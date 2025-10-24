@@ -43,7 +43,7 @@ html[data-theme="dark"] {
   --text: #e7eaf0;
   --text-muted: #a3a9b7;
 
-  --surface: #181b21;
+  --surface: #22252b;
   --surface-2: #1f242c;
   --border: #2a3140;
   --shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
@@ -338,4 +338,8 @@ input[type="checkbox"].cb:focus-visible {
 html[data-theme="dark"] input[type="checkbox"].cb {
   background: var(--surface);
   border-color: var(--border);
+}
+
+.main-tabs {
+  margin: 15px 0;
 }

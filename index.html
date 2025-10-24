@@ -277,61 +277,199 @@
       </aside>
 
       <!-- MAIN -->
-      <main id="pane-list" role="tabpanel" aria-labelledby="tab-list">
-        <h2 class="section-title">Suche</h2>
-        <div class="toolbar">
-          <input
-            type="search"
-            id="q"
-            placeholder="Suche: Telefon, Notiz, Fahrtart…"
-          />
-        </div>
-        <div id="searchList" class="list"></div>
-
-        <h2 class="section-title">Nächste Fahrten</h2>
-        <div class="kpi">
-          <button class="muted pill todo" data-h="12">12h</button>
-          <button class="muted pill todo" data-h="24">24h</button>
-          <button class="muted pill todo" data-h="168">1W</button>
-        </div>
-        <div id="todoList" class="list"></div>
-
-        <h2 class="section-title">Suche nach Datum</h2>
-        <div class="toolbar">
-          <label class="label">Bestelldatum</label>
-          <input type="date" id="listDate" />
-          <label class="checkbox"
-            ><input type="checkbox" id="showAll" class="cb" /> alle
-            Bestellungen</label
-          >
+      <main
+        id="pane-list"
+        role="tabpanel"
+        aria-labelledby="tab-list"
+        class="main-tabs"
+        data-active="search"
+      >
+        <!-- Кнопки табов -->
+        <nav class="subtabs" role="tablist" aria-label="Ansicht wählen">
+          <!-- 1) Nächste Fahrten (АКТИВНЫЙ) -->
           <button
-            id="reload"
-            class="icon-btn icon-btn--muted"
-            type="button"
-            title="Aktualisieren"
-            aria-label="Aktualisieren"
+            class="subtab is-active"
+            id="tab-next"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-next"
+            data-target="panel-next"
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M20 12a8 8 0 1 1-2.35-5.65"
+            <svg class="subtab__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <!-- «часы/список» -->
+              <circle
+                cx="12"
+                cy="12"
+                r="8"
                 fill="none"
                 stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                stroke-width="1.6"
               />
-              <polyline
-                points="20 4 20 9 15 9"
+              <path
+                d="M12 8v4l3 2"
                 fill="none"
                 stroke="currentColor"
-                stroke-width="1.8"
+                stroke-width="1.6"
                 stroke-linecap="round"
                 stroke-linejoin="round"
               />
             </svg>
+            <span class="subtab__label">Nächste Fahrten</span>
           </button>
-        </div>
-        <div id="list" class="list"></div>
+
+          <!-- 2) Suche -->
+          <button
+            class="subtab"
+            id="tab-search"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-search"
+            data-target="panel-search"
+          >
+            <svg class="subtab__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <!-- «лупа» -->
+              <circle
+                cx="11"
+                cy="11"
+                r="6.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <path
+                d="M16 16l4 4"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span class="subtab__label">Suche</span>
+          </button>
+
+          <!-- 3) Suche nach Datum -->
+          <button
+            class="subtab"
+            id="tab-date"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-date"
+            data-target="panel-date"
+          >
+            <svg class="subtab__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <!-- «календарь» -->
+              <rect
+                x="3"
+                y="5"
+                width="18"
+                height="16"
+                rx="2"
+                ry="2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+              />
+              <path
+                d="M16 3v4M8 3v4M3 9h18"
+                stroke="currentColor"
+                stroke-width="1.6"
+              />
+            </svg>
+            <span class="subtab__label">Suche nach Datum</span>
+          </button>
+        </nav>
+
+        <!-- ВАЖНО: активная панель — panel-next; остальные скрыты -->
+        <section
+          id="panel-next"
+          role="tabpanel"
+          aria-labelledby="tab-next"
+        ></section>
+        <section
+          id="panel-search"
+          role="tabpanel"
+          aria-labelledby="tab-search"
+          hidden
+        ></section>
+        <section
+          id="panel-date"
+          role="tabpanel"
+          aria-labelledby="tab-date"
+          hidden
+        ></section>
+
+        <!-- TAB 1: Suche -->
+        <section id="panel-search" role="tabpanel" aria-labelledby="tab-search">
+          <h2 class="section-title">Suche</h2>
+          <div class="toolbar">
+            <input
+              type="search"
+              id="q"
+              placeholder="Suche: Telefon, Notiz, Fahrtart…"
+            />
+          </div>
+          <div id="searchList" class="list"></div>
+        </section>
+
+        <!-- TAB 2: Nächste Fahrten -->
+        <section
+          id="panel-next"
+          role="tabpanel"
+          aria-labelledby="tab-next"
+          hidden
+        >
+          <h2 class="section-title">Nächste Fahrten</h2>
+          <div class="kpi">
+            <button class="muted pill todo" data-h="12">12h</button>
+            <button class="muted pill todo" data-h="24">24h</button>
+            <button class="muted pill todo" data-h="168">1W</button>
+          </div>
+          <div id="todoList" class="list"></div>
+        </section>
+
+        <!-- TAB 3: Suche nach Datum -->
+        <section
+          id="panel-date"
+          role="tabpanel"
+          aria-labelledby="tab-date"
+          hidden
+        >
+          <h2 class="section-title">Suche nach Datum</h2>
+          <div class="toolbar">
+            <label class="label">Bestelldatum</label>
+            <input type="date" id="listDate" />
+            <label class="checkbox">
+              <input type="checkbox" id="showAll" class="cb" /> alle
+              Bestellungen
+            </label>
+            <button
+              id="reload"
+              class="icon-btn icon-btn--muted"
+              type="button"
+              title="Aktualisieren"
+              aria-label="Aktualisieren"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M20 12a8 8 0 1 1-2.35-5.65"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <polyline
+                  points="20 4 20 9 15 9"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+          <div id="list" class="list"></div>
+        </section>
       </main>
     </div>
 

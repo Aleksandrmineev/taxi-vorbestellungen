@@ -1,80 +1,56 @@
+// assets/js/main.js
 import { initForm } from "./ui/form.js";
 import { initOrdersList } from "./ui/ordersList.js";
 import { initTodoList } from "./ui/todoList.js";
 import { initSearch } from "./ui/search.js";
+import { initMainTabs } from "./ui/tabs.js";
 
 window.addEventListener("DOMContentLoaded", () => {
-  // форма
+  // === 1) Форма
+  // onCreated будет вызван после успешного сохранения нового заказа
+  let orders, todos; // объявим заранее, чтобы onCreated имел доступ по замыканию
   const { fillForm } = initForm({
     onCreated: () => {
-      orders.load();
-      todos.load(24);
+      // после создания — обновляем списки
+      orders?.load?.();
+      todos?.load?.(24);
     },
   });
 
-  // списки
-  const orders = initOrdersList({ fillForm });
-  const todos = initTodoList({ fillForm });
-  initSearch({ fillForm });
+  // === 2) Секции (поиск, списки)
+  initSearch({ fillForm }); // поиск реагирует на ввод
+  todos = initTodoList({ fillForm }); // вернёт { load }
+  orders = initOrdersList({ fillForm }); // вернёт { load }
 
-  // стартовая загрузка
-  orders.load();
-  todos.load(24);
-});
+  // === 3) Табы внутри <main>
+  // Коллбеки будут вызываться при показе соответствующей вкладки.
+  initMainTabs({
+    defaultPanelId: "panel-next", // ← теперь по умолчанию открывается Nächste Fahrten
+    onSearchShown: () => {},
+    onNextShown: () => {
+      todos?.load?.(24);
+    },
+    onDateShown: () => {
+      orders?.load?.();
+    },
+  });
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("f");
-  const submitBtn = form?.querySelector(".icon-btn--primary");
-
-  if (form && submitBtn) {
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      submitBtn.classList.add("loading");
-
-      try {
-        // пример: твоя логика сохранения
-        await saveOrder(form);
-        // после успешного сохранения — показать подтверждение
-        showSuccessPopup(); // заменишь своей функцией
-      } catch (err) {
-        console.error(err);
-        alert("Fehler beim Speichern!");
-      } finally {
-        submitBtn.classList.remove("loading");
-      }
-    });
-  }
-
-  // пример заглушек, чтобы не ломалось
-  async function saveOrder(form) {
-    return new Promise((resolve) => setTimeout(resolve, 2000)); // имитация 2 сек
-  }
-  function showSuccessPopup() {
-    console.log("✅ Bestellung gespeichert!");
-  }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
+  // === 4) Footer: Google Calendar intent для Android
   const gcal = document.getElementById("footer-gcal");
-  if (!gcal) return;
+  if (gcal) {
+    const originalUrl = gcal.getAttribute("href") || "";
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    if (isAndroid && originalUrl.startsWith("https://")) {
+      const intentUrl =
+        "intent://" +
+        originalUrl.replace(/^https?:\/\//, "") +
+        "#Intent;scheme=https;package=com.google.android.calendar;" +
+        "S.browser_fallback_url=" +
+        encodeURIComponent(originalUrl) +
+        ";end";
 
-  const originalUrl = gcal.getAttribute("href");
-
-  // Android: попытка открыть приложение Google Calendar через intent://
-  const isAndroid = /Android/i.test(navigator.userAgent);
-  if (isAndroid && originalUrl.startsWith("https://")) {
-    const intentUrl =
-      "intent://" +
-      originalUrl.replace(/^https?:\/\//, "") +
-      "#Intent;scheme=https;package=com.google.android.calendar;" +
-      "S.browser_fallback_url=" +
-      encodeURIComponent(originalUrl) +
-      ";end";
-
-    gcal.setAttribute("href", intentUrl);
-    // обычно intent лучше открывать в текущем окне
-    gcal.removeAttribute("target");
+      gcal.setAttribute("href", intentUrl);
+      gcal.removeAttribute("target"); // intent лучше открывать в текущем окне
+    }
   }
-
-  // iOS: оставляем https — если установлен Google Calendar, часто перехватит
 });

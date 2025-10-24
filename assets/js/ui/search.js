@@ -11,19 +11,47 @@ export function initSearch({ fillForm }) {
     const { display, href } = telHref(it.phone);
     const phoneHtml = display ? `<a href="${href}">${display}</a>` : "";
     const dateHuman = formatDateHuman(it.date);
-    return `<div class="item"
-                data-id="${it.id}"
-                data-type="${it.type}"
-                data-dur="${it.duration_min}"
-                data-phone="${display}"
-                data-message="${(it.message || "").replace(/"/g, "&quot;")}"
-                data-time="${it.time}">
-      <h4>#${it.id} — ${dateHuman} ${it.time} — ${
-      it.type
-    } — ${phoneHtml} <span class="badge ${it.status}">${it.status}</span></h4>
-      ${it.message ? `<div class="sub">${it.message}</div>` : ``}
-      <div class="btns"><button class="muted copy">📄 Kopieren</button></div>
-    </div>`;
+
+    return `
+      <div class="item"
+           data-id="${it.id}"
+           data-type="${it.type}"
+           data-dur="${it.duration_min}"
+           data-phone="${display || ""}"
+           data-message="${(it.message || "").replace(/"/g, "&quot;")}"
+           data-time="${it.time}">
+        <h4>#${it.id} — ${dateHuman} ${it.time} — ${it.type} — ${phoneHtml}
+          <span class="badge ${it.status}">${it.status}</span>
+        </h4>
+        ${it.message ? `<div class="sub">${it.message}</div>` : ``}
+  
+        <div class="btns">
+          <!-- Kopieren / Wiederholen (muted) -->
+          <button class="icon-btn icon-btn--muted todo-repeat"
+                  title="Kopieren"
+                  aria-label="Kopieren">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <!-- круг и стрелка — современный refresh/copy -->
+              <path
+                d="M20 12a8 8 0 1 1-2.35-5.65"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="20 4 20 9 15 9"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>`;
   }
 
   q.addEventListener("input", () => {

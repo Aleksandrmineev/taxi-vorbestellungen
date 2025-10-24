@@ -34,9 +34,10 @@
   }
 
   .form-card {
-    padding: 0;
+    padding: 10px;
     border: none;
     box-shadow: none;
+    margin: 15px 0;
   }
 }
 
@@ -214,7 +215,92 @@ html[data-theme="dark"] .toast {
   }
 }
 
-/* SVG прячем, когда активен лоадер */
-.icon-btn.loading svg {
+/* ===== Табы (Suche, Nächste Fahrten, Suche nach Datum) ===== */
+.subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1rem;
+  justify-content: flex-start;
+}
+
+.subtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.3;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.subtab:hover {
+  background: var(--hover);
+}
+
+.subtab {
+  position: relative;
+  overflow: hidden;
+}
+
+.subtab::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  transform-origin: center;
+  width: 80%;
+  height: 2px;
+  background: var(--gold-600);
+  border-radius: 1px;
   opacity: 0;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+.subtab.is-active::after {
+  transform: translateX(-50%) scaleX(1);
+  opacity: 0.95;
+}
+
+/* по желанию — лёгкое свечение при наведении */
+.subtab:hover::after {
+  opacity: 0.5;
+  transform: translateX(-50%) scaleX(0.5);
+}
+
+.subtab__icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.subtab__label {
+  display: inline-block;
+  text-align: left;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.2;
+}
+
+/* Адаптив */
+@media (max-width: 500px) {
+  .subtab {
+    flex: 1 1 100%;
+    justify-content: center;
+    text-align: center;
+    padding: 0.7rem 0.8rem;
+  }
+  .subtab__icon {
+    width: 16px;
+    height: 16px;
+  }
 }
