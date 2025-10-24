@@ -1,0 +1,109 @@
+/* Header */
+.site-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text);
+}
+.brand__logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+.brand__title {
+  font-family: "Marcellus SC", var(--font-sans);
+  font-size: 18px;
+  letter-spacing: 0.4px;
+}
+.brand__accent {
+  color: var(--gold-600);
+}
+
+.header-spacer {
+  flex: 1;
+}
+
+/* Pills */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+}
+.pill svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* phone – золотистый */
+.pill--gold {
+  background: var(--gold-bg);
+  color: var(--gold-ink);
+  border-color: var(--gold-border);
+  box-shadow: var(--shadow);
+}
+
+/* ghost кнопка (тумблер темы) */
+.pill--ghost {
+  background: transparent;
+  color: var(--text);
+}
+
+/* Ховер */
+.pill:hover {
+  filter: brightness(0.98);
+}
+
+.brand__title {
+  font-family: var(--font-brand);
+  line-height: 1.05;
+  font-weight: 600;
+  font-size: clamp(22px, 2.6vw, 34px);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+
+  /* Золотой градиент */
+  background: linear-gradient(
+    120deg,
+    #b8902d 0%,
+    #d9b654 25%,
+    #b8902d 50%,
+    #f1d27b 75%,
+    #b8902d 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-fill-color: transparent;
+
+  animation: goldMove 8s linear infinite; /* 👈 плавное переливание */
+}
+
+/* 🔄 Анимация движения золота */
+@keyframes goldMove {
+  0% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+  100% {
+    background-position: 0% center;
+  }
+}

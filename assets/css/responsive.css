@@ -1,0 +1,220 @@
+/* Список: кнопки вниз, одна колонка карточки */
+@media (max-width: 680px) {
+  .item {
+    grid-template-columns: 1fr;
+  }
+  .btns {
+    justify-self: start;
+  }
+}
+
+/* Сетка: aside под контент, ОБЯЗАТЕЛЬНО без sticky на мобилке */
+@media (max-width: 980px) {
+  .layout.layout--aside-left {
+    grid-template-columns: 1fr;
+  }
+  .layout.layout--aside-left > aside {
+    position: static;
+    top: auto;
+  }
+
+  .brand__logo {
+    width: 24px;
+    height: 24px;
+  }
+  .brand__logo img {
+    width: 24px;
+    height: 24px;
+  }
+  .brand__title {
+    font-size: 18px;
+  }
+  .pill {
+    font-size: clamp(14px, 3.5vw, 16px);
+  }
+
+  .form-card {
+    padding: 0;
+    border: none;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 420px) {
+  :root {
+    --control-height: 24px;
+  }
+  input,
+  select,
+  textarea {
+    padding: 8px 10px;
+  }
+  .actions {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Mobile Tabs (показывать только на узких) ===== */
+/* ========= Toast (out) ========= */
+aside {
+  position: sticky;
+} /* у тебя уже есть sticky; важно, чтобы был positioned ancestor */
+
+.toast {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  max-width: 320px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.3;
+  z-index: 20;
+
+  /* анимация появления/исчезновения */
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Варианты (при желании) */
+.toast--ok {
+  border-color: color-mix(in srgb, var(--success) 30%, var(--border));
+}
+.toast--err {
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--border));
+}
+
+/* Темная тема легонько затемняем фон */
+html[data-theme="dark"] .toast {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+/* На очень узких — центрируем снизу как “toast” */
+@media (max-width: 420px) {
+  .toast {
+    position: fixed;
+    left: 50%;
+    right: auto;
+    bottom: 20px;
+    top: auto;
+    transform: translate(-50%, 6px);
+  }
+  .toast.show {
+    transform: translate(-50%, 0);
+  }
+}
+
+/* ===== Mobile tabs (icons only) ===== */
+.mobile-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 96px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--cl-border, rgba(255, 255, 255, 0.12));
+  background: var(--cl-surface, rgba(79, 101, 243, 0.3));
+  color: var(--cl-text, #e8e8e8);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+    transform 0.06s ease-in;
+}
+.mobile-tab svg {
+  width: 42px;
+  height: 42px;
+}
+.mobile-tab.is-active {
+  background: var(--cl-accent-muted, rgba(13, 94, 247, 0.12));
+  border-color: var(--gold-600);
+  color: var(--gold-600);
+}
+.mobile-tab:active {
+  transform: translateY(1px);
+}
+
+.mobile-tab {
+  display: none;
+}
+
+/* ===== Breakpoint: превращаем колонки в таб-панели ===== */
+@media (max-width: 900px) {
+  .mobile-tabs {
+    display: flex;
+    gap: 15px;
+    margin: 5px;
+  }
+
+  /* вместо двух колонок — стэк */
+  .layout.layout--aside-left {
+    display: block;
+  }
+
+  /* Скрываем обе панели по умолчанию на мобиле */
+  #pane-form,
+  #pane-list {
+    display: none;
+  }
+
+  /* Показываем активную по data-active у .layout */
+  .layout[data-active="form"] #pane-form {
+    display: block;
+  }
+  .layout[data-active="list"] #pane-list {
+    display: block;
+  }
+
+  /* Опционально: убираем повторяющиеся H2, если мешают визуально */
+  #pane-form .section-title:first-of-type,
+  #pane-list .section-title:first-of-type {
+    margin-top: 8px;
+  }
+}
+
+/* Спиннер внутри кнопки */
+.icon-btn.loading {
+  pointer-events: none;
+  opacity: 0.7;
+  position: relative;
+}
+
+.icon-btn.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* SVG прячем, когда активен лоадер */
+.icon-btn.loading svg {
+  opacity: 0;
+}

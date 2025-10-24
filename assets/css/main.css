@@ -1,0 +1,208 @@
+/* ========= Layout: aside left ========= */
+.layout.layout--aside-left {
+  display: grid;
+  grid-template-columns: minmax(310px, 1fr) minmax(0, 2fr);
+  gap: 28px;
+  align-items: start;
+}
+.layout.layout--aside-left > aside {
+  position: sticky;
+  top: 16px;
+}
+
+/* ========= Main wrapper ========= */
+main.card,
+main {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+/* ========= Form ========= */
+form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 14px var(--gap);
+  align-items: end;
+  margin-bottom: 22px;
+}
+.form-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 18px;
+}
+.full {
+  position: relative;
+  grid-column: 1 / -1;
+}
+.full input,
+.full select,
+.full textarea {
+  width: 90%;
+  height: var(--control-height);
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font: inherit;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    background 0.15s ease, color 0.15s ease;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  height: calc(var(--control-height) * 1.5);
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font: inherit;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    background 0.15s ease, color 0.15s ease;
+}
+
+.full select {
+  height: calc(var(--control-height) * 2);
+}
+.full textarea {
+  height: auto;
+  min-height: var(--control-height);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 0;
+  border-color: color-mix(in srgb, var(--primary) 60%, #fff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+  background: var(--surface);
+}
+
+/* ========= Actions ========= */
+.actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ========= Toolbars ========= */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* ========= Lists & Cards ========= */
+.list {
+  margin-top: 12px;
+}
+.item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  background: var(--surface);
+  color: var(--text);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 12px;
+  align-items: center;
+  transition: background 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease, color 0.15s ease;
+}
+.item:hover {
+  background: var(--hover);
+  border-color: color-mix(in srgb, var(--border) 60%, transparent);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.03);
+}
+.item h4 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.35;
+}
+.sub {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.btns {
+  display: flex;
+  gap: 8px;
+  justify-self: end;
+}
+
+/* ========= Badges ========= */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  margin-left: 6px;
+  border: 1px solid transparent;
+}
+.badge.active {
+  background: #eef2ff;
+  color: #1e40af;
+  border-color: #dbe6ff;
+}
+.badge.done {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bff3d1;
+}
+.badge.cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #ffd2d2;
+}
+
+/* Темные вариации бейджей */
+html[data-theme="dark"] .badge.active {
+  background: #1c2740;
+  color: #9fb8ff;
+  border-color: #27345a;
+}
+html[data-theme="dark"] .badge.done {
+  background: #173326;
+  color: #7ce6b2;
+  border-color: #214a36;
+}
+html[data-theme="dark"] .badge.cancelled {
+  background: #3a1d1d;
+  color: #ff9d9d;
+  border-color: #583030;
+}
+
+/* ========= KPI ========= */
+.kpi {
+  margin: 18px 0;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.kpi .pill {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}

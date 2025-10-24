@@ -1,0 +1,341 @@
+/* ========= Design Tokens ========= */
+:root {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-brand: "Marcellus SC", serif;
+
+  /* Light theme (default) */
+  --bg: #f7f8fa;
+  --text: #111111;
+  --text-muted: #6b7280;
+
+  --surface: #faf9f6;
+  --surface-2: #f6f7fb;
+  --border: #e5e7eb;
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+
+  --primary: #0d5ef7;
+  --primary-contrast: #ffffff;
+
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #2563eb;
+
+  --hover: #fbfdff;
+
+  --radius-lg: 12px;
+  --radius-md: 10px;
+  --control-height: 24px;
+  --container-max: 880px;
+  --gap: 16px;
+
+  /* Gold accents */
+  --gold-600: #b98b20;
+  --gold-500: #caa135;
+  --gold-400: #e0bb59;
+  --gold-bg: #fff7e6;
+  --gold-border: #f1dfb0;
+  --gold-ink: #5d4613;
+}
+
+/* ========= Dark theme overrides ========= */
+html[data-theme="dark"] {
+  --bg: #0e1116;
+  --text: #e7eaf0;
+  --text-muted: #a3a9b7;
+
+  --surface: #181b21;
+  --surface-2: #1f242c;
+  --border: #2a3140;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+
+  --primary: #5a8cff;
+  --primary-contrast: #0b1020;
+
+  --success: #3bdc88;
+  --danger: #ff6b6b;
+  --warning: #7aa7ff;
+
+  --hover: #1b212b;
+
+  --gold-600: #e4c978;
+  --gold-500: #f0d88b;
+  --gold-400: #f7e7a8;
+  --gold-bg: #2a2414;
+  --gold-border: #3a321a;
+  --gold-ink: #f1e8c3;
+}
+
+/* Поддержка системных тем */
+:root {
+  color-scheme: light dark;
+}
+
+/* ========= Base ========= */
+body {
+  font: 16px/1.45 var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  max-width: var(--container-max);
+  margin: 24px auto;
+  padding: 0 var(--gap);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+h1 {
+  font-size: 22px;
+  margin: 0 0 16px;
+  letter-spacing: 0.2px;
+}
+.section-title {
+  font-weight: 700;
+  font-size: 18px;
+  margin: 12px 0 10px;
+}
+
+/* ========= Utilities ========= */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+.btn {
+  height: 40px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+.btn-primary:hover {
+  filter: brightness(0.96);
+}
+.btn-muted {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.btn-muted:hover {
+  background: color-mix(in srgb, var(--surface-2) 85%, #fff);
+}
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+}
+.icon-btn svg {
+  display: block;
+}
+.pill {
+  border-radius: 999px;
+  padding: 8px 12px;
+}
+.pill--gold {
+  background: var(--gold-bg);
+  color: var(--gold-ink);
+  border-color: var(--gold-border);
+  box-shadow: var(--shadow);
+}
+.pill--ghost {
+  background: transparent;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.label {
+  display: none;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: var(--text);
+  opacity: 0.7;
+  font-size: 13px;
+}
+.label--hint {
+  opacity: 0.6;
+  font-weight: 600;
+  font-size: 12px;
+}
+body.labels-hidden .label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ========= Icon Buttons ========= */
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Акцент — золотой (например, для телефона или темы) */
+.icon-btn--gold {
+  background: var(--gold-bg);
+  border-color: var(--gold-border);
+  color: var(--gold-ink);
+  box-shadow: var(--shadow);
+}
+
+/* Основная кнопка (активное действие) */
+.icon-btn--primary {
+  background: var(--primary);
+  color: var(--primary-contrast);
+  border-color: color-mix(in srgb, var(--primary) 60%, #fff);
+}
+
+/* делаем основную кнопку крупнее */
+.actions.full .icon-btn--primary {
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: 180px; /* базовая ширина до масштабирования */
+  padding: 12px 0;
+  font-size: 16px;
+  justify-content: center;
+}
+
+/* увеличиваем именно эту кнопку */
+.actions.full .icon-btn--primary.enlarged {
+  max-width: 540px; /* ×3 ширина */
+}
+
+/* выравниваем кнопки по центру */
+.actions.full {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+/* Вторичная (спокойная) */
+.icon-btn--muted {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* Hover / Focus */
+.icon-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+.icon-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.icon-btn:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+/* ========= Dark theme адаптация ========= */
+html[data-theme="dark"] .icon-btn {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+html[data-theme="dark"] .icon-btn--primary {
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+html[data-theme="dark"] .icon-btn--muted:hover {
+  background: var(--hover);
+}
+
+/* ========= Адаптив ========= */
+@media (max-width: 640px) {
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .icon-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* ========= Compact Checkbox ========= */
+:root {
+  --cb-size: 18px;
+  --cb-radius: 6px;
+}
+
+input[type="checkbox"].cb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: var(--cb-size);
+  height: var(--cb-size);
+  border: 1px solid var(--border);
+  border-radius: var(--cb-radius);
+  background: var(--surface);
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+input[type="checkbox"].cb::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 26%, 86% 12%, 38% 66%);
+  background: var(--primary-contrast);
+  transform: scale(0);
+  transform-origin: center;
+  transition: transform 0.18s ease;
+}
+input[type="checkbox"].cb:checked {
+  background: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 70%, transparent);
+}
+input[type="checkbox"].cb:checked::after {
+  transform: scale(1);
+}
+input[type="checkbox"].cb:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+/* Темная тема */
+html[data-theme="dark"] input[type="checkbox"].cb {
+  background: var(--surface);
+  border-color: var(--border);
+}
