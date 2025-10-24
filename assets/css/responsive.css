@@ -149,7 +149,7 @@ html[data-theme="dark"] .toast {
   transform: translateY(1px);
 }
 
-.mobile-tab {
+.mobile-tabs {
   display: none;
 }
 
