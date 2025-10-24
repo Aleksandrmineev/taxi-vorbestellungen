@@ -7,7 +7,7 @@
 
     <meta
       name="description"
-      content="Hilfe & Anleitung für die TaxiApp MurtalTaxi: Bestellung, Suche, Nächste Fahrten, Kalender, technische Daten."
+      content="Hilfe & Anleitung für die TaxiApp MurtalTaxi: Vorbestellung, Suche, Nächste Fahrten, Kalender, technische Daten."
     />
     <meta name="color-scheme" content="dark light" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -88,28 +88,16 @@
     <main class="container">
       <h1>Hilfe & Anleitung</h1>
 
-      <!-- Über die App: компактное продукт-описание без повторов -->
       <p class="intro">
-        Die <strong>TaxiApp MurtalTaxi</strong> macht den Arbeitsalltag von
-        Fahrer:innen und Disponent:innen einfacher, schneller und
-        übersichtlicher. Alle wichtigen Aufgaben – Vorbestellung, Suche, Planung
-        der nächsten Fahrten und die Synchronisation mit dem gemeinsamen
-        Google-Kalender – laufen in einer klaren, mobilen Oberfläche zusammen.
+        <strong>Erstes Ziel der TaxiApp MurtalTaxi:</strong> alle
+        Vorbestellungen klar strukturieren – und
+        <strong>keine einzige geht verloren</strong>. Die App macht das Anlegen
+        und Wiederholen von Bestellungen schnell, zeigt anstehende Fahrten
+        (12h/24h/1W) übersichtlich an, umgeht die Grenzen von Chat-Listen und
+        sorgt mit dem gemeinsamen Google-Kalender für automatische Erinnerungen
+        – egal ob der Auftrag in ein paar Stunden oder erst in ein paar Monaten
+        stattfindet.
       </p>
-      <ul class="list-plain">
-        <li>
-          Schnelles Anlegen von Bestellungen mit Datum, Uhrzeit, Typ und Notiz
-        </li>
-        <li>Direkte Suche nach Telefonnummer, Adresse oder Fahrtart</li>
-        <li>Übersicht „Nächste Fahrten“ für 12h, 24h oder 1 Woche</li>
-        <li>
-          Automatische Kalender-Einträge mit späterer Entfernung bei
-          „Erledigt“/„Storniert“
-        </li>
-        <li>
-          Optimiert für Smartphone, Tablet und Desktop – helles & dunkles Thema
-        </li>
-      </ul>
 
       <p>
         <button
@@ -137,219 +125,161 @@
       </p>
 
       <section>
+        <h2>Schnellüberblick</h2>
+        <ul class="list-plain">
+          <li>
+            Neue Bestellungen in Sekunden anlegen; Wiederholen per Kopieren
+          </li>
+          <li>Übersicht „Nächste Fahrten“: 12h, 24h oder 1 Woche</li>
+          <li>Suche nach Telefonnummer, Adresse/Notiz oder Fahrtart</li>
+          <li>Automatische Kalender-Einträge und Erinnerungen</li>
+          <li>Mobil- und Desktop-optimiert, hell/dunkel</li>
+        </ul>
+      </section>
+
+      <section>
         <h2>Symbole & Bedeutung</h2>
         <ul class="list-plain">
           <li>
-            <svg viewBox="0 0 24 24" style="width: 20px; height: 20px">
-              <rect
-                x="3"
-                y="13"
-                width="18"
-                height="8"
-                rx="2"
-                ry="2"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-              />
-              <path
-                d="M12 3v11m0 0-4-4m4 4 4-4"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-              />
-            </svg>
-            <strong>Speichern</strong> — speichert die Bestellung. Während des
-            Speicherns erscheint ein kleiner Ladeindikator.
+            <strong>Speichern</strong> — legt die Bestellung an; kurzer
+            Ladeindikator sichtbar.
           </li>
           <li>
-            <svg viewBox="0 0 24 24" style="width: 20px; height: 20px">
-              <path
-                d="M20 12a8 8 0 1 1-2.35-5.65"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-              <polyline
-                points="20 4 20 9 15 9"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-            </svg>
-            <strong>Aktualisieren / Wiederholen</strong> — lädt die Liste neu
-            oder füllt das Formular wie beim letzten Mal.
+            <strong>Aktualisieren / Wiederholen</strong> — Liste neu laden oder
+            Formular wie beim letzten Mal füllen.
           </li>
           <li>
-            <svg viewBox="0 0 24 24" style="width: 20px; height: 20px">
-              <path
-                d="M11 18a7 7 0 1 1 4.95-2.05L21 21"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-            </svg>
-            <strong>Suche</strong> — sucht nach Telefonnummer, Notiz oder
+            <strong>Suche</strong> — Filter nach Telefon, Notiz/Adresse,
             Fahrtart.
           </li>
           <li>
-            <svg viewBox="0 0 24 24" style="width: 20px; height: 20px">
-              <rect
-                x="3"
-                y="5"
-                width="18"
-                height="16"
-                rx="2"
-                ry="2"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.6"
-              />
-              <path
-                d="M16 3v4M8 3v4M3 9h18"
-                stroke="currentColor"
-                stroke-width="1.6"
-              />
-              <circle cx="12" cy="15" r="2" fill="currentColor" />
-            </svg>
-            <strong>Kalender</strong> — öffnet den gemeinsamen Fahrten-Kalender.
+            <strong>Kalender</strong> — öffnet den gemeinsamen Google-Kalender.
           </li>
         </ul>
       </section>
 
       <section>
-        <h2>Neue Bestellung</h2>
+        <h2>Neue Bestellung & Wiederholen</h2>
         <ol>
           <li>Datum und Uhrzeit eingeben.</li>
           <li>
             Fahrtart wählen: <strong>Ortsfahrt</strong> oder
             <strong>KT</strong> (Krankentransport).
           </li>
-          <li>Dauer in Minuten angeben.</li>
-          <li>Telefonnummer und Notiz/Adresse eintragen.</li>
+          <li>Dauer, Telefon und Notiz/Adresse eintragen.</li>
           <li>
-            <strong>Speichern</strong> klicken – nach kurzer Ladezeit folgt die
-            Bestätigung.
-          </li>
-          <li>
-            <strong>Wie beim letzten Mal</strong> — wiederholt die letzte
-            Bestellung automatisch.
+            <strong>Speichern</strong> klicken – Bestätigung folgt nach kurzer
+            Ladezeit.
           </li>
         </ol>
-      </section>
-
-      <section>
-        <h2>Schnellsuche</h2>
         <p>
-          Filtert Bestellungen nach Telefonnummer, Adresse oder Fahrtart.
-          Ergebnisse erscheinen sofort beim Tippen.
+          Zum Wiederholen einer früheren Bestellung: Auf der Karte
+          <em>Kopieren/Wiederholen</em> wählen – die Felder füllen sich
+          automatisch, nur noch <em>Speichern</em>. Browser-Autofill und lokale
+          Vorschläge helfen bei Telefon und Adressen.
         </p>
       </section>
 
       <section>
         <h2>Nächste Fahrten</h2>
-        <p>Zeigt anstehende Fahrten für:</p>
+        <p>To-Do-Übersicht der anstehenden Fahrten für:</p>
         <ul>
           <li><strong>12h</strong> – nächste 12 Stunden</li>
           <li><strong>24h</strong> – nächster Tag</li>
           <li><strong>1W</strong> – kommende Woche</li>
         </ul>
+        <p>
+          Aktionen: <em>Erledigt</em>, <em>Stornieren</em>,
+          <em>Wiederholen</em>. Karten verschwinden mit sanfter Animation.
+        </p>
+      </section>
+
+      <section>
+        <h2>Schnellsuche</h2>
+        <p>
+          Suche nach Telefonnummer, Adresse/Notiz oder Fahrtart. Ergebnisse
+          erscheinen sofort beim Tippen.
+        </p>
       </section>
 
       <section>
         <h2>Suche nach Datum</h2>
         <p>
-          Wähle ein <strong>Bestelldatum</strong>, um Fahrten an diesem Tag zu
-          sehen. Mit <strong>alle Bestellungen</strong> werden sämtliche
-          Einträge des gewählten Datums angezeigt. Mit dem Symbol
-          <em>Aktualisieren</em> kann die Liste neu geladen werden.
+          Wähle ein <strong>Bestelldatum</strong>, um alle Fahrten dieses Tages
+          zu sehen. Mit <strong>alle Bestellungen</strong> werden auch
+          erledigte/stornierte angezeigt. Über <em>Aktualisieren</em> kann die
+          Liste neu geladen werden.
         </p>
       </section>
 
       <section>
-        <h2>Kalender</h2>
-
-        <h3>Wie Einträge in den Kalender kommen</h3>
+        <h2>Kalender: Anlegen, Entfernen, Erinnerungen</h2>
+        <h3>Einträge anlegen</h3>
         <p>
-          Beim Klick auf <strong>Speichern</strong> legt die App automatisch ein
-          Ereignis im gemeinsamen Google-Kalender an. Titel enthält die
-          Bestell-Nummer (z.&nbsp;B. <code>#123</code>) und die wichtigsten
-          Angaben (Typ, Telefon, Notiz). Uhrzeit wird in der lokalen Zeitzone
-          <em>Europe/Vienna</em> gespeichert, damit sie auf allen Geräten gleich
-          angezeigt wird.
+          Beim Speichern wird automatisch ein Termin im gemeinsamen
+          Google-Kalender erstellt. Der Titel enthält die Bestellnummer und
+          Kerndaten; Zeit in <em>Europe/Vienna</em>.
         </p>
 
-        <h3>Löschen aus dem Kalender</h3>
+        <h3>Einträge entfernen</h3>
         <p>
-          Wenn du eine Bestellung als <strong>Erledigt</strong> markierst oder
-          <strong>Stornierst</strong>, entfernt die App den Kalendereintrag
-          automatisch. In der Tabelle wird das Feld
-          <code>gcal_event_id</code> geleert, damit der Eintrag nicht erneut
-          bearbeitet wird.
+          Bei <strong>Erledigt</strong> oder <strong>Storniert</strong> wird der
+          zugehörige Termin automatisch aus dem Kalender entfernt.
         </p>
         <p>
-          <em>Hinweis:</em> Auf Smartphones erfolgt das Entfernen
-          <strong>nicht synchron in Echtzeit</strong>, sondern mit einer kurzen
-          Verzögerung, bis die Kalender-App mit Google synchronisiert hat. Das
-          dauert üblicherweise
-          <strong>einige Sekunden bis wenige Minuten</strong>. In Google
-          Kalender (Web) ist die Änderung meist sofort sichtbar.
+          <em>Hinweis zur Synchronisation:</em> Auf Smartphones erfolgt das
+          Entfernen nicht in Echtzeit, sondern mit kurzer Verzögerung, bis die
+          Kalender-App synchronisiert hat (meist Sekunden bis wenige Minuten).
+          Im Web ist es in der Regel sofort sichtbar.
         </p>
 
         <h3>Kalender hinzufügen</h3>
         <ul>
           <li>
-            <strong>Android (Google Kalender App):</strong> Tippe im Footer auf
-            <em>Kalender</em> und bestätige <em>Abonnieren</em>. Falls die App
-            nicht öffnet, prüfe dein Google-Konto in der Kalender-App.
+            <strong>Android:</strong> Im Footer <em>Kalender</em> antippen und
+            <em>Abonnieren</em> bestätigen.
           </li>
           <li>
-            <strong>iPhone:</strong> Tippe im Footer auf <em>Kalender</em>. In
-            Safari entweder <em>Abonnieren</em> wählen oder
-            <em>In Google Kalender öffnen</em>, wenn du die Google-App nutzt.
+            <strong>iPhone:</strong> <em>Kalender</em> im Footer → in Safari
+            <em>Abonnieren</em> oder <em>In Google Kalender öffnen</em>.
           </li>
           <li>
             <strong>Desktop:</strong> Öffnet Google Kalender im Browser und fügt
-            den Fahrten-Kalender deinem Konto hinzu.
+            den Fahrten-Kalender hinzu.
           </li>
         </ul>
 
         <h3>Kalender vorübergehend ein-/ausblenden</h3>
         <ul>
           <li>
-            <strong>Android:</strong> Google Kalender → Menü ☰ →
-            <em>Einstellungen</em> → Konto → Kalender auswählen →
-            <em>Sichtbar</em> (ein/aus) oder <em>Synchronisieren</em> (ein/aus).
+            <strong>Android:</strong> Google Kalender → Menü ☰ → Einstellungen →
+            Konto → Kalender → Sichtbar/Sync umschalten.
           </li>
           <li>
-            <strong>iPhone (Google Kalender App):</strong> Menü ☰ →
-            <em>Settings</em> → Kalender → Sichtbarkeit umschalten.
+            <strong>iPhone (Google Kalender):</strong> Menü ☰ → Settings →
+            Kalender → Sichtbarkeit.
           </li>
           <li>
             <strong>iPhone (Apple Kalender):</strong> App <em>Kalender</em> →
-            „Kalender“ unten → Häkchen beim gemeinsamen Kalender
-            setzen/entfernen.
+            „Kalender“ → Häkchen setzen/entfernen.
           </li>
           <li>
-            <strong>Desktop:</strong> In der linken Liste der Kalender den
-            gemeinsamen Kalender an-/abwählen.
+            <strong>Desktop:</strong> Kalender in der linken Liste an-/abwählen.
           </li>
         </ul>
 
-        <h3>Wenn ein Eintrag am Handy „nicht erscheint“</h3>
+        <h3>Wenn ein Termin am Handy „nicht erscheint“</h3>
         <ul>
           <li>
-            Ziehe in der Kalender-App die Ansicht nach unten, um zu
-            aktualisieren.
+            Ansicht in der Kalender-App nach unten ziehen, um zu aktualisieren.
           </li>
           <li>
-            Prüfe, ob der gemeinsame Kalender für dein Konto
-            <em>sichtbar</em> und die <em>Synchronisierung</em> eingeschaltet
-            ist.
+            Sichtbarkeit des gemeinsamen Kalenders und die Synchronisation
+            prüfen.
           </li>
           <li>
             Android: Einstellungen → Apps → Kalender → Speicher →
-            <em>Cache leeren</em>, danach die App erneut öffnen.
+            <em>Cache leeren</em>, App neu öffnen.
           </li>
         </ul>
       </section>
@@ -357,7 +287,9 @@
       <section>
         <h2>Technische Daten</h2>
         <ul>
-          <li><strong>Frontend:</strong> HTML / CSS / JS, responsive Design</li>
+          <li>
+            <strong>Frontend:</strong> HTML / CSS / JS, responsive (hell/dunkel)
+          </li>
           <li><strong>Backend:</strong> Google Apps Script (JSON-API)</li>
           <li><strong>Daten:</strong> Google Sheets („Orders“)</li>
           <li><strong>Kalender:</strong> gemeinsamer Google-Kalender</li>
@@ -365,7 +297,6 @@
             <strong>Kompatibilität:</strong> Chrome, Safari, Firefox, Android,
             iOS
           </li>
-          <li><strong>Version:</strong> 1.0</li>
         </ul>
       </section>
 
