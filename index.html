@@ -174,17 +174,29 @@
             <datalist id="time5"></datalist>
           </div>
 
+          <!-- Телефон -->
           <div class="full">
             <label class="label">Telefonnummer</label>
-            <input type="tel" name="phone" placeholder="+43…" required />
+            <input
+              type="tel"
+              name="phone"
+              id="phone"
+              placeholder="+43…"
+              autocomplete="tel"
+              list="phones"
+            />
+            <datalist id="phones"></datalist>
           </div>
 
+          <!-- Notiz / Adresse (textarea нельзя привязать к datalist, сделаем кастом) -->
           <div class="full">
             <label class="label label--hint">Notiz / Adresse</label>
             <textarea
               name="message"
+              id="message"
               rows="3"
               placeholder="Adresse, Hinweise…"
+              autocomplete="street-address"
             ></textarea>
           </div>
 

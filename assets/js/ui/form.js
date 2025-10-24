@@ -101,3 +101,237 @@ export function initForm({ onCreated }) {
 
   return { fillForm };
 }
+
+// === Local history for phone & address (localStorage) ===
+const LS_KEYS = {
+  phones: "mt_recent_phones",
+  addresses: "mt_recent_addresses",
+};
+const MAX_ITEMS = 8;
+
+function loadList(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "[]");
+  } catch {
+    return [];
+  }
+}
+function saveList(key, arr) {
+  localStorage.setItem(key, JSON.stringify(arr.slice(0, MAX_ITEMS)));
+}
+function upsertValue(key, value, { normalize } = {}) {
+  let v = (value || "").trim();
+  if (!v) return;
+  if (normalize) v = normalize(v);
+  const list = loadList(key).filter((x) => x && x !== v);
+  list.unshift(v);
+  saveList(key, list);
+}
+
+function normalizePhone(v) {
+  let s = v.replace(/\s+/g, "");
+  if (!s) return "";
+  if (s.startsWith("+")) return s;
+  if (s.startsWith("0")) return "+43" + s.slice(1);
+  if (s.startsWith("43")) return "+" + s;
+  const d = s.replace(/[^\d]/g, "");
+  return d ? "+" + d : "";
+}
+
+// --- PHONE: bind datalist ---
+function bindPhoneDatalist(input, datalist) {
+  const render = () => {
+    const arr = loadList(LS_KEYS.phones);
+    datalist.innerHTML = arr
+      .map((v) => `<option value="${v}"></option>`)
+      .join("");
+  };
+  render();
+
+  // при фокусе/вводе — обновим список (на случай параллельных изменений)
+  input.addEventListener("focus", render);
+  input.addEventListener("input", () => {
+    // Ничего не делаем тут — datalist фильтрует автоматически
+  });
+}
+
+// --- ADDRESS: lightweight dropdown under textarea ---
+function createSuggestionMenu() {
+  const overlay = document.createElement("div");
+  overlay.className = "addr-suggest";
+  const css = document.createElement("style");
+  css.textContent = `
+    .addr-suggest {
+      position: absolute; z-index: 50; display: none;
+      background: var(--cl-surface, #14171f);
+      color: var(--cl-text, #e8e8e8);
+      border: 1px solid var(--cl-border, rgba(255,255,255,.15));
+      border-radius: 10px; box-shadow: 0 10px 24px rgba(0,0,0,.35);
+      max-height: 220px; overflow:auto; min-width: 240px;
+    }
+    .addr-suggest__item {
+      padding: 8px 10px; cursor: pointer; line-height: 1.2;
+      border-bottom: 1px dashed rgba(255,255,255,.06);
+    }
+    .addr-suggest__item:last-child { border-bottom: none; }
+    .addr-suggest__item:hover, .addr-suggest__item--active {
+      background: rgba(255,255,255,.08);
+    }
+  `;
+  document.head.appendChild(css);
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function bindAddressSuggest(textarea) {
+  const menu = createSuggestionMenu();
+  let activeIndex = -1; // для стрелок
+  let currentList = [];
+
+  function positionMenu() {
+    const r = textarea.getBoundingClientRect();
+    menu.style.left = `${window.scrollX + r.left}px`;
+    menu.style.top = `${window.scrollY + r.bottom + 6}px`;
+    menu.style.minWidth = `${r.width}px`;
+  }
+
+  function hide() {
+    menu.style.display = "none";
+    activeIndex = -1;
+  }
+  function show() {
+    positionMenu();
+    menu.style.display = "block";
+  }
+
+  function render(filter = "") {
+    const all = loadList(LS_KEYS.addresses);
+    const f = (filter || "").trim().toLowerCase();
+    currentList = f ? all.filter((x) => x.toLowerCase().includes(f)) : all;
+    currentList = currentList.slice(0, MAX_ITEMS);
+
+    if (!currentList.length) {
+      hide();
+      return;
+    }
+
+    menu.innerHTML = currentList
+      .map(
+        (txt, i) =>
+          `<div class="addr-suggest__item" data-i="${i}">${txt.replace(
+            /</g,
+            "&lt;"
+          )}</div>`
+      )
+      .join("");
+
+    // клики
+    menu.querySelectorAll(".addr-suggest__item").forEach((el) => {
+      el.addEventListener("mousedown", (e) => {
+        e.preventDefault(); // не терять фокус
+        const i = Number(el.dataset.i);
+        textarea.value = currentList[i];
+        hide();
+        textarea.focus();
+      });
+    });
+
+    activeIndex = -1;
+    show();
+  }
+
+  textarea.addEventListener("focus", () => render(textarea.value));
+  textarea.addEventListener("input", () => render(textarea.value));
+  textarea.addEventListener("blur", () => setTimeout(hide, 120));
+
+  textarea.addEventListener("keydown", (e) => {
+    if (menu.style.display !== "block") return;
+    const items = [...menu.querySelectorAll(".addr-suggest__item")];
+    if (!items.length) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeIndex = (activeIndex + 1) % items.length;
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeIndex = (activeIndex - 1 + items.length) % items.length;
+    } else if (e.key === "Enter") {
+      if (activeIndex >= 0) {
+        e.preventDefault();
+        textarea.value = currentList[activeIndex];
+        hide();
+      }
+    } else if (e.key === "Escape") {
+      hide();
+      return;
+    } else {
+      return; // другие клавиши — пусть обрабатываются как обычно
+    }
+
+    items.forEach((el) => el.classList.remove("addr-suggest__item--active"));
+    if (activeIndex >= 0)
+      items[activeIndex].classList.add("addr-suggest__item--active");
+  });
+
+  // на ресайз/скролл перепозиционируем
+  window.addEventListener("resize", () => {
+    if (menu.style.display === "block") positionMenu();
+  });
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (menu.style.display === "block") positionMenu();
+    },
+    true
+  );
+}
+
+// === Инициализация: вызови после того, как форма создана на странице ===
+export function initLocalHistory() {
+  const form = document.getElementById("f");
+  if (!form) return;
+
+  const phone = form.querySelector("#phone");
+  const phonesList = document.getElementById("phones");
+  const message = form.querySelector("#message");
+
+  if (phone && phonesList) bindPhoneDatalist(phone, phonesList);
+  if (message) bindAddressSuggest(message);
+
+  // сохраняем значения при сабмите формы
+  form.addEventListener("submit", () => {
+    const phoneVal = phone?.value || "";
+    if (phoneVal.trim()) {
+      upsertValue(LS_KEYS.phones, phoneVal, { normalize: normalizePhone });
+    }
+    const msgVal = message?.value || "";
+    if (msgVal.trim().length >= 4) {
+      upsertValue(LS_KEYS.addresses, msgVal);
+    }
+  });
+}
+
+// --- Автоинициализация локальной истории при загрузке формы ---
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("f");
+  if (!form) return;
+
+  const phone = form.querySelector("#phone");
+  const phonesList = document.getElementById("phones");
+  const message = form.querySelector("#message");
+
+  if (phone && phonesList) bindPhoneDatalist(phone, phonesList);
+  if (message) bindAddressSuggest(message);
+
+  // сохраняем значения при сабмите формы
+  form.addEventListener("submit", () => {
+    const phoneVal = phone?.value || "";
+    if (phoneVal.trim()) {
+      upsertValue(LS_KEYS.phones, phoneVal, { normalize: normalizePhone });
+    }
+    const msgVal = message?.value || "";
+    if (msgVal.trim().length >= 4) {
+      upsertValue(LS_KEYS.addresses, msgVal);
+    }
+  });
+});
