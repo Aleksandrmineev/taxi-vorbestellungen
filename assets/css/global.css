@@ -343,3 +343,96 @@ html[data-theme="dark"] input[type="checkbox"].cb {
 .main-tabs {
   margin: 15px 0;
 }
+
+/* Для Hilfe */
+/* FAQ: details/summary */
+details {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  margin: 0 0 0.75rem 0;
+  box-shadow: var(--shadow);
+}
+
+details[open] {
+  background: var(--surface-2);
+}
+
+details > summary {
+  list-style: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+  position: relative;
+  padding-right: 1.75rem;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* стрелочка */
+details > summary::after {
+  content: "▾";
+  position: absolute;
+  right: 0.25rem;
+  top: 0.15rem;
+  font-size: 1rem;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+details[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+details > div {
+  margin-top: 0.5rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+details ul {
+  margin: 0.5rem 0 0 1rem;
+}
+
+details:focus-within,
+details > summary:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+/* ----- Kontakt & Support / Version ----- */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0 1rem;
+}
+
+.version-info {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* ----- Hover-Effekt für Zurück-Button ----- */
+/* ----- Hover-Effekt für alle Zurück-Buttons ----- */
+button.pill[aria-label="Zurück"],
+button.pill[aria-label="Zurück"]:visited {
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+button.pill[aria-label="Zurück"]:hover,
+button.pill[aria-label="Zurück"]:focus-visible {
+  background: var(--hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+button.pill[aria-label="Zurück"]:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
