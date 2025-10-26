@@ -1,33 +1,56 @@
+/* =========================================================
+   GLOBAL (ожидаются токены в :root)
+   --surface, --surface-2, --border, --radius-lg, --radius-md,
+   --shadow, --text, --text-muted, --primary, --hover, --gap
+   ========================================================= */
+
 /* ========= Layout: aside left ========= */
 .layout.layout--aside-left {
   display: grid;
-  grid-template-columns: minmax(310px, 1fr) minmax(0, 2fr);
+  grid-template-columns: minmax(280px, 1fr) minmax(0, 1.5fr); /* ← 1 : 2 */
   gap: 28px;
   align-items: start;
 }
+.layout.layout--aside-left > aside,
+.layout.layout--aside-left > main {
+  min-width: 0;
+}
+
+/* Приклеенная боковая панель */
 .layout.layout--aside-left > aside {
   position: sticky;
   top: 16px;
+  z-index: 2;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 /* ========= Main wrapper ========= */
-main.card,
-main {
+main,
+main.card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   padding: 16px;
+  position: relative;
+  z-index: 1;
+  min-width: 0;
 }
 
 /* ========= Form ========= */
 form {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: 1fr; /* по умолчанию одна колонка */
   gap: 14px var(--gap);
   align-items: end;
   margin-bottom: 22px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
+
 .form-card {
   position: relative;
   background: var(--surface);
@@ -36,31 +59,32 @@ form {
   box-shadow: var(--shadow);
   padding: 16px;
   margin-bottom: 18px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
+
+/* Ничто не шире родителя */
+.form-card *,
+.form-card input,
+.form-card select,
+.form-card textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .full {
   position: relative;
   grid-column: 1 / -1;
 }
-.full input,
-.full select,
-.full textarea {
-  width: 90%;
-  height: var(--control-height);
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  font: inherit;
-  background: var(--surface);
-  color: var(--text);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease,
-    background 0.15s ease, color 0.15s ease;
-}
 
-input,
-select,
-textarea {
+/* Поля ввода — единый стиль */
+.form-card input,
+.form-card select,
+.form-card textarea {
   width: 100%;
-  height: calc(var(--control-height) * 1.5);
+  height: 44px;
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -70,34 +94,144 @@ textarea {
   transition: border-color 0.15s ease, box-shadow 0.15s ease,
     background 0.15s ease, color 0.15s ease;
 }
-
-.full select {
-  height: calc(var(--control-height) * 2);
-}
-.full textarea {
+.form-card textarea {
   height: auto;
-  min-height: var(--control-height);
+  min-height: 90px;
+  resize: vertical;
 }
-input::placeholder,
-textarea::placeholder {
+.form-card input::placeholder,
+.form-card textarea::placeholder {
   color: var(--text-muted);
 }
-input:focus,
-select:focus,
-textarea:focus {
+.form-card input:focus,
+.form-card select:focus,
+.form-card textarea:focus {
   outline: 0;
   border-color: color-mix(in srgb, var(--primary) 60%, #fff);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
   background: var(--surface);
 }
 
+/* Select: встроенная стрелка */
+.form-card select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path d='M6 9l6 6 6-6' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+  padding-right: 36px;
+}
+
+/* ====== Раскладка формы (парами) ====== */
+@media (min-width: 360px) {
+  form {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+  /* дата + время */
+  .form-card .full:has([name="date"]),
+  .form-card .full:has([name="time"]) {
+    grid-column: auto;
+  }
+  /* тип + длительность */
+  .form-card .full:has([name="type"]),
+  .form-card .full:has([name="duration_min"]) {
+    grid-column: auto;
+  }
+  /* textarea и actions — во всю ширину */
+  .form-card .full:has(textarea),
+  .actions {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Вариант 2: на ≥640px остаётся minmax(140px,1fr) (не 200px) */
+@media (min-width: 640px) {
+  form {
+    grid-template-columns: repeat(2, minmax(100px, 1fr));
+  }
+}
+
 /* ========= Actions ========= */
 .actions {
-  grid-column: 1 / -1;
   display: flex;
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+  min-width: 0;
+}
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2, var(--surface));
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.25s ease, background 0.2s ease;
+}
+.icon-btn:hover {
+  transform: translateY(-1px);
+}
+.icon-btn:active {
+  transform: translateY(0);
+}
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+}
+.icon-btn--primary {
+  background: var(--primary);
+  color: var(--primary-contrast, #fff);
+  border-color: color-mix(in srgb, var(--primary) 60%, #0000);
+}
+.icon-btn--muted {
+  background: var(--surface-2, #f6f7fb);
+  color: var(--text);
+}
+
+/* ========= Subtabs ========= */
+.main-tabs {
+  min-width: 0;
+}
+.subtabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: -4px 0 12px;
+}
+.subtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2, var(--surface));
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.subtab:hover {
+  background: var(--hover, #fbfdff);
+}
+.subtab.is-active {
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+.subtab__icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+.subtab__label {
+  font-size: 14px;
+  line-height: 1;
 }
 
 /* ========= Toolbars ========= */
@@ -109,9 +243,10 @@ textarea:focus {
   margin: 14px 0;
 }
 .checkbox {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 20px;
+  gap: 8px;
+  font-size: 14px;
 }
 
 /* ========= Lists & Cards ========= */
@@ -133,7 +268,7 @@ textarea:focus {
     box-shadow 0.15s ease, color 0.15s ease;
 }
 .item:hover {
-  background: var(--hover);
+  background: var(--hover, #fbfdff);
   border-color: color-mix(in srgb, var(--border) 60%, transparent);
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.03);
 }
@@ -141,6 +276,9 @@ textarea:focus {
   margin: 0;
   font-size: 16px;
   line-height: 1.35;
+}
+.item a {
+  color: rgb(78, 78, 255);
 }
 .sub {
   grid-column: 1 / -1;
@@ -178,7 +316,7 @@ textarea:focus {
   border-color: #ffd2d2;
 }
 
-/* Темные вариации бейджей */
+/* Темная тема для бейджей */
 html[data-theme="dark"] .badge.active {
   background: #1c2740;
   color: #9fb8ff;
@@ -203,6 +341,21 @@ html[data-theme="dark"] .badge.cancelled {
   flex-wrap: wrap;
 }
 .kpi .pill {
-  background: var(--surface-2);
+  padding: 6px 10px;
+  border-radius: 999px;
   border: 1px solid var(--border);
+  background: var(--surface-2, var(--surface));
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ========= Адаптив ========= */
+@media (max-width: 767.98px) {
+  .layout.layout--aside-left {
+    grid-template-columns: 1fr; /* одна колонка только ниже 768px */
+  }
+  .layout.layout--aside-left > aside {
+    position: static;
+    top: auto;
+  }
 }

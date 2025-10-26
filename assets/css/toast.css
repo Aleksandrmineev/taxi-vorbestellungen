@@ -1,0 +1,148 @@
+/* ===== Toast (верх экрана) ===== */
+.toast-container {
+  position: fixed;
+  z-index: 9999;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(92vw, 740px);
+  pointer-events: none;
+}
+
+/* ===== Базовый стиль уведомления ===== */
+.toast {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  column-gap: 10px;
+  align-items: center;
+
+  min-width: 420px;
+  max-width: min(92vw, 740px);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+
+  padding: 12px 14px;
+  margin: 0 auto 10px;
+  border-radius: 14px;
+
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+
+  opacity: 0;
+  transform: translate(-50%, -12px);
+  position: relative;
+  left: 50%;
+}
+
+/* ===== Темная тема ===== */
+html[data-theme="dark"] .toast {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+}
+
+/* ===== Иконка, контент, кнопка ===== */
+.toast__icon {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  color: var(--primary);
+}
+
+.toast__title {
+  font: 600 14px/1.25 var(--font-sans, system-ui, sans-serif);
+  margin-bottom: 2px;
+}
+.toast__msg {
+  font: 500 13px/1.35 var(--font-sans, system-ui, sans-serif);
+  opacity: 0.95;
+}
+.toast__body a {
+  color: var(--primary);
+  text-underline-offset: 2px;
+}
+
+.toast__close {
+  margin-left: 8px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 4px;
+  border-radius: 8px;
+}
+.toast__close:hover {
+  opacity: 1;
+}
+
+/* ===== Варианты (ok / warn / error) ===== */
+.toast--ok {
+  border-color: color-mix(in srgb, var(--success) 55%, transparent);
+}
+.toast--warn {
+  border-color: color-mix(in srgb, var(--warning) 55%, transparent);
+}
+.toast--error {
+  border-color: color-mix(in srgb, var(--danger) 65%, transparent);
+}
+
+.toast--ok .toast__icon {
+  color: var(--success);
+}
+.toast--warn .toast__icon {
+  color: var(--warning);
+}
+.toast--error .toast__icon {
+  color: var(--danger);
+}
+
+/* ===== Анимации ===== */
+.toast.is-in {
+  animation: toast-in 0.26s ease-out forwards;
+}
+.toast.is-out {
+  animation: toast-out 0.28s ease-in forwards;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -16px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -16px);
+  }
+}
+
+/* ===== Адаптив ===== */
+@media (max-width: 520px) {
+  .toast {
+    min-width: auto;
+  }
+}
+
+/* ===== Уважение к reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .toast.is-in,
+  .toast.is-out {
+    animation-duration: 0.001s;
+  }
+}

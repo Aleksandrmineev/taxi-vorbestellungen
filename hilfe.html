@@ -75,7 +75,7 @@
         href="tel:+436601018101"
         aria-label="Jetzt anrufen: +43 660 1018101"
       >
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
           <path
             d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.56.57 1 1 0 011 1v3.61a1 1 0 01-1 1A17.02 17.02 0 013 5a1 1 0 011-1h3.61a1 1 0 011 1c0 1.22.2 2.41.57 3.56a1 1 0 01-.24 1.01l-2.32 2.22z"
             fill="currentColor"
@@ -88,20 +88,10 @@
     <main class="container">
       <h1>Hilfe & Anleitung</h1>
 
-      <p class="intro">
-        <strong>Erstes Ziel der TaxiApp MurtalTaxi:</strong> alle
-        Vorbestellungen klar strukturieren – und
-        <strong>keine einzige geht verloren</strong>. Die App macht das Anlegen
-        und Wiederholen von Bestellungen schnell, zeigt anstehende Fahrten
-        (12h/24h/1W) übersichtlich an, umgeht die Grenzen von Chat-Listen und
-        sorgt mit dem gemeinsamen Google-Kalender für automatische Erinnerungen
-        – egal ob der Auftrag in ein paar Stunden oder erst in ein paar Monaten
-        stattfindet.
-      </p>
-
       <p>
         <button
           class="pill"
+          id="btn-back-top"
           type="button"
           aria-label="Zurück"
           onclick="history.back()"
@@ -124,33 +114,38 @@
         </button>
       </p>
 
+      <p class="intro">
+        <strong>Ziel der TaxiApp - Alle Vorbestellungen:</strong>
+        Vorbestellungen klar und zuverlässig organisieren. Die App ermöglicht
+        das schnelle Anlegen und Wiederholen von Fahrten, zeigt anstehende
+        Termine (12h / 24h / 1W) übersichtlich an und synchronisiert sie
+        automatisch mit dem gemeinsamen Google-Kalender – mit Erinnerungen für
+        alle Beteiligten.
+      </p>
+
       <section>
         <h2>Schnellüberblick</h2>
         <ul class="list-plain">
           <li>
-            Neue Bestellungen in Sekunden anlegen; Wiederholen per Kopieren
+            Neue Bestellungen in Sekunden anlegen, Wiederholen per Kopieren
           </li>
           <li>Übersicht „Nächste Fahrten“: 12h, 24h oder 1 Woche</li>
           <li>Suche nach Telefonnummer, Adresse/Notiz oder Fahrtart</li>
           <li>Automatische Kalender-Einträge und Erinnerungen</li>
-          <li>Mobil- und Desktop-optimiert, hell/dunkel</li>
+          <li>Optimiert für Mobilgeräte und Desktop, hell/dunkel</li>
         </ul>
       </section>
 
       <section>
         <h2>Symbole & Bedeutung</h2>
         <ul class="list-plain">
-          <li>
-            <strong>Speichern</strong> — legt die Bestellung an; kurzer
-            Ladeindikator sichtbar.
-          </li>
+          <li><strong>Speichern</strong> — legt eine Bestellung an.</li>
           <li>
             <strong>Aktualisieren / Wiederholen</strong> — Liste neu laden oder
-            Formular wie beim letzten Mal füllen.
+            Formular erneut füllen.
           </li>
           <li>
-            <strong>Suche</strong> — Filter nach Telefon, Notiz/Adresse,
-            Fahrtart.
+            <strong>Suche</strong> — Filter nach Telefon, Notiz, Fahrtart.
           </li>
           <li>
             <strong>Kalender</strong> — öffnet den gemeinsamen Google-Kalender.
@@ -167,22 +162,18 @@
             <strong>KT</strong> (Krankentransport).
           </li>
           <li>Dauer, Telefon und Notiz/Adresse eintragen.</li>
-          <li>
-            <strong>Speichern</strong> klicken – Bestätigung folgt nach kurzer
-            Ladezeit.
-          </li>
+          <li><strong>Speichern</strong> klicken – kurze Bestätigung folgt.</li>
         </ol>
         <p>
           Zum Wiederholen einer früheren Bestellung: Auf der Karte
-          <em>Kopieren/Wiederholen</em> wählen – die Felder füllen sich
-          automatisch, nur noch <em>Speichern</em>. Browser-Autofill und lokale
-          Vorschläge helfen bei Telefon und Adressen.
+          <em>Kopieren/Wiederholen</em> wählen – die Felder werden automatisch
+          gefüllt.
         </p>
       </section>
 
       <section>
         <h2>Nächste Fahrten</h2>
-        <p>To-Do-Übersicht der anstehenden Fahrten für:</p>
+        <p>Übersicht der anstehenden Fahrten:</p>
         <ul>
           <li><strong>12h</strong> – nächste 12 Stunden</li>
           <li><strong>24h</strong> – nächster Tag</li>
@@ -190,7 +181,7 @@
         </ul>
         <p>
           Aktionen: <em>Erledigt</em>, <em>Stornieren</em>,
-          <em>Wiederholen</em>. Karten verschwinden mit sanfter Animation.
+          <em>Wiederholen</em>.
         </p>
       </section>
 
@@ -207,30 +198,26 @@
         <p>
           Wähle ein <strong>Bestelldatum</strong>, um alle Fahrten dieses Tages
           zu sehen. Mit <strong>alle Bestellungen</strong> werden auch
-          erledigte/stornierte angezeigt. Über <em>Aktualisieren</em> kann die
-          Liste neu geladen werden.
+          erledigte/stornierte angezeigt.
         </p>
       </section>
 
       <section>
-        <h2>Kalender: Anlegen, Entfernen, Erinnerungen</h2>
-        <h3>Einträge anlegen</h3>
+        <h2>Kalender: Einträge & Synchronisation</h2>
+
+        <h3>Automatische Einträge</h3>
         <p>
           Beim Speichern wird automatisch ein Termin im gemeinsamen
-          Google-Kalender erstellt. Der Titel enthält die Bestellnummer und
-          Kerndaten; Zeit in <em>Europe/Vienna</em>.
+          Google-Kalender erstellt. Der Titel enthält Bestellnummer, Datum und
+          Uhrzeit.
         </p>
 
-        <h3>Einträge entfernen</h3>
+        <h3>Entfernen</h3>
         <p>
-          Bei <strong>Erledigt</strong> oder <strong>Storniert</strong> wird der
-          zugehörige Termin automatisch aus dem Kalender entfernt.
-        </p>
-        <p>
-          <em>Hinweis zur Synchronisation:</em> Auf Smartphones erfolgt das
-          Entfernen nicht in Echtzeit, sondern mit kurzer Verzögerung, bis die
-          Kalender-App synchronisiert hat (meist Sekunden bis wenige Minuten).
-          Im Web ist es in der Regel sofort sichtbar.
+          Wird eine Fahrt als <strong>Erledigt</strong> oder
+          <strong>Storniert</strong> markiert, entfernt die App den
+          Kalendereintrag automatisch. Auf Mobilgeräten kann die Synchronisation
+          mit kurzer Verzögerung erfolgen.
         </p>
 
         <h3>Kalender hinzufügen</h3>
@@ -240,42 +227,19 @@
             <em>Abonnieren</em> bestätigen.
           </li>
           <li>
-            <strong>iPhone:</strong> <em>Kalender</em> im Footer → in Safari
-            <em>Abonnieren</em> oder <em>In Google Kalender öffnen</em>.
+            <strong>iPhone:</strong> Im Footer <em>Kalender</em> öffnen und in
+            Safari <em>Abonnieren</em> oder <em>In Google Kalender</em> wählen.
           </li>
-          <li>
-            <strong>Desktop:</strong> Öffnet Google Kalender im Browser und fügt
-            den Fahrten-Kalender hinzu.
-          </li>
+          <li><strong>Desktop:</strong> Öffnet Google Kalender im Browser.</li>
         </ul>
 
-        <h3>Kalender vorübergehend ein-/ausblenden</h3>
+        <h3>Wenn ein Termin nicht sichtbar ist</h3>
         <ul>
           <li>
-            <strong>Android:</strong> Google Kalender → Menü ☰ → Einstellungen →
-            Konto → Kalender → Sichtbar/Sync umschalten.
+            Ansicht in der Kalender-App aktualisieren (nach unten ziehen).
           </li>
           <li>
-            <strong>iPhone (Google Kalender):</strong> Menü ☰ → Settings →
-            Kalender → Sichtbarkeit.
-          </li>
-          <li>
-            <strong>iPhone (Apple Kalender):</strong> App <em>Kalender</em> →
-            „Kalender“ → Häkchen setzen/entfernen.
-          </li>
-          <li>
-            <strong>Desktop:</strong> Kalender in der linken Liste an-/abwählen.
-          </li>
-        </ul>
-
-        <h3>Wenn ein Termin am Handy „nicht erscheint“</h3>
-        <ul>
-          <li>
-            Ansicht in der Kalender-App nach unten ziehen, um zu aktualisieren.
-          </li>
-          <li>
-            Sichtbarkeit des gemeinsamen Kalenders und die Synchronisation
-            prüfen.
+            Prüfen, ob der gemeinsame Kalender sichtbar und synchronisiert ist.
           </li>
           <li>
             Android: Einstellungen → Apps → Kalender → Speicher →
@@ -294,21 +258,16 @@
           <div>
             Änderungen werden am Smartphone nicht in Echtzeit synchronisiert.
             Meist erscheinen sie nach
-            <strong>einigen Sekunden bis wenigen Minuten</strong>, sobald die
-            Kalender-App mit Google synchronisiert hat. In der Web-Version von
-            Google Kalender ist es in der Regel sofort sichtbar. Ziehe die
-            Ansicht in der App nach unten, um zu aktualisieren.
+            <strong>einigen Sekunden bis wenigen Minuten</strong>. In der
+            Web-Version von Google Kalender ist es meist sofort sichtbar.
           </div>
         </details>
 
         <details>
-          <summary>
-            Wie wiederhole ich eine frühere Bestellung mit einem Klick?
-          </summary>
+          <summary>Wie wiederhole ich eine frühere Bestellung?</summary>
           <div>
-            Öffne die Karte der Fahrt und tippe auf
-            <em>Kopieren/Wiederholen</em>. Die Felder der Bestellmaske werden
-            automatisch ausgefüllt – du musst nur noch
+            Öffne die Karte und tippe auf <em>Kopieren/Wiederholen</em>. Die
+            Felder werden automatisch ausgefüllt – nur noch
             <strong>Speichern</strong> drücken.
           </div>
         </details>
@@ -321,14 +280,12 @@
             Im Tab <strong>Suche nach Datum</strong> das
             <em>Bestelldatum</em> wählen. Mit
             <em>alle Bestellungen</em> blendest du auch erledigte/stornierte
-            ein. Über <em>Aktualisieren</em> lädst du die Liste neu.
+            ein.
           </div>
         </details>
 
         <details>
-          <summary>
-            Wie füge ich den gemeinsamen Kalender auf meinem Gerät hinzu?
-          </summary>
+          <summary>Wie füge ich den gemeinsamen Kalender hinzu?</summary>
           <div>
             Unten im Footer auf <strong>Kalender</strong> tippen:
             <ul>
@@ -341,76 +298,17 @@
                 <em>In Google Kalender öffnen</em>.
               </li>
               <li>
-                <strong>Desktop:</strong> Öffnet Google Kalender im Browser und
-                fügt den Kalender hinzu.
+                <strong>Desktop:</strong> Öffnet Google Kalender im Browser.
               </li>
             </ul>
           </div>
         </details>
 
         <details>
-          <summary>
-            Kann ich den Kalender vorübergehend ein-/ausblenden?
-          </summary>
-          <div>
-            Ja. In den Kalender-Einstellungen die <em>Sichtbarkeit</em> oder
-            <em>Synchronisierung</em> umschalten (Android/iPhone/Apple
-            Kalender/Browser).
-          </div>
-        </details>
-
-        <details>
-          <summary>
-            Was ist, wenn sich zwei Fahrten zeitlich überschneiden?
-          </summary>
-          <div>
-            Beim Speichern prüft die App den Kalender auf
-            <strong>Konflikte</strong> im gewählten Zeitraum und zeigt sie an.
-            Du kannst Zeit/Dauer anpassen oder gezielt die Risiken akzeptieren.
-          </div>
-        </details>
-
-        <details>
-          <summary>
-            Speichert die App Telefonnummern und Adressen automatisch?
-          </summary>
-          <div>
-            Ja. Es greifen
-            <strong>Autovervollständigung des Browsers</strong> und lokale
-            Vorschläge (Local Storage) für bequeme Wiederverwendung – die Daten
-            werden <strong>nicht</strong> an Dritte gesendet.
-          </div>
-        </details>
-
-        <details>
-          <summary>
-            Funktioniert die App auch mit sehr frühen/späten Terminen?
-          </summary>
-          <div>
-            Ja. Das System ist darauf ausgelegt,
-            <strong>keine Vorbestellung zu verlieren</strong> – egal ob der
-            Termin in wenigen Stunden oder erst in Monaten liegt. Erinnerungen
-            laufen über den gemeinsamen Kalender.
-          </div>
-        </details>
-
-        <details>
-          <summary>
-            Wie schalte ich zwischen hellem und dunklem Thema um?
-          </summary>
-          <div>
-            Über die <strong>Theme</strong>-Schaltfläche im Footer. Farben,
-            Oberflächen und Kontraste passen sich dann automatisch an.
-          </div>
-        </details>
-
-        <details>
           <summary>Was passiert bei „Erledigt“ oder „Storniert“?</summary>
           <div>
-            Der Status wird in der Liste angepasst, die Karte verschwindet sanft
-            und der zugehörige Kalendereintrag wird
-            <strong>automatisch entfernt</strong>
-            (am Handy mit kurzer Synchronisations-Verzögerung).
+            Der Status wird in der Liste angepasst, die Karte verschwindet und
+            der zugehörige Kalendereintrag wird automatisch entfernt.
           </div>
         </details>
       </section>
@@ -418,9 +316,7 @@
       <section>
         <h2>Technische Daten</h2>
         <ul>
-          <li>
-            <strong>Frontend:</strong> HTML / CSS / JS, responsive (hell/dunkel)
-          </li>
+          <li><strong>Frontend:</strong> HTML / CSS / JS, responsive</li>
           <li><strong>Backend:</strong> Google Apps Script (JSON-API)</li>
           <li><strong>Daten:</strong> Google Sheets („Orders“)</li>
           <li><strong>Kalender:</strong> gemeinsamer Google-Kalender</li>
@@ -460,7 +356,6 @@
             @aamineev
           </a>
         </p>
-        <p>Antwort meist innerhalb weniger Stunden.</p>
       </section>
 
       <hr class="divider" />
@@ -474,6 +369,7 @@
       <p>
         <button
           class="pill"
+          id="btn-back-bottom"
           type="button"
           aria-label="Zurück"
           onclick="history.back()"

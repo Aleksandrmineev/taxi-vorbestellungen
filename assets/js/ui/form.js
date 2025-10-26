@@ -1,3 +1,6 @@
+// ui/form.js
+// === Управление формой создания заказа (дефолты, нормализация, лок.история, отправка, toasts)
+
 import { Api } from "../api.js";
 import {
   todayISO,
@@ -5,11 +8,153 @@ import {
   normalizeTimeLoose,
 } from "../utils/time.js";
 
+/* ------------------------- Toasts (UI) ------------------------- */
+/** Рисует toast в #out. type: 'ok' | 'warn' | 'error'
+ *  opts: { title, message, timeout=2600, type='ok', sound=true, linkHTML? }
+/* ------------------------- Toasts (UI) ------------------------- */
+export function showToast({
+  title = "",
+  message = "",
+  type = "ok", // ok | warn | error
+  timeout = 5800,
+  sound = true,
+  linkHTML = "",
+} = {}) {
+  const host = document.getElementById("out");
+  if (!host) return;
+
+  const ICONS = {
+    ok: `<svg class="toast__icon" viewBox="0 0 24 24" aria-hidden="true">
+           <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+         </svg>`,
+    warn: `<svg class="toast__icon" viewBox="0 0 24 24" aria-hidden="true">
+           <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                 fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+         </svg>`,
+    error: `<svg class="toast__icon" viewBox="0 0 24 24" aria-hidden="true">
+           <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+         </svg>`,
+  };
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast--${type} is-in`;
+  toast.setAttribute("role", "status");
+  toast.setAttribute("aria-live", "polite");
+  toast.innerHTML = `
+    ${ICONS[type] || ICONS.ok}
+    <div class="toast__body">
+      ${title ? `<div class="toast__title">${title}</div>` : ""}
+      ${message ? `<div class="toast__msg">${message}</div>` : ""}
+      ${linkHTML || ""}
+    </div>
+    <button class="toast__close" type="button" aria-label="Schließen">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  `;
+
+  const close = () => {
+    if (toast._closing) return;
+    toast._closing = true;
+    toast.classList.remove("is-in");
+    toast.classList.add("is-out");
+    setTimeout(() => toast.remove(), 280);
+  };
+
+  toast.querySelector(".toast__close")?.addEventListener("click", close);
+  toast.addEventListener("click", close);
+
+  const t = setTimeout(close, Math.max(1400, timeout));
+  toast._timer = t;
+
+  host.appendChild(toast);
+
+  if (sound) playNotifySound(type);
+}
+
+/* ----------------------- Notify sound -------------------------- */
+/* Двухтоновый короткий сигнал (≈ Google/календарь vibe) */
+function playNotifySound(kind = "ok") {
+  if (!("AudioContext" in window)) return;
+  try {
+    const ctx = new AudioContext();
+    const now = ctx.currentTime;
+
+    // Параметры
+    const seq =
+      kind === "error"
+        ? [
+            /* ниже и резче */ { f: 660, t: 0.0, d: 0.14 },
+            { f: 520, t: 0.12, d: 0.18 },
+          ]
+        : [
+            /* светлый «ди-динг» */ { f: 880, t: 0.0, d: 0.12 },
+            { f: 1320, t: 0.1, d: 0.16 },
+          ];
+
+    seq.forEach(({ f, t, d }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      // чуть «колокольности»
+      osc.type = "triangle";
+      osc.frequency.value = f;
+
+      // ADSR-подобная огибающая
+      const g = gain.gain;
+      g.setValueAtTime(0.0001, now + t);
+      g.exponentialRampToValueAtTime(0.12, now + t + 0.02);
+      g.exponentialRampToValueAtTime(0.0001, now + t + d);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + t);
+      osc.stop(now + t + d + 0.02);
+      osc.onended = () => {
+        try {
+          gain.disconnect();
+        } catch {}
+      };
+    });
+
+    // Автоматическое закрытие контекста
+    setTimeout(() => ctx.close().catch(() => {}), 600);
+  } catch {}
+}
+
+/* ---------------------- Кнопка загрузки (UI) --------------------- */
+function makeSubmitLoading(btn, on) {
+  if (!btn) return;
+  if (on) {
+    btn.disabled = true;
+    btn.classList.add("is-loading");
+    btn._prevHTML = btn._prevHTML || btn.innerHTML;
+    btn.innerHTML = `
+      <svg class="spin" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" opacity=".25"/>
+        <path d="M21 12a9 9 0 0 1-9 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="sr-only">Speichern…</span>
+    `;
+  } else {
+    btn.disabled = false;
+    btn.classList.remove("is-loading");
+    if (btn._prevHTML) btn.innerHTML = btn._prevHTML;
+  }
+}
+
+/* ----------------------- Основная форма -------------------------- */
 export function initForm({ onCreated }) {
   const f = document.getElementById("f");
   const out = document.getElementById("out");
+  if (!f) return { fillForm: () => {} };
 
-  // Standardwerte
+  const timeInput = f.querySelector("#time");
+  const datalist = document.getElementById("time5");
+  const submitBtn = f.querySelector(".icon-btn--primary");
+
+  // 1) Дефолты
   f.elements.date.value = todayISO();
   f.elements.type.addEventListener("change", () => {
     const dur = f.elements["duration_min"];
@@ -23,62 +168,84 @@ export function initForm({ onCreated }) {
   });
   f.elements.type.dispatchEvent(new Event("change"));
 
-  // Datalist für Zeit + weiche Normalisierung
-  const timeInput = document.getElementById("time");
-  const datalist = document.getElementById("time5");
+  // 2) Время + нормализация
   datalist.innerHTML = buildTimeOptionsHTML();
   timeInput.addEventListener("blur", () => {
     timeInput.value = normalizeTimeLoose(timeInput.value);
   });
 
-  // === Automatische Markierung des Inhalts beim Fokus (input/textarea) ===
+  // 3) Удобства ввода
   document.querySelectorAll("input, textarea").forEach((el) => {
     el.addEventListener("focus", function () {
       setTimeout(() => {
         try {
-          if (typeof this.select === "function") this.select();
+          if (this.select) this.select();
           else if (this.setSelectionRange)
             this.setSelectionRange(0, (this.value || "").length);
-        } catch (_) {}
+        } catch {}
       }, 0);
     });
-    // Klick der Maus entfernt die Auswahl nicht sofort
     el.addEventListener("mouseup", (e) => e.preventDefault());
   });
 
-  // Submit
+  // 4) Submit
   f.addEventListener("submit", async (e) => {
     e.preventDefault();
-    timeInput.value = normalizeTimeLoose(timeInput.value);
 
-    const fd = new FormData(f);
-    const data = Object.fromEntries(fd.entries());
-    data.phone = (data.phone || "").trim();
+    // мгновенный отклик
+    makeSubmitLoading(submitBtn, true);
 
-    const res = await Api.createOrder(data).catch((err) => ({
-      ok: false,
-      error: String(err),
-    }));
-    if (!res.ok) {
-      out.innerHTML = `<div class="item">Fehler: ${
-        res.error || "Netzwerkfehler"
-      }</div>`;
-      return;
+    try {
+      timeInput.value = normalizeTimeLoose(timeInput.value);
+      const fd = new FormData(f);
+      const data = Object.fromEntries(fd.entries());
+      data.phone = (data.phone || "").trim();
+
+      const res = await Api.createOrder(data).catch((err) => ({
+        ok: false,
+        error: String(err),
+      }));
+      if (!res.ok) {
+        showToast({
+          title: "Fehler",
+          message: res.error || "Netzwerkfehler",
+          type: "error",
+        });
+        return;
+      }
+
+      const { id, conflicts, gcal_event_id } = res.data || {};
+      let linkHTML = "";
+      if (gcal_event_id) {
+        linkHTML = `<div class="toast__msg">
+          <a target="_blank" href="https://calendar.google.com/calendar/u/0/r/eventedit/${gcal_event_id}">Im Kalender öffnen</a>
+        </div>`;
+      }
+      const hasConf = conflicts && conflicts.length;
+      const msg = hasConf
+        ? `Überschneidungen: ${conflicts.length}. Bitte Kalender prüfen.`
+        : "Gespeichert.";
+
+      showToast({
+        title: `Bestellung Nr.${id}`,
+        message: hasConf
+          ? `Überschneidungen: ${conflicts.length}. Bitte Kalender prüfen.`
+          : "Gespeichert.",
+        type: hasConf ? "warn" : "ok",
+        linkHTML: gcal_event_id
+          ? `<div class="toast__msg"><a target="_blank" href="https://calendar.google.com/calendar/u/0/r/eventedit/${gcal_event_id}">Im Kalender öffnen</a></div>`
+          : "",
+      });
+
+      localStorage.setItem("lastOrder", JSON.stringify(data));
+      onCreated?.();
+    } finally {
+      makeSubmitLoading(submitBtn, false);
     }
-
-    const { id, conflicts, gcal_event_id } = res.data;
-    const warn =
-      conflicts && conflicts.length
-        ? `<div class="item">Überschneidungen: ${conflicts.length}. Bitte Kalender prüfen.</div>`
-        : "";
-    out.innerHTML = `<div class="item"><h4>Bestellung Nr.${id} gespeichert</h4>
-      <div class="sub">Ereignis: <code>${gcal_event_id}</code> — <a target="_blank" href="https://calendar.google.com/calendar/u/0/r/eventedit/${gcal_event_id}">Im Kalender öffnen</a></div>${warn}</div>`;
-
-    localStorage.setItem("lastOrder", JSON.stringify(data));
-    onCreated?.();
   });
 
-  document.getElementById("repeatLast").addEventListener("click", () => {
+  // 5) Повтор последнего
+  document.getElementById("repeatLast")?.addEventListener("click", () => {
     const last = JSON.parse(localStorage.getItem("lastOrder") || "{}");
     for (const [k, v] of Object.entries(last)) {
       if (k === "date" || k === "time") continue;
@@ -86,8 +253,10 @@ export function initForm({ onCreated }) {
     }
     f.elements.type.dispatchEvent(new Event("change"));
     if (!timeInput.value) timeInput.value = "08:00";
+    window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
+  // Публичная функция
   function fillForm({ date, time, type, duration_min, phone, message }) {
     if (date) f.elements.date.value = date;
     if (time) timeInput.value = normalizeTimeLoose(time);
@@ -98,11 +267,10 @@ export function initForm({ onCreated }) {
     f.elements.type.dispatchEvent(new Event("change"));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-
   return { fillForm };
 }
 
-// === Local history for phone & address (localStorage) ===
+/* ----------------- Локальная история (тел./адрес) ----------------- */
 const LS_KEYS = {
   phones: "mt_recent_phones",
   addresses: "mt_recent_addresses",
@@ -127,7 +295,6 @@ function upsertValue(key, value, { normalize } = {}) {
   list.unshift(v);
   saveList(key, list);
 }
-
 function normalizePhone(v) {
   let s = v.replace(/\s+/g, "");
   if (!s) return "";
@@ -138,7 +305,6 @@ function normalizePhone(v) {
   return d ? "+" + d : "";
 }
 
-// --- PHONE: bind datalist ---
 function bindPhoneDatalist(input, datalist) {
   const render = () => {
     const arr = loadList(LS_KEYS.phones);
@@ -147,36 +313,20 @@ function bindPhoneDatalist(input, datalist) {
       .join("");
   };
   render();
-
-  // при фокусе/вводе — обновим список (на случай параллельных изменений)
   input.addEventListener("focus", render);
-  input.addEventListener("input", () => {
-    // Ничего не делаем тут — datalist фильтрует автоматически
-  });
 }
 
-// --- ADDRESS: lightweight dropdown under textarea ---
 function createSuggestionMenu() {
   const overlay = document.createElement("div");
   overlay.className = "addr-suggest";
   const css = document.createElement("style");
   css.textContent = `
-    .addr-suggest {
-      position: absolute; z-index: 50; display: none;
-      background: var(--cl-surface, #14171f);
-      color: var(--cl-text, #e8e8e8);
-      border: 1px solid var(--cl-border, rgba(255,255,255,.15));
-      border-radius: 10px; box-shadow: 0 10px 24px rgba(0,0,0,.35);
-      max-height: 220px; overflow:auto; min-width: 240px;
-    }
-    .addr-suggest__item {
-      padding: 8px 10px; cursor: pointer; line-height: 1.2;
-      border-bottom: 1px dashed rgba(255,255,255,.06);
-    }
-    .addr-suggest__item:last-child { border-bottom: none; }
-    .addr-suggest__item:hover, .addr-suggest__item--active {
-      background: rgba(255,255,255,.08);
-    }
+    .addr-suggest{ position:absolute; z-index:50; display:none; background:var(--cl-surface,#14171f);
+      color:var(--cl-text,#e8e8e8); border:1px solid var(--cl-border,rgba(255,255,255,.15));
+      border-radius:10px; box-shadow:0 10px 24px rgba(0,0,0,.35); max-height:220px; overflow:auto; min-width:240px; }
+    .addr-suggest__item{ padding:8px 10px; cursor:pointer; line-height:1.2; border-bottom:1px dashed rgba(255,255,255,.06); }
+    .addr-suggest__item:last-child{ border-bottom:none; }
+    .addr-suggest__item:hover,.addr-suggest__item--active{ background:rgba(255,255,255,.08); }
   `;
   document.head.appendChild(css);
   document.body.appendChild(overlay);
@@ -185,36 +335,29 @@ function createSuggestionMenu() {
 
 function bindAddressSuggest(textarea) {
   const menu = createSuggestionMenu();
-  let activeIndex = -1; // для стрелок
+  let activeIndex = -1;
   let currentList = [];
-
-  function positionMenu() {
+  const positionMenu = () => {
     const r = textarea.getBoundingClientRect();
     menu.style.left = `${window.scrollX + r.left}px`;
     menu.style.top = `${window.scrollY + r.bottom + 6}px`;
     menu.style.minWidth = `${r.width}px`;
-  }
-
-  function hide() {
+  };
+  const hide = () => {
     menu.style.display = "none";
     activeIndex = -1;
-  }
-  function show() {
+  };
+  const show = () => {
     positionMenu();
     menu.style.display = "block";
-  }
-
-  function render(filter = "") {
+  };
+  const render = (filter = "") => {
     const all = loadList(LS_KEYS.addresses);
     const f = (filter || "").trim().toLowerCase();
-    currentList = f ? all.filter((x) => x.toLowerCase().includes(f)) : all;
-    currentList = currentList.slice(0, MAX_ITEMS);
-
-    if (!currentList.length) {
-      hide();
-      return;
-    }
-
+    currentList = (
+      f ? all.filter((x) => x.toLowerCase().includes(f)) : all
+    ).slice(0, MAX_ITEMS);
+    if (!currentList.length) return hide();
     menu.innerHTML = currentList
       .map(
         (txt, i) =>
@@ -224,31 +367,25 @@ function bindAddressSuggest(textarea) {
           )}</div>`
       )
       .join("");
-
-    // клики
     menu.querySelectorAll(".addr-suggest__item").forEach((el) => {
       el.addEventListener("mousedown", (e) => {
-        e.preventDefault(); // не терять фокус
+        e.preventDefault();
         const i = Number(el.dataset.i);
         textarea.value = currentList[i];
         hide();
         textarea.focus();
       });
     });
-
     activeIndex = -1;
     show();
-  }
-
+  };
   textarea.addEventListener("focus", () => render(textarea.value));
   textarea.addEventListener("input", () => render(textarea.value));
   textarea.addEventListener("blur", () => setTimeout(hide, 120));
-
   textarea.addEventListener("keydown", (e) => {
     if (menu.style.display !== "block") return;
     const items = [...menu.querySelectorAll(".addr-suggest__item")];
     if (!items.length) return;
-
     if (e.key === "ArrowDown") {
       e.preventDefault();
       activeIndex = (activeIndex + 1) % items.length;
@@ -265,15 +402,12 @@ function bindAddressSuggest(textarea) {
       hide();
       return;
     } else {
-      return; // другие клавиши — пусть обрабатываются как обычно
+      return;
     }
-
     items.forEach((el) => el.classList.remove("addr-suggest__item--active"));
     if (activeIndex >= 0)
       items[activeIndex].classList.add("addr-suggest__item--active");
   });
-
-  // на ресайз/скролл перепозиционируем
   window.addEventListener("resize", () => {
     if (menu.style.display === "block") positionMenu();
   });
@@ -286,52 +420,24 @@ function bindAddressSuggest(textarea) {
   );
 }
 
-// === Инициализация: вызови после того, как форма создана на странице ===
+/* -------- Автоинициализация локальной истории ---------- */
 export function initLocalHistory() {
   const form = document.getElementById("f");
   if (!form) return;
-
   const phone = form.querySelector("#phone");
   const phonesList = document.getElementById("phones");
   const message = form.querySelector("#message");
-
   if (phone && phonesList) bindPhoneDatalist(phone, phonesList);
   if (message) bindAddressSuggest(message);
-
-  // сохраняем значения при сабмите формы
   form.addEventListener("submit", () => {
     const phoneVal = phone?.value || "";
-    if (phoneVal.trim()) {
+    if (phoneVal.trim())
       upsertValue(LS_KEYS.phones, phoneVal, { normalize: normalizePhone });
-    }
     const msgVal = message?.value || "";
-    if (msgVal.trim().length >= 4) {
-      upsertValue(LS_KEYS.addresses, msgVal);
-    }
+    if (msgVal.trim().length >= 4) upsertValue(LS_KEYS.addresses, msgVal);
   });
 }
 
-// --- Автоинициализация локальной истории при загрузке формы ---
 document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("f");
-  if (!form) return;
-
-  const phone = form.querySelector("#phone");
-  const phonesList = document.getElementById("phones");
-  const message = form.querySelector("#message");
-
-  if (phone && phonesList) bindPhoneDatalist(phone, phonesList);
-  if (message) bindAddressSuggest(message);
-
-  // сохраняем значения при сабмите формы
-  form.addEventListener("submit", () => {
-    const phoneVal = phone?.value || "";
-    if (phoneVal.trim()) {
-      upsertValue(LS_KEYS.phones, phoneVal, { normalize: normalizePhone });
-    }
-    const msgVal = message?.value || "";
-    if (msgVal.trim().length >= 4) {
-      upsertValue(LS_KEYS.addresses, msgVal);
-    }
-  });
+  initLocalHistory();
 });

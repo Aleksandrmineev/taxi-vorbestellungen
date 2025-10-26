@@ -1,4 +1,8 @@
-/* Список: кнопки вниз, одна колонка карточки */
+/* =========================================================
+   BASE + GLOBAL STRUCTURE
+   ========================================================= */
+
+/* ========== CARDS: кнопки вниз, одна колонка карточки ========== */
 @media (max-width: 680px) {
   .item {
     grid-template-columns: 1fr;
@@ -7,21 +11,32 @@
     justify-self: start;
   }
 }
+/* --- END CARDS --- */
 
-/* Сетка: aside под контент, ОБЯЗАТЕЛЬНО без sticky на мобилке */
-@media (max-width: 980px) {
+/* =========================================================
+   LAYOUT / RESPONSIVE (от больших к маленьким)
+   ========================================================= */
+
+/* ≤ 767.98px — стек, без sticky, таб-панели */
+@media (max-width: 767.98px) {
+  :root {
+    --gap: 5px;
+  }
+
+  /* колонки → стек */
   .layout.layout--aside-left {
+    display: block;
     grid-template-columns: 1fr;
   }
+
+  /* sticky у aside не нужен */
   .layout.layout--aside-left > aside {
     position: static;
     top: auto;
   }
 
-  .brand__logo {
-    width: 24px;
-    height: 24px;
-  }
+  /* бренд компактнее */
+  .brand__logo,
   .brand__logo img {
     width: 24px;
     height: 24px;
@@ -30,17 +45,58 @@
     font-size: 18px;
   }
   .pill {
-    font-size: clamp(14px, 3.5vw, 16px);
+    font-size: clamp(10px, 3vw, 16px);
   }
 
+  /* карточка формы */
   .form-card {
-    padding: 10px;
+    padding: 10px 0;
     border: none;
     box-shadow: none;
     margin: 15px 0;
   }
-}
 
+  /* мобильные табы */
+  .mobile-tabs {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin: 5px;
+  }
+
+  /* таб-панели */
+  #pane-form,
+  #pane-list {
+    display: none;
+  }
+  .layout[data-active="form"] #pane-form {
+    display: block;
+  }
+  .layout[data-active="list"] #pane-list {
+    display: block;
+  }
+
+  /* косметика заголовков */
+  #pane-form .section-title:first-of-type,
+  #pane-list .section-title:first-of-type {
+    margin-top: 8px;
+  }
+}
+/* --- END 767 --- */
+
+/* ≤ 680px — карточки в одну колонку */
+@media (max-width: 680px) {
+  .item {
+    grid-template-columns: 1fr;
+  }
+  .btns {
+    justify-self: start;
+  }
+}
+/* --- END 680 --- */
+
+/* ≤ 420px — компактные контролы */
 @media (max-width: 420px) {
   :root {
     --control-height: 24px;
@@ -53,19 +109,48 @@
   .actions {
     gap: 10px;
   }
-}
 
+  /* toast снизу по центру */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    top: auto;
+    right: auto;
+    transform: translate(-50%, 6px);
+  }
+  .toast.show {
+    transform: translate(-50%, 0);
+  }
+}
+/* --- END 420 --- */
+
+/* ≤ 380px — одна колонка формы */
 @media (max-width: 380px) {
   form {
     grid-template-columns: 1fr;
   }
+  .brand__title {
+    font-size: 12px;
+  }
 }
+/* --- END 380 --- */
 
-/* ===== Mobile Tabs (показывать только на узких) ===== */
-/* ========= Toast (out) ========= */
-aside {
-  position: sticky;
-} /* у тебя уже есть sticky; важно, чтобы был positioned ancestor */
+/* ≤ 360px — только иконки в табах */
+@media (max-width: 360px) {
+  .mobile-tab {
+    min-width: 64px;
+    padding-inline: 6px;
+  }
+  .mobile-tab__label {
+    display: none;
+  }
+}
+/* --- END 360 --- */
+
+/* =========================================================
+   TOAST
+   ========================================================= */
 
 .toast {
   position: absolute;
@@ -81,8 +166,6 @@ aside {
   font-size: 14px;
   line-height: 1.3;
   z-index: 20;
-
-  /* анимация появления/исчезновения */
   opacity: 0;
   transform: translateY(-6px);
   pointer-events: none;
@@ -92,8 +175,6 @@ aside {
   opacity: 1;
   transform: translateY(0);
 }
-
-/* Варианты (при желании) */
 .toast--ok {
   border-color: color-mix(in srgb, var(--success) 30%, var(--border));
 }
@@ -101,28 +182,19 @@ aside {
   border-color: color-mix(in srgb, var(--danger) 30%, var(--border));
 }
 
-/* Темная тема легонько затемняем фон */
 html[data-theme="dark"] .toast {
   background: var(--surface-2);
   border-color: var(--border);
 }
+/* --- END TOAST --- */
 
-/* На очень узких — центрируем снизу как “toast” */
-@media (max-width: 420px) {
-  .toast {
-    position: fixed;
-    left: 50%;
-    right: auto;
-    bottom: 20px;
-    top: auto;
-    transform: translate(-50%, 6px);
-  }
-  .toast.show {
-    transform: translate(-50%, 0);
-  }
+/* =========================================================
+   MOBILE TABS — не изменены
+   ========================================================= */
+
+.mobile-tabs {
+  display: none;
 }
-
-/* ===== Mobile tabs (icons only) ===== */
 .mobile-tab {
   display: inline-flex;
   align-items: center;
@@ -131,12 +203,23 @@ html[data-theme="dark"] .toast {
   width: 96px;
   height: 44px;
   border-radius: 12px;
-  border: 1px solid var(--cl-border, rgba(255, 255, 255, 0.12));
-  background: var(--cl-surface, rgba(79, 101, 243, 0.3));
-  color: var(--cl-text, #e8e8e8);
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+
+  /* === адаптивные фирменные цвета === */
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: color-mix(in srgb, var(--surface) 90%, var(--primary) 5%);
+  color: var(--primary);
+
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease,
     transform 0.06s ease-in;
+
+  /* ---------- Тёмная тема ---------- */
+  html[data-theme="dark"] & {
+    border-color: color-mix(in srgb, var(--gold-600) 35%, var(--border));
+    background: color-mix(in srgb, var(--surface-2) 85%, var(--primary) 8%);
+    color: var(--gold-600);
+  }
 }
+
 .mobile-tab svg {
   width: 42px;
   height: 42px;
@@ -150,72 +233,53 @@ html[data-theme="dark"] .toast {
   transform: translateY(1px);
 }
 
-.mobile-tabs {
-  display: none;
-}
-
-/* ===== Breakpoint: превращаем колонки в таб-панели ===== */
-@media (max-width: 900px) {
+@media (max-width: 767.98px) {
   .mobile-tabs {
     display: flex;
-    gap: 15px;
-    margin: 5px;
-  }
-
-  /* вместо двух колонок — стэк */
-  .layout.layout--aside-left {
-    display: block;
-  }
-
-  /* Скрываем обе панели по умолчанию на мобиле */
-  #pane-form,
-  #pane-list {
-    display: none;
-  }
-
-  /* Показываем активную по data-active у .layout */
-  .layout[data-active="form"] #pane-form {
-    display: block;
-  }
-  .layout[data-active="list"] #pane-list {
-    display: block;
-  }
-
-  /* Опционально: убираем повторяющиеся H2, если мешают визуально */
-  #pane-form .section-title:first-of-type,
-  #pane-list .section-title:first-of-type {
-    margin-top: 8px;
+    justify-content: space-between;
+    align-items: center;
   }
 }
 
-/* Спиннер внутри кнопки */
-.icon-btn.loading {
-  pointer-events: none;
-  opacity: 0.7;
-  position: relative;
+/* --- Mobile tabs: современный вид и чёткие иконки --- */
+:root {
+  --mobile-tab-ico: 24px;
+  --mobile-tab-gap: 6px;
+  --mobile-tab-fz: 12.5px;
 }
-
-.icon-btn.loading::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 18px;
-  height: 18px;
-  margin: -9px 0 0 -9px;
-  border: 2px solid currentColor;
-  border-radius: 50%;
-  border-top-color: transparent;
-  animation: spin 0.7s linear infinite;
+.mobile-tab {
+  width: 100%;
+  min-width: 88px;
+  padding: 8px 10px;
+  gap: var(--mobile-tab-gap);
 }
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.mobile-tab svg {
+  width: var(--mobile-tab-ico);
+  height: var(--mobile-tab-ico);
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  shape-rendering: geometricPrecision;
+  display: block;
 }
+.mobile-tab__label {
+  font-size: var(--mobile-tab-fz);
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+}
+.mobile-tab.is-active {
+  outline: 0;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+/* --- END MOBILE TABS --- */
 
-/* ===== Табы (Suche, Nächste Fahrten, Suche nach Datum) ===== */
+/* =========================================================
+   SUBTABS
+   ========================================================= */
+
 .subtabs {
   display: flex;
   flex-wrap: wrap;
@@ -223,8 +287,9 @@ html[data-theme="dark"] .toast {
   margin: 0.5rem 0 1rem;
   justify-content: flex-start;
 }
-
 .subtab {
+  position: relative;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -241,16 +306,9 @@ html[data-theme="dark"] .toast {
   transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease,
     box-shadow 0.25s ease;
 }
-
 .subtab:hover {
   background: var(--hover);
 }
-
-.subtab {
-  position: relative;
-  overflow: hidden;
-}
-
 .subtab::after {
   content: "";
   position: absolute;
@@ -265,24 +323,19 @@ html[data-theme="dark"] .toast {
   opacity: 0;
   transition: transform 0.35s ease, opacity 0.35s ease;
 }
-
 .subtab.is-active::after {
   transform: translateX(-50%) scaleX(1);
   opacity: 0.95;
 }
-
-/* по желанию — лёгкое свечение при наведении */
 .subtab:hover::after {
   opacity: 0.5;
   transform: translateX(-50%) scaleX(0.5);
 }
-
 .subtab__icon {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
 }
-
 .subtab__label {
   display: inline-block;
   text-align: left;
@@ -290,8 +343,6 @@ html[data-theme="dark"] .toast {
   word-break: break-word;
   line-height: 1.2;
 }
-
-/* Адаптив */
 @media (max-width: 500px) {
   .subtab {
     flex: 1 1 100%;
@@ -304,3 +355,33 @@ html[data-theme="dark"] .toast {
     height: 16px;
   }
 }
+/* --- END SUBTABS --- */
+
+/* =========================================================
+   SPINNER FOR ICON BUTTONS
+   ========================================================= */
+
+.icon-btn.loading {
+  pointer-events: none;
+  opacity: 0.7;
+  position: relative;
+}
+.icon-btn.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* --- END SPINNER --- */

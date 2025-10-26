@@ -16,7 +16,7 @@ export function initOrdersList({ fillForm }) {
   function fadeOutAndRemove(el) {
     if (!el) return;
     el.style.transition = "opacity .2s ease, transform .2s ease";
-    el.style.opacity = 0;
+    el.style.opacity = "0";
     el.style.transform = "translateY(4px)";
     setTimeout(() => el.remove(), 220);
   }
@@ -76,6 +76,7 @@ export function initOrdersList({ fillForm }) {
 
   async function load() {
     list.innerHTML = '<div class="item">Laden…</div>';
+
     const res = await Api.ordersByDate(listDate.value, showAll.checked).catch(
       (err) => ({ ok: false, error: String(err) })
     );
@@ -83,10 +84,37 @@ export function initOrdersList({ fillForm }) {
       list.innerHTML = `<div class="item">Fehler: ${res.error}</div>`;
       return;
     }
+
     const items = res.items || [];
+    const now = new Date();
+    const graceMin = 30; // время «буфера» после окончания поездки, мин.
+
+    // фильтруем только те, что ещё актуальны или явно запрошены (showAll)
+    const filtered = items.filter((it) => {
+      if (showAll.checked) return true; // при активном чекбоксе показываем все
+
+      // если дата поездки раньше сегодняшней → скрываем
+      const rideDate = new Date(it.date);
+      const today = new Date();
+      if (rideDate < new Date(today.toISOString().split("T")[0])) return false;
+
+      // время окончания = время начала + длительность + буфер
+      const [h, m] = (it.time || "00:00").split(":").map(Number);
+      const rideEnd = new Date(it.date);
+      rideEnd.setHours(
+        h,
+        m + (parseInt(it.duration_min) || 0) + graceMin,
+        0,
+        0
+      );
+
+      // показываем, если поездка ещё не завершилась + буфер
+      return rideEnd > now;
+    });
+
     list.innerHTML =
-      items.map(cardHtml).join("") ||
-      '<div class="item">Keine Bestellungen.</div>';
+      filtered.map(cardHtml).join("") ||
+      '<div class="item">Keine aktiven Bestellungen.</div>';
   }
 
   reloadBtn.addEventListener("click", load);
@@ -125,15 +153,21 @@ export function initOrdersList({ fillForm }) {
       return;
     }
 
-    // Abbrechen (mit stilvollem, optionalem Grund)
+    // Abbrechen (mit optionalem Grund)
     if (btn.classList.contains("cancel")) {
-      const comment =
-        (await promptReason({
-          title: "Bestellung stornieren",
-          message: "Grund (optional):",
-          placeholder: "z. B. Kunde hat abgesagt …",
-          okText: "Stornieren",
-        })) || ""; // пустая строка допустима
+      const res = await promptReason({
+        title: "Bestellung stornieren",
+        message: "Grund (optional):",
+        placeholder: "z. B. Kunde hat abgesagt …",
+        okText: "Stornieren",
+        cancelText: "Abbrechen",
+      });
+
+      // Пользователь нажал Abbrechen / Esc / клик по фону — ничего не делаем
+      if (res === null) return;
+
+      // Пустая строка "" допустима — подтверждение без комментария
+      const comment = res;
 
       await Api.updateStatus(id, "cancelled", comment);
       item.querySelector(".badge").className = "badge cancelled";

@@ -1,0 +1,194 @@
+/* ===== Modal (centered) — assets/css/modal.css ===== */
+
+/* Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.45);
+  display: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.modal-overlay.is-open {
+  display: block;
+  opacity: 1;
+}
+
+/* Dialog */
+.modal {
+  position: fixed;
+  z-index: 10001;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -44%) scale(0.98);
+  box-sizing: border-box;
+
+  /* ширина: всегда оставляем 10px слева/справа */
+  width: min(560px, calc(100vw - 20px));
+  min-width: min(320px, calc(100vw - 20px));
+  max-width: calc(100vw - 20px);
+
+  /* высота: всегда оставляем 10px сверху/снизу */
+  max-height: calc(100dvh - 20px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 16px;
+
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+@supports not (height: 100dvh) {
+  .modal {
+    max-height: calc(100vh - 20px);
+  }
+}
+.modal.is-open {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Dark theme tweaks */
+html[data-theme="dark"] .modal {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+}
+
+/* Header */
+.modal__header {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.modal__icon {
+  width: 28px;
+  height: 28px;
+  color: var(--danger);
+}
+.modal__title {
+  font-weight: 700;
+  font-size: 18px;
+}
+.modal__close {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 4px;
+}
+.modal__close:hover {
+  opacity: 1;
+}
+
+/* Body */
+.modal__body {
+  font-size: 14px;
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+.modal__desc {
+  margin-bottom: 6px;
+}
+
+/* Unified inputs (textarea inside modal) */
+.modal__input,
+.modal__textarea {
+  width: 100%;
+  min-width: 260px;
+  min-height: 84px; /* удобно на телефоне */
+  max-height: 40vh;
+  resize: vertical;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+/* Footer */
+.modal__footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+/* Buttons (используют твой components.css); добавим вариации */
+.btn--danger {
+  background: var(--danger);
+  color: var(--primary-contrast);
+  border-color: color-mix(in srgb, var(--danger) 65%, #000);
+}
+.btn--danger:hover {
+  filter: brightness(0.96);
+}
+.btn--ghost {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* Quick reasons list */
+.reasons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.reason-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  font: 500 14px var(--font-sans, system-ui, sans-serif);
+  transition: background 0.2s ease, transform 0.08s ease, box-shadow 0.2s ease;
+}
+.reason-btn:hover {
+  background: var(--hover);
+}
+.reason-btn:active {
+  transform: translateY(1px);
+}
+.reason-btn.is-active {
+  outline: 2px solid color-mix(in srgb, var(--primary) 35%, transparent);
+}
+html[data-theme="dark"] .reason-btn {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+/* Custom reason (Sonstiges…) */
+.custom-reason {
+  margin-top: 10px;
+}
+.custom-reason .custom-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+/* Narrow screens: 1 column */
+@media (max-width: 420px) {
+  .reasons {
+    grid-template-columns: 1fr;
+  }
+}

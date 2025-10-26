@@ -92,7 +92,7 @@ h1 {
   margin: 12px 0 10px;
 }
 
-/* ========= Utilities ========= */
+/* ========= Utilities / Base components ========= */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -100,57 +100,7 @@ h1 {
   box-shadow: var(--shadow);
   padding: 16px;
 }
-.btn {
-  height: 40px;
-  padding: 10px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font: inherit;
-}
-.btn-primary {
-  background: var(--primary);
-  color: var(--primary-contrast);
-}
-.btn-primary:hover {
-  filter: brightness(0.96);
-}
-.btn-muted {
-  background: var(--surface-2);
-  color: var(--text);
-}
-.btn-muted:hover {
-  background: color-mix(in srgb, var(--surface-2) 85%, #fff);
-}
-.icon-btn {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border-radius: var(--radius-md);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-}
-.icon-btn svg {
-  display: block;
-}
-.pill {
-  border-radius: 999px;
-  padding: 8px 12px;
-}
-.pill--gold {
-  background: var(--gold-bg);
-  color: var(--gold-ink);
-  border-color: var(--gold-border);
-  box-shadow: var(--shadow);
-}
-.pill--ghost {
-  background: transparent;
-}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -162,6 +112,7 @@ h1 {
   white-space: nowrap;
   border: 0;
 }
+
 .label {
   display: none;
   font-weight: 600;
@@ -187,251 +138,34 @@ body.labels-hidden .label {
   border: 0;
 }
 
-/* ========= Icon Buttons ========= */
-.icon-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.25s ease;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.icon-btn svg {
-  width: 22px;
-  height: 22px;
-  display: block;
-  flex-shrink: 0;
-}
-
-/* Акцент — золотой (например, для телефона или темы) */
-.icon-btn--gold {
-  background: var(--gold-bg);
-  border-color: var(--gold-border);
-  color: var(--gold-ink);
-  box-shadow: var(--shadow);
-}
-
-/* Основная кнопка (активное действие) */
-.icon-btn--primary {
-  background: var(--primary);
-  color: var(--primary-contrast);
-  border-color: color-mix(in srgb, var(--primary) 60%, #fff);
-}
-
-/* делаем основную кнопку крупнее */
-.actions.full .icon-btn--primary {
-  flex: 1 1 100%;
-  width: 100%;
-  max-width: 180px; /* базовая ширина до масштабирования */
-  padding: 12px 0;
-  font-size: 16px;
-  justify-content: center;
-}
-
-/* увеличиваем именно эту кнопку */
-.actions.full .icon-btn--primary.enlarged {
-  max-width: 540px; /* ×3 ширина */
-}
-
-/* выравниваем кнопки по центру */
-.actions.full {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-}
-
-/* Вторичная (спокойная) */
-.icon-btn--muted {
-  background: var(--surface-2);
-  color: var(--text);
-}
-
-/* Hover / Focus */
-.icon-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
-}
-.icon-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-.icon-btn:focus-visible {
-  outline: 0;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
-}
-
-/* ========= Dark theme адаптация ========= */
-html[data-theme="dark"] .icon-btn {
-  background: var(--surface);
-  border-color: var(--border);
-  color: var(--text);
-}
-html[data-theme="dark"] .icon-btn--primary {
-  background: var(--primary);
-  color: var(--primary-contrast);
-}
-html[data-theme="dark"] .icon-btn--muted:hover {
-  background: var(--hover);
-}
-
-/* ========= Адаптив ========= */
-@media (max-width: 640px) {
-  .icon-btn {
-    width: 40px;
-    height: 40px;
-  }
-  .icon-btn svg {
-    width: 20px;
-    height: 20px;
-  }
-}
-
-/* ========= Compact Checkbox ========= */
-:root {
-  --cb-size: 18px;
-  --cb-radius: 6px;
-}
-
-input[type="checkbox"].cb {
-  appearance: none;
-  -webkit-appearance: none;
-  width: var(--cb-size);
-  height: var(--cb-size);
-  border: 1px solid var(--border);
-  border-radius: var(--cb-radius);
-  background: var(--surface);
-  display: grid;
-  place-content: center;
-  cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-input[type="checkbox"].cb::after {
-  content: "";
-  width: 10px;
-  height: 10px;
-  clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 26%, 86% 12%, 38% 66%);
-  background: var(--primary-contrast);
-  transform: scale(0);
-  transform-origin: center;
-  transition: transform 0.18s ease;
-}
-input[type="checkbox"].cb:checked {
-  background: var(--primary);
-  border-color: color-mix(in srgb, var(--primary) 70%, transparent);
-}
-input[type="checkbox"].cb:checked::after {
-  transform: scale(1);
-}
-input[type="checkbox"].cb:focus-visible {
-  outline: 0;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
-}
-
-/* Темная тема */
-html[data-theme="dark"] input[type="checkbox"].cb {
-  background: var(--surface);
-  border-color: var(--border);
-}
-
 .main-tabs {
-  margin: 15px 0;
+  margin: 0 0 15px;
 }
 
-/* Для Hilfe */
-/* FAQ: details/summary */
-details {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 0.75rem 1rem;
-  margin: 0 0 0.75rem 0;
-  box-shadow: var(--shadow);
-}
-
-details[open] {
-  background: var(--surface-2);
-}
-
-details > summary {
-  list-style: none;
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--text);
-  position: relative;
-  padding-right: 1.75rem;
-}
-
-details > summary::-webkit-details-marker {
-  display: none;
-}
-
-/* стрелочка */
-details > summary::after {
-  content: "▾";
-  position: absolute;
-  right: 0.25rem;
-  top: 0.15rem;
-  font-size: 1rem;
-  color: var(--text-muted);
-  transition: transform 0.2s ease;
-}
-
-details[open] > summary::after {
-  transform: rotate(180deg);
-}
-
-details > div {
-  margin-top: 0.5rem;
-  color: var(--text);
-  line-height: 1.5;
-}
-
-details ul {
-  margin: 0.5rem 0 0 1rem;
-}
-
-details:focus-within,
-details > summary:focus {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  border-radius: var(--radius-md);
-}
-
-/* ----- Kontakt & Support / Version ----- */
+/* ----- Разделители / версия ----- */
 .divider {
   border: none;
   border-top: 1px solid var(--border);
   margin: 2rem 0 1rem;
 }
-
 .version-info {
   font-size: 0.95rem;
   color: var(--text-muted);
   line-height: 1.4;
 }
 
-/* ----- Hover-Effekt für Zurück-Button ----- */
-/* ----- Hover-Effekt für alle Zurück-Buttons ----- */
+/* ----- Hover-эффект для кнопки «Zurück» (специфика страницы) ----- */
 button.pill[aria-label="Zurück"],
 button.pill[aria-label="Zurück"]:visited {
   cursor: pointer;
   transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
-
 button.pill[aria-label="Zurück"]:hover,
 button.pill[aria-label="Zurück"]:focus-visible {
   background: var(--hover);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
-
 button.pill[aria-label="Zurück"]:active {
   transform: translateY(0);
   box-shadow: none;
