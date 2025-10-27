@@ -15,11 +15,28 @@ function identity() {
 
 async function getJSON(paramsObj) {
   const params = new URLSearchParams(paramsObj);
-  // cache-busting
-  params.set("ts", Date.now().toString());
+  params.set("ts", Date.now().toString()); // cache-busting
 
   const url = `${API}?${params.toString()}`;
   const res = await fetch(url, { method: "GET", cache: "no-store" });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status} ${res.statusText} — ${text}`);
+  }
+  return res.json();
+}
+
+async function postJSON(bodyObj) {
+  const res = await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    body: JSON.stringify({ ...bodyObj, ts: Date.now() }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status} ${res.statusText} — ${text}`);
+  }
   return res.json();
 }
 
@@ -36,17 +53,12 @@ export const Api = {
     });
   },
 
-  // + внутри вашего объекта Api
+  /** Push: сохранить подписку */
   async pushSubscribe(sub) {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "push_subscribe", ...sub }),
-    });
-    return res.json();
+    return postJSON({ action: "push_subscribe", ...sub });
   },
 
-  // ДОБАВЬ к остальным методам Api
+  /** Заказы по дате */
   async ordersByDate(dateISO, includeAll = false) {
     return getJSON({
       action: "ordersbydate",
@@ -55,16 +67,15 @@ export const Api = {
     });
   },
 
-  /** Добавить сообщение в чат */
+  /** Добавить обычное сообщение (или parsed — на бэке создаст заказ) */
   async messagesAdd(payload) {
     const id = identity();
     const author = (payload && payload.author) || id.displayName;
     const device = (payload && payload.device) || id.deviceId;
     const text = (payload && payload.text) || "";
-    const parsed =
-      payload && payload.parsed ? JSON.stringify(payload.parsed) : "";
+    const parsed = payload && payload.parsed ? payload.parsed : undefined;
 
-    return getJSON({
+    return postJSON({
       action: "messagesadd",
       author,
       device,
@@ -80,21 +91,19 @@ export const Api = {
       created_by_name: displayName,
       created_by_device: deviceId,
     });
-    return getJSON({
-      action: "create",
-      data: JSON.stringify(payload),
-    });
+    // можно и GET, но POST надёжнее для длинных тел
+    return postJSON({ action: "create", data: payload });
   },
 
-  /** Список ближайших задач/заказов (на hours часов вперёд) */
+  /** Список ближайших задач/заказов */
   async todos(hours = 24) {
     return getJSON({
       action: "todos",
-      hours: String(hours), // как на сервере
+      hours: String(hours),
     });
   },
 
-  /** Обновить статус заказа — гибкая сигнатура */
+  /** Обновить статус заказа */
   async updateStatus(a, b, c) {
     let id, status, comment;
     if (typeof a === "object" && a) {

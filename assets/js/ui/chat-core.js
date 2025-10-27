@@ -168,18 +168,18 @@ export async function fullRefresh() {
   } catch {}
 }
 
-// ===== send (без локального рендера для заказов) =====
+// ===== send (заказы — через createOrder; обычный текст — через messagesAdd)
 export async function sendMessage(text) {
   const raw = String(text || "").trim();
   if (!raw) return { ok: false, error: "empty" };
 
   const cand = parseOrderCandidate(raw);
 
-  if (cand.is_order) {
-    // заказ — без локального пузыря, ждём order_created
-    return Api.messagesAdd({ text: raw, parsed: cand });
+  if (cand?.is_order && cand.order) {
+    // создаём заказ так же, как на index.html
+    return Api.createOrder(cand.order);
   }
 
-  // обычный текст — просто отправляем (оптимистический рендер делаем снаружи)
+  // обычное сообщение
   return Api.messagesAdd({ text: raw });
 }
