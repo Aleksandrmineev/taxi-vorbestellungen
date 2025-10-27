@@ -10,6 +10,15 @@ import {
   addLocalTextMessage,
 } from "./chat-core.js";
 
+import {
+  ensureUserGestureListeners,
+  insertEnableButton,
+  isAudioReady,
+  playSend,
+  playReceive,
+  playOrder,
+} from "./chat-audio.js";
+
 const chatEl = document.getElementById("chat");
 const form = document.getElementById("sendForm");
 const input = document.getElementById("msg");
@@ -25,102 +34,29 @@ if (!state.displayName) {
   localStorage.setItem("displayName", state.displayName);
 }
 
-/* ===== Audio ===== */
-let AC = null;
-let didInitAudio = false;
-function ensureAudio() {
-  if (!AC) {
-    const Ctor = window.AudioContext || window.webkitAudioContext;
-    if (!Ctor) return null;
-    AC = new Ctor();
+/* ===== Audio boot ===== */
+ensureUserGestureListeners();
+if (!isAudioReady()) insertEnableButton(".chat-header");
+
+/* ===== Sticky-to-bottom helpers ===== */
+let initialRendered = false;
+// по умолчанию «держимся» за низ
+let shouldStickBottom = true;
+
+function isNearBottom(el, threshold = 120) {
+  return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+}
+function scrollToBottom({ smooth = false } = {}) {
+  chatEl.scrollTo({
+    top: chatEl.scrollHeight,
+    behavior: smooth ? "smooth" : "auto",
+  });
+}
+function maybeScrollToBottom({ force = false, smooth = false } = {}) {
+  if (force || shouldStickBottom || isNearBottom(chatEl)) {
+    scrollToBottom({ smooth });
   }
-  if (AC.state === "suspended") AC.resume().catch(() => {});
-  return AC;
 }
-function envTone({
-  freq = 600,
-  type = "sine",
-  dur = 0.12,
-  attack = 0.005,
-  decay = 0.08,
-  gain = 0.08,
-  when = 0,
-}) {
-  const ac = ensureAudio();
-  if (!ac) return;
-  const t0 = ac.currentTime + when;
-  const osc = ac.createOscillator();
-  const g = ac.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, t0);
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.linearRampToValueAtTime(gain, t0 + attack);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + decay);
-  osc.connect(g).connect(ac.destination);
-  osc.start(t0);
-  osc.stop(t0 + Math.max(attack + decay, dur));
-}
-function playSend() {
-  envTone({
-    freq: 520,
-    type: "triangle",
-    gain: 0.07,
-    attack: 0.005,
-    decay: 0.07,
-    dur: 0.1,
-    when: 0,
-  });
-  envTone({
-    freq: 740,
-    type: "triangle",
-    gain: 0.06,
-    attack: 0.005,
-    decay: 0.08,
-    dur: 0.12,
-    when: 0.06,
-  });
-}
-function playReceive() {
-  envTone({
-    freq: 540,
-    type: "sine",
-    gain: 0.07,
-    attack: 0.003,
-    decay: 0.09,
-    dur: 0.1,
-    when: 0,
-  });
-}
-function playOrder() {
-  envTone({
-    freq: 420,
-    type: "sine",
-    gain: 0.08,
-    attack: 0.004,
-    decay: 0.12,
-    dur: 0.14,
-    when: 0,
-  });
-  envTone({
-    freq: 880,
-    type: "sine",
-    gain: 0.07,
-    attack: 0.004,
-    decay: 0.14,
-    dur: 0.16,
-    when: 0.1,
-  });
-}
-["click", "keydown", "touchstart"].forEach((ev) =>
-  document.addEventListener(
-    ev,
-    () => {
-      ensureAudio();
-      didInitAudio = true;
-    },
-    { once: true, passive: true }
-  )
-);
 
 /* ===== Templates ===== */
 function bubbleHtml(m) {
@@ -189,17 +125,26 @@ function dedupOrderCreated(items) {
 
 /* ===== Render ===== */
 function render(items = state.items) {
+  // если пользователь пролистал далеко вверх — не дёргать вниз
+  shouldStickBottom = isNearBottom(chatEl);
+
   let list = dedupOrderCreated(items);
   list = state.filterOrdersOnly ? list.filter((x) => x.is_order) : list;
   if (state.filterOrdersOnly)
     list = list.slice().sort((a, b) => orderStamp(a) - orderStamp(b));
+
+  // рендрим
   chatEl.innerHTML =
-    list.map(bubbleHtml).join("") ||
-    "<p class='msg them'>Keine Nachrichten.</p>";
-  chatEl.scrollTop = chatEl.scrollHeight;
+    (list.map(bubbleHtml).join("") ||
+      "<p class='msg them'>Keine Nachrichten.</p>") +
+    "<div id='chat-bottom' aria-hidden='true'></div>";
+
+  // всегда держим внизу, если пользователь был внизу
+  maybeScrollToBottom({ smooth: initialRendered });
+  initialRendered = true;
 }
 
-// показать кэш сразу, потом свежие
+/* ===== First show + refresh ===== */
 render();
 await fullRefresh();
 render();
@@ -227,9 +172,9 @@ form.addEventListener("submit", (e) => {
   input.focus();
 
   // 2) сразу звук отправки
-  if (didInitAudio) playSend();
+  playSend();
 
-  // 3) лёгкая эвристика: заказ или обычный текст
+  // 3) эвристика: заказ или обычный текст
   let isOrder = false;
   try {
     isOrder =
@@ -244,12 +189,16 @@ form.addEventListener("submit", (e) => {
     render();
   }
 
-  // 5) отправка на GAS с мягкой задержкой, без await
+  // 5) отправка на GAS — чуть позже, не блокируем
   setTimeout(() => {
     sendMessage(raw).catch(() => {
-      // опционально: отметить ошибку/ретрай
+      // TODO: тост/ретрай
     });
   }, SEND_DELAY);
+
+  // держим низ после отправки
+  shouldStickBottom = true;
+  maybeScrollToBottom({ force: true, smooth: true });
 });
 
 /* ===== Фильтры ===== */
@@ -275,57 +224,50 @@ btnName.addEventListener("click", () => {
   render();
 });
 
-/* ===== Голосовой ввод: нажми-и-держи (улучшенное склеивание без дублей) ===== */
+/* ===== Голосовой ввод: нажми-и-держи (с анти-дублирующей склейкой) ===== */
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
 
 let recog = null;
 let isListening = false;
 let listenTimeoutId = null;
-
-// буферы для качественной склейки
+// буферы
 let baseTextAtStart = "";
-let finalBuffer = ""; // только финальные фразы
-let interimBuffer = ""; // самый свежий промежуточный фрагмент
+let finalBuffer = "";
+let interimBuffer = "";
 
 function ensureRecognition() {
   if (!SpeechRecognition) return null;
   if (recog) return recog;
   const r = new SpeechRecognition();
-
-  // — Ключевые настройки:
   r.lang = "de-DE";
-  r.interimResults = true; // даёт «живой» текст
-  r.continuous = true; // чтобы поток не обрывался преждевременно
-
+  r.interimResults = true;
+  r.continuous = true;
   r.maxAlternatives = 1;
 
   r.onresult = (e) => {
-    // собираем все результаты заново каждый раз: это защищает от дублей
     let finals = [];
     let interim = "";
-
     for (let i = 0; i < e.results.length; i++) {
       const res = e.results[i];
       const txt = (res[0]?.transcript || "").trim();
       if (!txt) continue;
       if (res.isFinal) finals.push(txt);
-      else interim = txt; // оставляем только последний промежуточный
+      else interim = txt;
     }
-
     finalBuffer = sanitizeText(finals.join(" "));
     interimBuffer = sanitizeText(interim);
-
-    // показываем пользователю: base + finals + interim (без дублей на стыках)
     const visible = smartMerge(baseTextAtStart, finalBuffer, interimBuffer);
     setTextareaValue(visible);
+    // при наборе голосом держим низ
+    shouldStickBottom = true;
+    maybeScrollToBottom({ smooth: true });
   };
 
   r.onerror = () => stopListening();
   r.onend = () => stopListening();
-
   recog = r;
-  return recog;
+  return r;
 }
 
 function startListening() {
@@ -348,10 +290,8 @@ function startListening() {
     btnVoice.classList.add("listening");
     btnVoice.setAttribute("aria-pressed", "true");
     clearTimeout(listenTimeoutId);
-    listenTimeoutId = setTimeout(() => stopListening(), 60000); // авто-стоп 60с
-  } catch {
-    // повторный start может бросить — игнор
-  }
+    listenTimeoutId = setTimeout(() => stopListening(), 60000);
+  } catch {}
 }
 
 function stopListening() {
@@ -364,93 +304,57 @@ function stopListening() {
   btnVoice.setAttribute("aria-pressed", "false");
   clearTimeout(listenTimeoutId);
   listenTimeoutId = null;
-
-  // Коммитим только base + final (без interim), ещё раз прогоняем санитайзер
   const committed = smartMerge(baseTextAtStart, finalBuffer, "");
   setTextareaValue(committed);
   input.focus();
 }
 
-/* ===== Помощники текста ===== */
-
-// аккуратно объединяет base + add + tail с устранением дублей на стыках
 function smartMerge(base = "", add = "", tail = "") {
-  const a = base.trim();
-  const b = add.trim();
-  const c = tail.trim();
-
+  const a = base.trim(),
+    b = add.trim(),
+    c = tail.trim();
   let merged = a;
   if (b) merged = mergeWithOverlap(merged, b);
   if (c) merged = mergeWithOverlap(merged, c);
-
-  // финальная зачистка
   return postClean(merged);
 }
-
-// объединение строк с учётом перекрытия последних/первых слов
 function mergeWithOverlap(left, right) {
   if (!left) return right;
   if (!right) return left;
-
-  const L = left.trim();
-  const R = right.trim();
-
-  const lWords = L.split(/\s+/);
-  const rWords = R.split(/\s+/);
-  const maxOverlap = Math.min(6, lWords.length, rWords.length);
-
+  const L = left.trim(),
+    R = right.trim();
+  const lW = L.split(/\s+/),
+    rW = R.split(/\s+/);
+  const maxK = Math.min(6, lW.length, rW.length);
   let best = 0;
-  for (let k = maxOverlap; k > 0; k--) {
-    const tail = lWords.slice(-k).join(" ").toLowerCase();
-    const head = rWords.slice(0, k).join(" ").toLowerCase();
+  for (let k = maxK; k > 0; k--) {
+    const tail = lW.slice(-k).join(" ").toLowerCase();
+    const head = rW.slice(0, k).join(" ").toLowerCase();
     if (tail === head) {
       best = k;
       break;
     }
   }
-  const glued = best > 0 ? L + " " + rWords.slice(best).join(" ") : L + " " + R;
-
+  const glued = best ? L + " " + rW.slice(best).join(" ") : L + " " + R;
   return glued.replace(/\s+/g, " ").trim();
 }
-
-// базовая нормализация фраз: капс, пробелы, простая пунктуация
 function sanitizeText(s = "") {
   let t = s;
-
-  // Убираем повторы подряд ("jetzt jetzt", "der der") — регистронезависимо
   t = t.replace(/\b([\p{L}\p{N}][\p{L}\p{N}'’-]*)(?:\s+\1\b)+/giu, "$1");
-
-  // Нормализуем пробелы вокруг пунктуации
   t = t.replace(/\s*([,.!?;:])\s*/g, "$1 ");
   t = t.replace(/\s+/g, " ");
-
-  // Пробел после "um 12:30Uhr" -> "um 12:30 Uhr"
   t = t.replace(/(\d)(uhr)\b/gi, "$1 Uhr");
-
-  // Лёгкая капитализация начала предложения
   t = t.replace(/(^|\.\s+)([a-zäöüß])/g, (m, p1, p2) => p1 + p2.toUpperCase());
-
   return t.trim();
 }
-
-// финальная зачистка всей строки
 function postClean(s = "") {
   let t = s;
-
-  // Повторы слов после склейки
   t = t.replace(/\b([\p{L}\p{N}][\p{L}\p{N}'’-]*)(?:\s+\1\b)+/giu, "$1");
-
-  // Повторы знаков препинания
   t = t.replace(/([,.!?;:])\1+/g, "$1");
-
-  // Пробелы
   t = t.replace(/\s*([,.!?;:])\s*/g, "$1 ");
   t = t.replace(/\s+/g, " ");
-
   return t.trim();
 }
-
-// авто-увеличение высоты textarea
 function autosizeTextarea(el) {
   const maxRows = Number(el.dataset.maxRows || 5);
   el.style.height = "auto";
@@ -459,13 +363,12 @@ function autosizeTextarea(el) {
   const maxH = lh * maxRows;
   if (el.scrollHeight > maxH) el.style.height = maxH + "px";
 }
-
 function setTextareaValue(v) {
   input.value = v;
   autosizeTextarea(input);
 }
 
-// Навешиваем события «нажал-держи»
+// «нажал-держи»
 if (btnVoice) {
   const down = (e) => {
     e.preventDefault();
@@ -475,45 +378,73 @@ if (btnVoice) {
     e.preventDefault();
     stopListening();
   };
-
   btnVoice.addEventListener("pointerdown", down);
   btnVoice.addEventListener("pointerup", up);
   btnVoice.addEventListener("pointerleave", up);
   btnVoice.addEventListener("pointercancel", up);
-
-  // На некоторых моб. браузерах click может мешать — гасим
   btnVoice.addEventListener("click", (e) => e.preventDefault(), {
     passive: false,
   });
 }
 
-/* ===== Поллинг + звуки входящих ===== */
+/* ===== Поллинг + звуки входящих (и автоскролл вниз) ===== */
 let didInitialPoll = false;
 
 setInterval(async () => {
-  const newItems = await loadIncremental(); // возвращает новые
-  if (didInitialPoll && Array.isArray(newItems) && newItems.length) {
-    const incoming = newItems.filter(
-      (m) =>
-        (m.device && m.device !== deviceId) ||
-        (!m.device && (m.author || "") !== state.displayName)
-    );
-    const hasOrder = incoming.some(
-      (m) => m.type === "order_created" || m.is_order === true
-    );
-    if (didInitAudio) {
-      if (hasOrder) playOrder();
-      else if (incoming.length) playReceive();
+  const newItems = await loadIncremental(); // новые с сервера
+  if (Array.isArray(newItems) && newItems.length) {
+    if (didInitialPoll) {
+      const incoming = newItems.filter((m) => {
+        const mine =
+          (m.device && m.device === deviceId) ||
+          (!m.device && (m.author || "") === state.displayName);
+        return !mine;
+      });
+      if (incoming.length) {
+        const hasOrder = incoming.some(
+          (m) => m.type === "order_created" || m.is_order === true
+        );
+        hasOrder ? playOrder() : playReceive();
+        // прилипание к низу при входящих
+        shouldStickBottom = true;
+      }
     }
   }
   render();
   didInitialPoll = true;
 }, 3000);
 
-// при возвращении во вкладку — мягкая сверка
-document.addEventListener("visibilitychange", async () => {
-  if (!document.hidden) {
-    await fullRefresh();
-    render();
+/* ===== Клавиатура на мобилке: держать форму в зоне видимости ===== */
+function onViewportChange() {
+  // если фокус в textarea — тянем низ и форму в видимую область
+  if (document.activeElement === input) {
+    // сначала сам чат к низу
+    maybeScrollToBottom({ force: true, smooth: false });
+    // затем гарантируем видимость формы
+    form.scrollIntoView({
+      block: "end",
+      inline: "nearest",
+      behavior: "smooth",
+    });
   }
+}
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", onViewportChange);
+  window.visualViewport.addEventListener("scroll", onViewportChange);
+}
+window.addEventListener("orientationchange", () => {
+  setTimeout(() => {
+    maybeScrollToBottom({ force: true, smooth: false });
+  }, 150);
+});
+
+// когда пользователь кликает по полю — тоже дотягиваем вниз
+input.addEventListener("focus", () => {
+  shouldStickBottom = true;
+  // две попытки – сразу и в следующий кадр (для iOS)
+  maybeScrollToBottom({ force: true, smooth: false });
+  requestAnimationFrame(() =>
+    maybeScrollToBottom({ force: true, smooth: false })
+  );
 });

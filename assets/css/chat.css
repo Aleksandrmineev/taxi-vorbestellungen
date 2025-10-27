@@ -1,9 +1,11 @@
 /* ========= Chat (theme-aware via tokens) ========= */
 
+/* Не даём iOS менять размер текста */
 html {
   -webkit-text-size-adjust: 100%;
-} /* не даём iOS менять размер текста */
+}
 
+/* Layout */
 .chat-wrap {
   display: flex;
   flex-direction: column;
@@ -26,6 +28,7 @@ html {
   gap: 10px;
   padding: 10px 0;
   background: var(--bg);
+  flex: 0 0 auto;
 }
 .chat-title {
   font-weight: 700;
@@ -38,8 +41,11 @@ html {
 
 /* Body / list */
 .chat-body {
-  flex: 1;
+  flex: 1 1 auto;
   overflow: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth; /* мягкий автоскролл вниз */
+  -webkit-overflow-scrolling: touch;
   padding: 12px 0;
   background: linear-gradient(180deg, var(--surface-2), var(--surface));
   border: 1px solid var(--border);
@@ -47,6 +53,7 @@ html {
   overflow-x: hidden; /* защита от горскролла */
 }
 
+/* Message bubble */
 .msg {
   max-width: 82%;
   margin: 10px 12px;
@@ -97,7 +104,7 @@ html {
   display: flex;
   align-items: flex-end;
   gap: 6px;
-  background: var(--surface);
+  background: var(--bg); /* последнее значение */
   padding: 8px;
   border-top: 1px solid var(--border);
   position: sticky;
@@ -105,6 +112,11 @@ html {
   width: 100%;
   box-sizing: border-box;
   overflow-x: hidden; /* не даём вылезать вправо */
+  flex: 0 0 auto;
+  /* безопасная зона на iOS */
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px));
+  /* тень для разделения от списка */
+  box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.04);
 }
 .chat-send > * {
   min-width: 0;
@@ -228,6 +240,10 @@ html {
   white-space: nowrap;
   border: 0;
 }
-/* =========================================================
-   END Chat (theme-aware via tokens)
-   ========================================================= */
+
+/* Когда открыта мобильная клавиатура, делаем форму максимально «дышащей» */
+@supports (height: 100svh) {
+  .chat-wrap {
+    min-height: 100svh;
+  }
+}
