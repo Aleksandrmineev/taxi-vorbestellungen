@@ -1,38 +1,80 @@
-// Lightweight audio helper for Chat: init + tones + optional enable button
+// assets/js/ui/chat-audio.js
+// === Audio manager: system tone for send + file sounds for message/order ===
 
 let AC = null;
-let _ready = false; // был ли пользовательский жест
-let _buttonInserted = false;
+let _ready = false;
 
-function _getAudioContext() {
+// Звуки для message / order из папки
+const sounds = {
+  message: new Audio("./assets/sounds/message.mp3"),
+  order: new Audio("./assets/sounds/order.mp3"),
+};
+
+// Подготовка
+Object.values(sounds).forEach((a) => {
+  a.volume = 1.0;
+  a.preload = "auto";
+});
+
+function ensureAudioCtx() {
   if (!AC) {
     const Ctor = window.AudioContext || window.webkitAudioContext;
     if (!Ctor) return null;
     AC = new Ctor();
   }
-  if (AC.state === "suspended") {
-    AC.resume().catch(() => {});
-  }
+  if (AC.state === "suspended") AC.resume().catch(() => {});
   return AC;
 }
 
-function _envTone({
+function unlockAudio() {
+  if (_ready) return;
+  ensureAudioCtx();
+  Object.values(sounds).forEach((a) => {
+    try {
+      a.play().catch(() => {});
+      a.pause();
+      a.currentTime = 0;
+    } catch {}
+  });
+  _ready = true;
+  console.log("🔊 Audio ready");
+}
+
+// Простая система активации после первого жеста
+export function ensureUserGestureListeners() {
+  const once = () => unlockAudio();
+  ["click", "keydown", "touchstart", "pointerdown"].forEach((ev) =>
+    document.addEventListener(ev, once, { once: true, passive: true })
+  );
+}
+
+export function insertEnableButton(sel = ".chat-header") {
+  const container = document.querySelector(sel) || document.body;
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "pill";
+  btn.textContent = "Ton aktivieren";
+  btn.style.marginLeft = "8px";
+  btn.addEventListener("click", unlockAudio);
+  container.appendChild(btn);
+}
+
+export function isAudioReady() {
+  return _ready;
+}
+
+/* ====== system tone for SEND ====== */
+function envTone({
   freq = 600,
-  type = "sine",
+  type = "triangle",
   dur = 0.12,
   attack = 0.005,
   decay = 0.08,
-  gain = 0.08,
+  gain = 0.1,
   when = 0,
 }) {
-  const ac = _getAudioContext();
-  if (!ac || !_ready) {
-    // fallback: лёгкая вибрация (мобилки)
-    try {
-      navigator.vibrate && navigator.vibrate(40);
-    } catch {}
-    return;
-  }
+  const ac = ensureAudioCtx();
+  if (!ac) return;
   const t0 = ac.currentTime + when;
   const osc = ac.createOscillator();
   const g = ac.createGain();
@@ -46,97 +88,16 @@ function _envTone({
   osc.stop(t0 + Math.max(attack + decay, dur));
 }
 
-export function isAudioReady() {
-  return _ready;
-}
-
-export function ensureUserGestureListeners() {
-  // Первый ЖЕСТ → включаем звук
-  const once = () => {
-    _ready = true;
-    _getAudioContext();
-    hideEnableButton();
-  };
-  ["click", "keydown", "touchstart", "pointerdown"].forEach((ev) => {
-    document.addEventListener(ev, once, { once: true, passive: true });
-  });
-}
-
-export function insertEnableButton(containerSelector = ".chat-header") {
-  if (_buttonInserted) return;
-  const container = document.querySelector(containerSelector) || document.body;
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.id = "btn-sound";
-  btn.className = "pill";
-  btn.textContent = "Ton aktivieren";
-  btn.style.marginLeft = "8px";
-  btn.addEventListener("click", () => {
-    try {
-      _ready = true;
-      _getAudioContext();
-      hideEnableButton();
-    } catch {}
-  });
-  container.appendChild(btn);
-  _buttonInserted = true;
-}
-
-export function hideEnableButton() {
-  const b = document.getElementById("btn-sound");
-  if (b && b.parentNode) b.parentNode.removeChild(b);
-  _buttonInserted = false;
-}
-
-/* ===== Tones ===== */
 export function playSend() {
-  _envTone({
-    freq: 520,
-    type: "triangle",
-    gain: 0.07,
-    attack: 0.005,
-    decay: 0.07,
-    dur: 0.1,
-    when: 0,
-  });
-  _envTone({
-    freq: 740,
-    type: "triangle",
-    gain: 0.06,
-    attack: 0.005,
-    decay: 0.08,
-    dur: 0.12,
-    when: 0.06,
-  });
+  if (!_ready) return;
+  envTone({ freq: 520, type: "triangle", gain: 0.12, dur: 0.08 });
+  envTone({ freq: 740, type: "triangle", gain: 0.09, dur: 0.1, when: 0.05 });
 }
+
 export function playReceive() {
-  _envTone({
-    freq: 540,
-    type: "sine",
-    gain: 0.07,
-    attack: 0.003,
-    decay: 0.09,
-    dur: 0.1,
-    when: 0,
-  });
+  if (_ready) sounds.message.play().catch(() => {});
 }
+
 export function playOrder() {
-  _envTone({
-    freq: 420,
-    type: "sine",
-    gain: 0.08,
-    attack: 0.004,
-    decay: 0.12,
-    dur: 0.14,
-    when: 0,
-  });
-  _envTone({
-    freq: 880,
-    type: "sine",
-    gain: 0.07,
-    attack: 0.004,
-    decay: 0.14,
-    dur: 0.16,
-    when: 0.1,
-  });
+  if (_ready) sounds.order.play().catch(() => {});
 }

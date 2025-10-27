@@ -1,0 +1,25 @@
+{
+  "name": "vorbestellungen",
+  "version": "1.0.0",
+  "description": "MurtalTaxi – TaxiApp (Vorbestellung)",
+  "type": "module",
+  "main": "sw.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aleksandrmineev/taxi-vorbestellungen.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Aleksandrmineev/taxi-vorbestellungen/issues"
+  },
+  "homepage": "https://github.com/Aleksandrmineev/taxi-vorbestellungen#readme",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

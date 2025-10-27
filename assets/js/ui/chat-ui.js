@@ -1,3 +1,28 @@
+// вверху файла
+import { registerAndSubscribePush } from "./push-client.js";
+
+// …в boot-логике, где вы уже вешаете слушатели жеста:
+let didAskPush = false;
+const VAPID_PUBLIC_KEY =
+  "BHvHS0aMhtznjKjI5rtAji6clhHeCWRERV5hH-nS1o3TIbuxqAvNWsHdi4dMCqaCnU5avg1e0pD7t90PPZr7oK0";
+
+["click", "keydown", "touchstart", "pointerdown"].forEach((ev) => {
+  document.addEventListener(
+    ev,
+    async () => {
+      if (didAskPush) return;
+      didAskPush = true;
+      try {
+        await registerAndSubscribePush({
+          vapidPublicKey: VAPID_PUBLIC_KEY,
+          userName: state.displayName || "",
+        });
+      } catch {}
+    },
+    { once: true, passive: true }
+  );
+});
+
 import { Api } from "../api.js";
 import {
   deviceId,
