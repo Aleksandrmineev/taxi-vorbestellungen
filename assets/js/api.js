@@ -36,6 +36,16 @@ export const Api = {
     });
   },
 
+  // + внутри вашего объекта Api
+  async pushSubscribe(sub) {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "push_subscribe", ...sub }),
+    });
+    return res.json();
+  },
+
   // ДОБАВЬ к остальным методам Api
   async ordersByDate(dateISO, includeAll = false) {
     return getJSON({
