@@ -1,3 +1,5 @@
+/* ========= Chat (theme-aware via tokens) ========= */
+
 .chat-wrap {
   display: flex;
   flex-direction: column;
@@ -5,7 +7,11 @@
   max-width: var(--container-max);
   margin: 24px auto;
   padding: 0 var(--gap);
+  background: var(--bg);
+  color: var(--text);
 }
+
+/* Header */
 .chat-header {
   position: sticky;
   top: 0;
@@ -25,6 +31,7 @@
   gap: 8px;
 }
 
+/* Body / list */
 .chat-body {
   flex: 1;
   overflow: auto;
@@ -33,6 +40,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
+
 .msg {
   max-width: 82%;
   margin: 10px 12px;
@@ -42,6 +50,8 @@
   box-shadow: var(--shadow);
   border: 1px solid var(--border);
   word-wrap: break-word;
+  background: var(--surface);
+  color: var(--text);
 }
 .msg.me {
   margin-left: auto;
@@ -51,9 +61,13 @@
 .msg.them {
   background: var(--surface);
 }
+
+/* Order/system look */
 .msg.order {
-  border-color: var(--gold-600);
+  border-color: var(--gold-border);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold-600) 20%, transparent);
+  background: var(--gold-bg);
+  color: var(--gold-ink);
 }
 .msg .badge {
   display: inline-block;
@@ -72,97 +86,70 @@
   margin-top: 4px;
 }
 
-.chat-input {
-  position: sticky;
-  bottom: 0;
-  display: flex;
-  gap: 8px;
-  padding: 10px 0;
-  background: var(--bg);
-}
-.chat-input input[type="text"] {
-  flex: 1;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  padding: 0 12px;
-  background: var(--surface);
-}
-.chat-input button {
-  height: 44px;
-  border-radius: 12px;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
+/* Input area (new unified block) */
 .chat-send {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 6px;
-  background: var(--surface, #fff);
+  background: var(--surface);
   padding: 8px;
-  border-top: 1px solid var(--border, #e5e7eb);
+  border-top: 1px solid var(--border);
   position: sticky;
   bottom: 0;
 }
 
-.chat-send input {
+/* Multiline message field */
+#msg {
   flex: 1;
-  border: 1px solid var(--border, #ccc);
-  border-radius: var(--radius-md, 8px);
+  resize: none;
+  overflow-y: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
-  font-size: 15px;
+  background: var(--surface);
+  color: var(--text);
+  caret-color: var(--primary);
+  font: 15px/1.35 var(--font-sans);
+  min-height: 40px;
+  --ta-line: 1.35em;
+  --ta-max-rows: 5;
+}
+#msg::placeholder {
+  color: var(--text-muted);
 }
 
+/* Buttons */
 .chat-btn {
   height: 40px;
   padding: 0 14px;
   border: none;
-  border-radius: var(--radius-md, 8px);
+  border-radius: var(--radius-md);
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.25s, transform 0.05s;
+  transition: background 0.25s, color 0.25s, transform 0.05s;
 }
-
 .chat-btn--send {
-  background: var(--primary, #0d5ef7);
-  color: var(--primary-contrast, #fff);
+  background: var(--primary);
+  color: var(--primary-contrast);
 }
-
 .chat-btn--send:active {
   transform: translateY(1px);
 }
 
 .chat-btn--voice {
-  background: var(--surface-2, #f8f9fb);
-  color: var(--text-muted, #555);
-  display: flex;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.25s, color 0.25s;
 }
-
-.chat-btn--voice[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
-  color: var(--primary, #0d5ef7);
-}
-
-/* Пульсик у микрофона во время записи */
 .chat-btn--voice[aria-pressed="true"] {
   position: relative;
   background: color-mix(in srgb, var(--primary) 12%, var(--surface-2));
   color: var(--primary);
 }
+
+/* Recording pulse */
 .chat-btn--voice[aria-pressed="true"]::before,
 .chat-btn--voice[aria-pressed="true"]::after {
   content: "";
@@ -180,23 +167,23 @@
   animation-delay: 0.3s;
 }
 
-/* Подсветка всей панели ввода при записи */
-.chat-send.recording input {
+/* Highlight input area while recording */
+.chat-send.recording #msg {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
 }
 .chat-send.recording::after {
   content: "";
   position: absolute;
-  right: 84px; /* рядом с микрофоном */
+  right: 84px;
   bottom: 18px;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--danger, #dc2626);
+  background: var(--danger);
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 18%, transparent);
 }
 
-/* Анимация и уважение к reduced motion */
+/* Animations */
 @keyframes pulse {
   0% {
     transform: scale(0.85);
@@ -214,60 +201,15 @@
   }
 }
 
-.chat-send {
-  display: flex;
-  align-items: flex-end; /* важно: чтобы кнопки выравнивались по нижнему краю */
-  gap: 6px;
-  background: var(--surface);
-  padding: 8px;
-  border-top: 1px solid var(--border);
-  position: sticky;
-  bottom: 0;
-}
-
-/* textarea вместо input */
-#msg {
-  flex: 1;
-  resize: none; /* запрещаем ручной ресайз браузером */
-  overflow-y: hidden; /* до лимита строк без скролла */
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md, 8px);
-  padding: 10px 12px;
-  background: var(--surface);
-  font: 15px/1.35 var(--font-sans);
-  min-height: 40px; /* высота одной строки с паддингами */
-  /* Лимит в 5 строк (примерно): line-height * rows + вертикальные паддинги */
-  --ta-line: 1.35em;
-  --ta-max-rows: 5;
-  /* max-height именно числом не посчитать везде одинаково — JS ограничит,
-       здесь оставим auto для плавности; скролл включим в JS при достижении лимита */
-}
-
-/* Кнопки рядом оставляем как были */
-.chat-btn {
-  height: 40px;
-  padding: 0 14px;
-  border: none;
-  border-radius: var(--radius-md, 8px);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.25s, transform 0.05s;
-}
-
-.chat-btn--send {
-  background: var(--primary);
-  color: var(--primary-contrast);
-}
-
-.chat-btn--voice {
-  background: var(--surface-2);
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* При записи (у тебя уже есть класс .recording на form) */
-.chat-send.recording #msg {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
+/* A11y utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
