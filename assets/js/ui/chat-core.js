@@ -1,4 +1,3 @@
-// assets/js/ui/chat-core.js
 import { Api } from "../api.js";
 import { parseOrderCandidate } from "../utils/parseOrder.js";
 
@@ -15,6 +14,17 @@ export const deviceId =
 
 // ===== cache =====
 const CACHE_KEY = "chat_cache_v1";
+
+// Сбрасываем кэш при «перезагрузке страницы»
+(function resetCacheOnReloadOnce() {
+  try {
+    const navs = performance.getEntriesByType?.("navigation");
+    const isReload =
+      navs?.[0]?.type === "reload" ||
+      (performance.navigation && performance.navigation.type === 1);
+    if (isReload) localStorage.removeItem(CACHE_KEY);
+  } catch (_) {}
+})();
 
 function loadCache() {
   try {
@@ -91,6 +101,7 @@ export function mergeItems(newItems) {
     if (!m || !m.id) continue;
     if (byId.has(m.id)) continue;
 
+    // Сносим временное локальное, совпадающее по отправителю/тексту/времени
     const isMine = (x) =>
       (m.device && x.device && m.device === x.device) ||
       (!m.device && !x.device && (m.author || "") === (x.author || ""));
@@ -115,6 +126,21 @@ export function mergeItems(newItems) {
   saveCache(now, state.lastTs);
 }
 
+// ===== локальный optimistic для обычного текста (НЕ для заказов) =====
+export function addLocalTextMessage(text) {
+  const m = {
+    id: "tmp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+    ts: Date.now(),
+    author: state.displayName,
+    device: deviceId,
+    text: String(text || ""),
+    is_order: false,
+  };
+  state.items.push(m);
+  saveCache(state.items, state.lastTs || 0);
+  return m;
+}
+
 // ===== data fetch =====
 export async function loadIncremental() {
   try {
@@ -122,8 +148,13 @@ export async function loadIncremental() {
       since: state.lastTs || 0,
       limit: 300,
     });
-    if (res?.ok && Array.isArray(res.items)) mergeItems(res.items);
+    if (res?.ok && Array.isArray(res.items)) {
+      const newItems = res.items;
+      mergeItems(newItems);
+      return newItems; // возвращаем новые для звуков и логики
+    }
   } catch {}
+  return [];
 }
 
 export async function fullRefresh() {
@@ -144,12 +175,11 @@ export async function sendMessage(text) {
 
   const cand = parseOrderCandidate(raw);
 
-  // Если распознали заказ — не создаём локальный пузырь.
-  // Сервер сам вернёт system message type="order_created".
   if (cand.is_order) {
+    // заказ — без локального пузыря, ждём order_created
     return Api.messagesAdd({ text: raw, parsed: cand });
   }
 
-  // Обычный текст — просто отправляем (рендер произойдёт при следующем poll).
+  // обычный текст — просто отправляем (оптимистический рендер делаем снаружи)
   return Api.messagesAdd({ text: raw });
 }
