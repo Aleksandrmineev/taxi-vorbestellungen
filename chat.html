@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>MurtalTaxi – Chat</title>
+
+    <!-- Favicons -->
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./assets/favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./assets/favicon/favicon-16x16.png"
+    />
+    <link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+    <!-- Font -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Marcellus+SC&display=swap"
+      rel="stylesheet"
+    />
+
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="assets/css/global.css" />
+    <link rel="stylesheet" href="assets/css/header.css" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/footer.css" />
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="assets/css/components.css" />
+    <link rel="stylesheet" href="assets/css/chat.css" />
+  </head>
+  <body>
+    <header class="site-header card" role="banner">
+      <a class="brand" href="./" aria-label="MurtalTaxi Startseite">
+        <img
+          class="brand__logo"
+          src="./assets/img/logo1.png"
+          alt="MurtalTaxi Logo"
+        />
+        <span class="brand__title"
+          >Murtal<span class="brand__accent">TAXI</span></span
+        >
+      </a>
+      <div class="header-spacer"></div>
+      <a
+        class="pill pill--gold"
+        href="tel:+436601018101"
+        aria-label="Jetzt anrufen: +43 660 1018101"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.56.57 1 1 0 011 1v3.61a1 1 0 01-1 1A17.02 17.02 0 013 5a1 1 0 011-1h3.61a1 1 0 011 1c0 1.22.2 2.41.57 3.56a1 1 0 01-.24 1.01l-2.32 2.22z"
+            fill="currentColor"
+          />
+        </svg>
+        <strong>+43&nbsp;660&nbsp;1018101</strong>
+      </a>
+    </header>
+
+    <main class="chat-wrap">
+      <header class="chat-header">
+        <strong class="chat-title">MurtalTaxi Chat</strong>
+        <div class="chat-filter">
+          <button id="btn-name" class="pill" type="button">Name</button>
+          <button id="btn-all" class="pill" aria-pressed="true">Alle</button>
+          <button id="btn-only" class="pill">Bestellungen</button>
+        </div>
+      </header>
+
+      <section id="chat" class="chat-body" aria-live="polite"></section>
+
+      <form id="sendForm" class="chat-send" autocomplete="off">
+        <textarea
+          id="msg"
+          placeholder=" "
+          rows="1"
+          data-max-rows="5"
+          aria-label="Nachricht"
+        ></textarea>
+
+        <button
+          id="btn-voice"
+          type="button"
+          class="chat-btn chat-btn--voice"
+          title="Spracheingabe"
+          aria-pressed="false"
+        >
+          <!-- SVG микрофона как было -->
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path
+              d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z M19 10v2a7 7 0 0 1-14 0v-2 M12 19v3 M8 22h8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+
+        <button
+          id="btn-send"
+          type="submit"
+          class="chat-btn chat-btn--send"
+          aria-label="Senden"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="icon icon-tabler icons-tabler-outline icon-tabler-send-2"
+          >
+            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+            <path
+              d="M4.698 4.034l16.302 7.966l-16.302 7.966a.503 .503 0 0 1 -.546 -.124a.555 .555 0 0 1 -.12 -.568l2.468 -7.274l-2.468 -7.274a.555 .555 0 0 1 .12 -.568a.503 .503 0 0 1 .546 -.124z"
+            />
+            <path d="M6.5 12h14.5" />
+          </svg>
+          <span class="sr-only">Senden</span>
+        </button>
+      </form>
+    </main>
+
+    <script type="module" src="./assets/js/ui/chat-ui.js"></script>
+  </body>
+</html>

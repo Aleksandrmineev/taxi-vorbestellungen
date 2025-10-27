@@ -234,3 +234,144 @@ html[data-theme="dark"] .icon-btn--primary {
 html[data-theme="dark"] .icon-btn--muted:hover {
   background: var(--hover);
 }
+
+/* ===== Search input (универсальный компонент) ===== */
+/* ===== Search input (обновлённый, крупнее и просторнее) ===== */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 16px;
+  position: relative;
+}
+
+/* Сам инпут */
+.toolbar #q[type="search"],
+.toolbar input[type="search"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 50px; /* немного выше */
+  padding: 0.75em 1.25em 0.75em 2.8em; /* удобный внутренний отступ */
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--radius-md, 10px);
+  background: var(--surface, #fff);
+  color: var(--text, #111);
+  font-size: 1rem; /* крупнее */
+  line-height: 1.5;
+  font-weight: 500;
+  box-shadow: var(--shadow, 0 2px 10px rgba(0, 0, 0, 0.04));
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+/* Placeholder */
+.toolbar #q::placeholder {
+  color: var(--text-muted, #6b7280);
+  opacity: 0.85;
+  font-weight: 400;
+}
+
+/* Иконка-лупа через mask (адаптируется к теме) */
+/* по умолчанию — никаких псевдоэлементов у .toolbar */
+.toolbar::before {
+  content: none;
+}
+
+/* иконка-лупа только в тулбаре, где есть input[type="search"] */
+.toolbar:has(input[type="search"]) {
+  position: relative;
+}
+.toolbar:has(input[type="search"])::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='11' cy='11' r='6.5' fill='%23000'/%3E%3Cpath d='M16 16l4 4' stroke='%23000' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  background-color: var(--text-muted, #6b7280);
+}
+
+/* Фокус / hover */
+.toolbar #q:focus {
+  border-color: var(--primary, #0d5ef7);
+  box-shadow: 0 0 0 3px
+      color-mix(in srgb, var(--primary, #0d5ef7) 25%, transparent),
+    var(--shadow, 0 2px 10px rgba(0, 0, 0, 0.05));
+  background: var(--hover, #fbfdff);
+}
+.toolbar #q:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--border, #e5e7eb) 70%,
+    var(--text, #111)
+  );
+}
+
+/* Тёмная тема */
+@media (prefers-color-scheme: dark) {
+  .toolbar #q[type="search"],
+  .toolbar input[type="search"] {
+    border-color: var(--border, #2a2f3a);
+    background: var(--surface, #171a21);
+    color: var(--text, #e8eaed);
+  }
+}
+
+/* ===== Date input (Suche nach Datum) ===== */
+.toolbar input[type="date"]#listDate {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 48px;
+  padding: 0.6em 1.1em;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  color: var(--text, #111);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+}
+
+/* Hover/Focus */
+.toolbar input[type="date"]#listDate:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--border, #e5e7eb) 60%,
+    var(--text, #111)
+  );
+}
+.toolbar input[type="date"]#listDate:focus {
+  outline: none;
+  border-color: var(--primary, #0d5ef7);
+  box-shadow: 0 0 0 3px
+      color-mix(in srgb, var(--primary, #0d5ef7) 22%, transparent),
+    0 2px 10px rgba(0, 0, 0, 0.05);
+  background: var(--hover, #fbfdff);
+}
+
+/* Системная иконка календаря — оставляем как есть */
+.toolbar input[type="date"]#listDate::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  cursor: pointer;
+  filter: none;
+  width: 24px;
+  height: 24px;
+  margin-right: 4px;
+}
+
+/* Тёмная тема */
+@media (prefers-color-scheme: dark) {
+  .toolbar input[type="date"]#listDate {
+    border-color: var(--border, #2a2f3a);
+    background-color: var(--surface, #171a21);
+    color: var(--text, #e8eaed);
+  }
+}

@@ -1,4 +1,3 @@
-// assets/js/ui/todoList.js
 import { Api } from "../api.js";
 import {
   pad2,
@@ -22,10 +21,10 @@ export function initTodoList({ fillForm }) {
     setTimeout(() => el.remove(), 220);
   }
 
-  async function load(h = 24) {
+  async function load(hours = 24) {
     todoList.innerHTML = '<div class="item">Laden…</div>';
 
-    const res = await Api.todos(h).catch((err) => ({
+    const res = await Api.todos(hours).catch((err) => ({
       ok: false,
       error: String(err),
     }));
@@ -35,7 +34,12 @@ export function initTodoList({ fillForm }) {
       return;
     }
 
-    const items = res.items || [];
+    // показываем только актуальные задачи (не done/cancelled)
+    const items =
+      (res.items || []).filter(
+        (it) => it.status !== "done" && it.status !== "cancelled"
+      ) || [];
+
     todoList.innerHTML =
       items
         .map((it) => {
@@ -149,12 +153,12 @@ export function initTodoList({ fillForm }) {
     if (btn.classList.contains("todo-done")) {
       await Api.updateStatus(orderId, "done");
       item.querySelector(".badge").className = "badge done";
-      item.querySelector(".badge").textContent = "erledigt";
+      item.querySelector(".badge").textContent = "done";
       fadeOutAndRemove(item);
       return;
     }
 
-    // Отменить (с модальным вводом причины, поле необязательное)
+    // Отменить
     if (btn.classList.contains("todo-cancel")) {
       const comment =
         (await promptReason({
@@ -162,14 +166,19 @@ export function initTodoList({ fillForm }) {
           message: "Grund (optional):",
           placeholder: "z. B. Kunde hat abgesagt …",
           okText: "Stornieren",
-        })) || ""; // пустая строка допустима
+        })) || "";
 
       await Api.updateStatus(orderId, "cancelled", comment);
       item.querySelector(".badge").className = "badge cancelled";
-      item.querySelector(".badge").textContent = "storniert";
+      item.querySelector(".badge").textContent = "cancelled";
       fadeOutAndRemove(item);
       return;
     }
+  });
+
+  // авто-обновление при возврате на вкладку
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) load(24);
   });
 
   return { load };

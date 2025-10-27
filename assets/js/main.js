@@ -1,4 +1,3 @@
-// assets/js/main.js
 import { initForm } from "./ui/form.js";
 import { initOrdersList } from "./ui/ordersList.js";
 import { initTodoList } from "./ui/todoList.js";
@@ -7,26 +6,28 @@ import { initMainTabs } from "./ui/tabs.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   // === 1) Форма
-  // onCreated будет вызван после успешного сохранения нового заказа
-  let orders, todos; // объявим заранее, чтобы onCreated имел доступ по замыканию
+  let orders, todos;
   const { fillForm } = initForm({
     onCreated: () => {
-      // после создания — обновляем списки
       orders?.load?.();
       todos?.load?.(24);
     },
   });
 
   // === 2) Секции (поиск, списки)
-  initSearch({ fillForm }); // поиск реагирует на ввод
-  todos = initTodoList({ fillForm }); // вернёт { load }
-  orders = initOrdersList({ fillForm }); // вернёт { load }
+  const search = initSearch({ fillForm });
+  todos = initTodoList({ fillForm });
+  orders = initOrdersList({ fillForm });
 
   // === 3) Табы внутри <main>
-  // Коллбеки будут вызываться при показе соответствующей вкладки.
   initMainTabs({
-    defaultPanelId: "panel-next", // ← теперь по умолчанию открывается Nächste Fahrten
-    onSearchShown: () => {},
+    defaultPanelId: "panel-next",
+    onSearchShown: () => {
+      document.getElementById("q")?.focus();
+      // при возврате на вкладку поле уже может содержать текст:
+      const v = document.getElementById("q")?.value || "";
+      if (v.trim().length >= 2) search?.search?.(v);
+    },
     onNextShown: () => {
       todos?.load?.(24);
     },
@@ -35,7 +36,7 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  // === 4) Footer: Google Calendar intent для Android
+  // === 4) Footer: Google Calendar intent ...
   const gcal = document.getElementById("footer-gcal");
   if (gcal) {
     const originalUrl = gcal.getAttribute("href") || "";
@@ -50,7 +51,7 @@ window.addEventListener("DOMContentLoaded", () => {
         ";end";
 
       gcal.setAttribute("href", intentUrl);
-      gcal.removeAttribute("target"); // intent лучше открывать в текущем окне
+      gcal.removeAttribute("target");
     }
   }
 });

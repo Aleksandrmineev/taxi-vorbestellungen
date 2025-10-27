@@ -1,93 +1,112 @@
 import { Api } from "../api.js";
-import { formatDateHuman } from "../utils/time.js";
+import { pad2, formatDateFromISO } from "../utils/time.js";
 import { telHref } from "../utils/phone.js";
 
 export function initSearch({ fillForm }) {
-  const q = document.getElementById("q");
-  const searchList = document.getElementById("searchList");
-  let t;
+  const input = document.getElementById("q");
+  const list = document.getElementById("searchList");
+  if (!input || !list) return {};
 
-  function cardHtml(it) {
-    const { display, href } = telHref(it.phone);
-    const phoneHtml = display ? `<a href="${href}">${display}</a>` : "";
-    const dateHuman = formatDateHuman(it.date);
+  const DEBOUNCE_MS = 250;
+  let t = null;
 
-    return `
-      <div class="item"
-           data-id="${it.id}"
-           data-type="${it.type}"
-           data-dur="${it.duration_min}"
-           data-phone="${display || ""}"
-           data-message="${(it.message || "").replace(/"/g, "&quot;")}"
-           data-time="${it.time}">
-        <h4>#${it.id} — ${dateHuman} ${it.time} — ${it.type} — ${phoneHtml}
-          <span class="badge ${it.status}">${it.status}</span>
-        </h4>
-        ${it.message ? `<div class="sub">${it.message}</div>` : ``}
-  
-        <div class="btns">
-          <!-- Kopieren / Wiederholen (muted) -->
-          <button class="icon-btn icon-btn--muted todo-repeat"
-                  title="Kopieren"
-                  aria-label="Kopieren">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <!-- круг и стрелка — современный refresh/copy -->
-              <path
-                d="M20 12a8 8 0 1 1-2.35-5.65"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                points="20 4 20 9 15 9"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>`;
+  function setLoading() {
+    list.innerHTML = '<div class="item">Laden…</div>';
+  }
+  function setEmpty() {
+    list.innerHTML = "";
+  }
+  function setError(msg) {
+    list.innerHTML = `<div class="item">Fehler: ${msg}</div>`;
   }
 
-  q.addEventListener("input", () => {
+  function render(items) {
+    list.innerHTML =
+      items
+        .map((it) => {
+          const st = it.start_iso ? new Date(it.start_iso) : null;
+          const time = st
+            ? `${pad2(st.getHours())}:${pad2(st.getMinutes())}`
+            : "";
+          const dateHuman = st ? formatDateFromISO(it.start_iso) : "";
+          const { display, href } = telHref(it.phone);
+          const phoneHtml = display ? `<a href="${href}">${display}</a>` : "";
+          const status = it.status || "active";
+          const badge = `<span class="badge ${status}">${status}</span>`;
+
+          return `
+            <div class="item"
+                 data-order-id="${it.id || it.order_id || ""}"
+                 data-type="${it.type || ""}"
+                 data-dur="${it.duration_min || ""}"
+                 data-phone="${display || ""}"
+                 data-message="${(it.message || "").replace(/"/g, "&quot;")}"
+                 data-start="${it.start_iso || ""}">
+              <h4>
+                #${it.id || it.order_id || "—"}
+                ${st ? ` — ${dateHuman} ${time}` : ""}
+                ${it.type ? ` — ${it.type}` : ""}
+                ${phoneHtml ? ` — ${phoneHtml}` : ""}
+                ${badge}
+              </h4>
+              ${it.message ? `<div class="sub">${it.message}</div>` : ``}
+
+              <div class="btns">
+                <button class="icon-btn search-repeat" title="Wiederholen" aria-label="Wiederholen">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M20 12a8 8 0 1 1-2.35-5.65" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="20 4 20 9 15 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>`;
+        })
+        .join("") || '<div class="item">Nichts gefunden.</div>';
+  }
+
+  async function doSearch(q) {
+    const query = String(q || "").trim();
+    if (query.length < 2) {
+      setEmpty();
+      return;
+    }
+    setLoading();
+
+    const res = await Api.search(query, 50).catch((err) => ({
+      ok: false,
+      error: String(err),
+    }));
+
+    if (!res.ok) {
+      setError(res.error || "unbekannter Fehler");
+      return;
+    }
+
+    render(res.items || []);
+  }
+
+  // ввод с дебаунсом
+  input.addEventListener("input", () => {
     clearTimeout(t);
-    t = setTimeout(async () => {
-      const term = (q.value || "").trim();
-      if (term.length < 2) {
-        searchList.innerHTML = "";
-        return;
-      }
-      const res = await Api.search(term, 30).catch((err) => ({
-        ok: false,
-        error: String(err),
-      }));
-      if (!res.ok) {
-        searchList.innerHTML = `<div class="item">Fehler: ${res.error}</div>`;
-        return;
-      }
-      const items = res.items || [];
-      searchList.innerHTML =
-        items.map(cardHtml).join("") ||
-        '<div class="item">Nichts gefunden.</div>';
-    }, 250);
+    t = setTimeout(() => doSearch(input.value), DEBOUNCE_MS);
   });
 
-  searchList.addEventListener("click", (e) => {
-    const btn = e.target.closest(".copy");
+  // клик «повторить» заполняет форму
+  list.addEventListener("click", (e) => {
+    const btn = e.target.closest(".search-repeat");
     if (!btn) return;
     const item = btn.closest(".item");
+    if (!item) return;
+
     fillForm({
-      date: null, // aktuelles Formulardatum beibehalten
-      time: (item.dataset.time || "").padStart(5, "0"),
-      type: item.dataset.type,
-      duration_min: item.dataset.dur,
+      date: (item.dataset.start || "").slice(0, 10), // YYYY-MM-DD
+      time: (item.dataset.start || "").slice(11, 16), // HH:MM
+      type: item.dataset.type || "Orts",
+      duration_min: item.dataset.dur || "15",
       phone: item.dataset.phone || "",
       message: item.dataset.message || "",
     });
   });
+
+  return { search: doSearch };
 }

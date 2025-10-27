@@ -363,7 +363,7 @@
         </nav>
 
         <!-- ВАЖНО: активная панель — panel-next; остальные скрыты -->
-        <section
+        <!-- <section
           id="panel-next"
           role="tabpanel"
           aria-labelledby="tab-next"
@@ -379,7 +379,7 @@
           role="tabpanel"
           aria-labelledby="tab-date"
           hidden
-        ></section>
+        ></section> -->
 
         <!-- TAB 1: Suche -->
         <section id="panel-search" role="tabpanel" aria-labelledby="tab-search">
@@ -467,7 +467,7 @@
     <!-- ===== FOOTER ===== -->
     <footer class="site-footer">
       <div class="footer-row">
-        <!-- в <footer class="site-footer"> ... <div class="footer-row"> -->
+        <!-- ===== Календарь ===== -->
         <a
           id="footer-gcal"
           class="footer-link"
@@ -476,7 +476,6 @@
           rel="noopener"
           aria-label="Fahrten-Kalender abonnieren"
         >
-          <!-- современная иконка календаря -->
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect
               x="3"
@@ -495,12 +494,12 @@
               stroke-width="1.6"
               stroke-linecap="round"
             />
-            <!-- дата-точка -->
             <circle cx="12" cy="15" r="2" fill="currentColor" />
           </svg>
           Kalender
         </a>
 
+        <!-- ===== Hilfe ===== -->
         <a href="hilfe.html" class="footer-link">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -511,6 +510,24 @@
           Hilfe
         </a>
 
+        <!-- ===== Chat ===== -->
+        <a href="chat.html" class="footer-link" aria-label="Chat öffnen">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M21 11.5a8.38 8.38 0 0 1-1.2 4.3 8.5 8.5 0 0 1-7.3 4.2 8.38 8.38 0 0 1-3.7-.9L3 21l1.2-3.5a8.38 8.38 0 0 1-.9-3.7 8.5 8.5 0 0 1 4.2-7.3 8.38 8.38 0 0 1 4.3-1.2h.2a8.5 8.5 0 0 1 8 6.2 8.15 8.15 0 0 1 .2 1.8z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <circle cx="9.5" cy="10.5" r="0.9" fill="currentColor" />
+            <circle cx="14" cy="10.5" r="0.9" fill="currentColor" />
+          </svg>
+          Chat
+        </a>
+
+        <!-- ===== Theme Toggle ===== -->
         <button
           id="theme-toggle-footer"
           class="footer-link footer-theme"
@@ -519,11 +536,13 @@
           <svg id="theme-icon-footer" viewBox="0 0 24 24"></svg>
         </button>
 
+        <!-- ===== Telegram ===== -->
         <a
           href="https://t.me/aamineev"
           target="_blank"
           rel="noopener"
           class="footer-link"
+          aria-label="Kontakt über Telegram"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path
