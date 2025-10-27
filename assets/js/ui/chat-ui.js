@@ -441,6 +441,16 @@ setInterval(async () => {
   didInitialPoll = true;
 }, 3000);
 
+document.getElementById("btn-push")?.addEventListener("click", async () => {
+  const r = await registerAndSubscribePush({
+    vapidPublicKey: VAPID_PUBLIC_KEY,
+    userName: state.displayName || "",
+  });
+  alert(
+    r.ok ? "Уведомления включены" : "Не удалось: " + (r.error || "unknown")
+  );
+});
+
 /* ===== Клавиатура на мобилке: держать форму в зоне видимости ===== */
 function onViewportChange() {
   // если фокус в textarea — тянем низ и форму в видимую область

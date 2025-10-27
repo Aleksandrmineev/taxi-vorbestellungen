@@ -1,3 +1,10 @@
-// URL твоего Web App (замени при новом деплое)
-export const API =
-  "https://script.google.com/macros/s/AKfycbz2-FEErQC2bTjWcD10wGM3rQ3XBpes9N0gY7laTl1QAWGspX1BA1edUODlewjkel1HCQ/exec";
+// config.js
+export const CONFIG = {
+  GAS_URL: "https://taxi-vorbestellungen.vercel.app/api/gas",
+  PUSH_SENDER_URL: "https://taxi-vorbestellungen.vercel.app/api/send",
+  PUSH_SENDER_SECRET: "murtal123pushkey",
+};
+export const API = CONFIG.GAS_URL;
+window.GAS_URL = CONFIG.GAS_URL;
+window.PUSH_SENDER_URL = CONFIG.PUSH_SENDER_URL;
+window.PUSH_SENDER_SECRET = CONFIG.PUSH_SENDER_SECRET;
