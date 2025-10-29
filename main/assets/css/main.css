@@ -1,0 +1,396 @@
+/* header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px clamp(12px, 3vw, 28px);
+  border-bottom: 1px solid var(--ring);
+  backdrop-filter: saturate(140%) blur(6px);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+.brand__logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  background: linear-gradient(145deg, #1b2028, #0e1217);
+  box-shadow: inset 0 0 0 2px var(--ring);
+  position: relative;
+  overflow: hidden;
+}
+.brand__logo img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.brand__title {
+  font-family: var(--font-brand);
+  line-height: 1.05;
+  font-weight: 600;
+  font-size: clamp(22px, 2.6vw, 34px);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+
+  /* Золотой градиент */
+  background: linear-gradient(
+    120deg,
+    #b8902d 0%,
+    #d9b654 25%,
+    #b8902d 50%,
+    #f1d27b 75%,
+    #b8902d 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-fill-color: transparent;
+
+  animation: goldMove 8s linear infinite; /* 👈 плавное переливание */
+}
+
+/* 🔄 Анимация движения золота */
+@keyframes goldMove {
+  0% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+  100% {
+    background-position: 0% center;
+  }
+}
+
+/* hero */
+.hero {
+  display: grid;
+  gap: 14px;
+  padding: clamp(18px, 5vw, 34px);
+  max-width: 1100px;
+  width: 100%;
+  margin-inline: auto;
+}
+.hero h1 {
+  margin: 0;
+  /* было: clamp(28px, 4vw, 44px) */
+  font-size: clamp(34px, 4.6vw, 52px);
+  letter-spacing: 0.01em;
+}
+
+.hero__sub {
+  color: var(--muted);
+  font-size: var(--fs-hero-sub);
+}
+
+/* grid */
+.grid {
+  display: grid;
+  gap: var(--tile-gap);
+  grid-template-columns: repeat(2, 1fr); /* моб./планшет по умолчанию */
+  margin-top: 10px;
+}
+
+/* tiles */
+.tile {
+  position: relative;
+  isolation: isolate;
+  display: grid; /* центр иконки сверху, текст внизу */
+  grid-template-rows: auto 1fr auto; /* icon / spacer / text */
+  align-content: stretch;
+  min-height: 180px;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--card) 92%, #000 8%),
+    color-mix(in oklab, var(--card) 86%, #000 14%)
+  );
+  border: 1px solid var(--ring);
+  text-decoration: none;
+  color: var(--text);
+  box-shadow: var(--shadow);
+  transition: transform var(--transition), box-shadow var(--transition),
+    border-color var(--transition), background var(--transition);
+  overflow: hidden;
+}
+/* мягкая аура снизу */
+.tile:after {
+  content: "";
+  position: absolute;
+  inset: auto -20% -40% -20%;
+  height: 80%;
+  background: radial-gradient(
+    50% 60% at 50% 100%,
+    color-mix(in oklab, var(--accent) 22%, transparent) 0%,
+    transparent 70%
+  );
+  transform: translateY(15px);
+  opacity: 0.35;
+  pointer-events: none;
+  filter: blur(10px);
+  transition: transform var(--transition), opacity var(--transition);
+  z-index: -1;
+}
+/* цикличное «переливание» раз в ~3.6с */
+.tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 18%,
+    transparent 36%
+  );
+  transform: translateX(-130%);
+  animation: tile-sheen 3.6s ease-in-out infinite;
+  opacity: 0;
+  pointer-events: none;
+}
+@keyframes tile-sheen {
+  0% {
+    transform: translateX(-130%);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.25;
+  }
+  24% {
+    transform: translateX(130%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(130%);
+    opacity: 0;
+  }
+}
+
+.tile:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in oklab, var(--accent) 50%, var(--ring));
+  box-shadow: 0 22px 45px rgba(0, 0, 0, 0.45);
+}
+.tile:hover:after {
+  transform: translateY(0);
+  opacity: 0.55;
+}
+
+/* icon — крупнее и по центру */
+.tile__icon {
+  width: 76px;
+  height: 76px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02)
+  );
+  border: 1px solid var(--ring);
+  margin: 6px auto 0;
+  color: var(--accent);
+}
+.tile__icon svg {
+  width: 38px;
+  height: 38px;
+  fill: var(--accent);
+  filter: drop-shadow(0 1px 1.2px rgba(0, 0, 0, 0.25));
+}
+
+/* текстовый блок закрепляем к низу */
+.tile > div {
+  align-self: end;
+}
+
+.tile__title {
+  font-size: clamp(18px, 2.1vw, 22px);
+  font-weight: 700;
+  margin: 6px 0;
+
+  /* перенос по слогам и мягкий перенос длинных слов */
+  hyphens: auto;
+  overflow-wrap: break-word;
+  word-break: break-word;
+
+  /* для Safari/iOS */
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+
+  /* чуть улучшим ритм */
+  line-height: 1.25;
+}
+
+.tile__desc {
+  /* было: clamp(13px, 1.6vw, 15px) */
+  font-size: clamp(14px, 1.7vw, 17px);
+  color: var(--muted);
+  margin: 0;
+  /* перенос по слогам и мягкий перенос длинных слов */
+  hyphens: auto;
+  overflow-wrap: break-word;
+  word-break: break-word;
+
+  /* для Safari/iOS */
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+}
+
+/* footer */
+footer {
+  padding: 16px clamp(12px, 3vw, 28px);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--ring);
+}
+footer a {
+  color: var(--text);
+  text-decoration: none;
+}
+footer .muted {
+  color: var(--muted);
+}
+
+/* блок ссылок внизу */
+.footer__dev {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 20px clamp(12px, 3vw, 28px);
+  border-top: 1px solid var(--ring);
+}
+.footer__link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.footer__link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+/* золотое подчеркивание */
+.footer__link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1.5px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s ease;
+}
+
+/* hover-эффект */
+.footer__link:hover {
+  color: var(--accent);
+}
+.footer__link:hover::after {
+  transform: scaleX(1);
+}
+
+/* чтобы SVG тоже слегка оживал */
+.footer__link svg {
+  fill: var(--accent);
+  transition: transform var(--transition);
+}
+.footer__link:hover svg {
+  transform: translateY(-2px);
+}
+
+/* кнопка темы внизу */
+.footer__theme {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--ring);
+  background: var(--card);
+  cursor: pointer;
+  transition: transform var(--transition), border-color var(--transition);
+}
+.footer__theme svg {
+  fill: var(--accent);
+}
+.footer__theme:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--ring));
+}
+
+/* доступность: уважение reduce-motion */
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .pill,
+  .iconbtn {
+    transition: none;
+  }
+  .tile:hover {
+    transform: none;
+  }
+  .tile::before {
+    animation: none;
+  }
+}
+
+/* сетка плиток — безопасно для узких экранов */
+.grid {
+  display: grid;
+  gap: var(--tile-gap);
+  grid-template-columns: repeat(
+    2,
+    minmax(0, 1fr)
+  ); /* minmax(0,1fr) убирает переполнение */
+}
+
+/* плитка не «растягивает» контейнер при блюрах/градиентах */
+.tile {
+  min-width: 0;
+  contain: paint; /* изоляция эффектов ::after/blur, не выталкивает страницу по X */
+  overflow: hidden; /* у тебя уже было — оставляем */
+}
+
+/* иконка и svg — никогда не шире своей плитки */
+.tile__icon {
+  width: clamp(56px, 7vw, 72px);
+  height: clamp(56px, 7vw, 72px);
+}
+.tile__icon svg {
+  width: 70%;
+  height: 70%;
+  max-width: 100%;
+  display: block;
+}
+
+/* подстраховка от любых «виновников» */
+html,
+body {
+  overflow-x: hidden;
+}

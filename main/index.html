@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TaxiApp – MurtalTaxi</title>
+    <meta name="color-scheme" content="dark light" />
+
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./assets/favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./assets/favicon/favicon-16x16.png"
+    />
+    <link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Marcellus+SC&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/theme.css" />
+    <link rel="stylesheet" href="assets/css/global.css" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/adaptive.css" />
+  </head>
+  <body>
+    <!-- ========== HEADER ========== -->
+    <header class="header">
+      <a class="brand" href="./index.html" aria-label="MurtalTaxi Start">
+        <div class="brand__logo" aria-hidden="true">
+          <img src="./assets/img/logo1.png" alt="Logo Murtal Taxi" />
+        </div>
+        <span class="brand__title">Murtal&nbsp;TAXI</span>
+      </a>
+
+      <div class="spacer"></div>
+
+      <a
+        class="pill"
+        href="tel:+436601018101"
+        aria-label="Jetzt anrufen: +43 660 1018101"
+      >
+        <svg viewBox="0 0 24 24" role="img">
+          <path
+            d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.56.57 1 1 0 011 1v3.61a1 1 0 01-1 1A17.02 17.02 0 013 5a1 1 0 011-1h3.61a1 1 0 011 1c0 1.22.2 2.41.57 3.56a1 1 0 01-.24 1.01l-2.32 2.22z"
+          />
+        </svg>
+        <strong>+43&nbsp;660&nbsp;1018101</strong>
+      </a>
+
+      <!-- верхний переключатель темы -->
+      <button
+        id="theme-toggle"
+        class="pill"
+        type="button"
+        aria-label="Thema umschalten"
+      >
+        <svg id="theme-icon" viewBox="0 0 24 24" role="img"></svg>
+        <span class="sr-only">Thema wechseln</span>
+      </button>
+    </header>
+
+    <!-- ========== MAIN ========== -->
+    <main class="hero">
+      <h1>TaxiApp</h1>
+      <p class="hero__sub">
+        Zentrale Startseite: Vorbestellung, Bestellungen, Kalender, Chat,
+        QR-Zahlung.
+      </p>
+
+      <section class="grid" aria-label="Apps">
+        <!-- PreisRechner -->
+        <a
+          class="tile"
+          href="https://aleksandrmineev.github.io/taxi-tarifrechner/index.html"
+        >
+          <span class="tile__icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true">
+              <!-- duotone body -->
+              <rect
+                x="3"
+                y="2.75"
+                width="18"
+                height="18.5"
+                rx="3.25"
+                fill="currentColor"
+                opacity=".12"
+              />
+              <!-- outline -->
+              <rect
+                x="3"
+                y="2.75"
+                width="18"
+                height="18.5"
+                rx="3.25"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <!-- display -->
+              <rect
+                x="6.25"
+                y="5.75"
+                width="11.5"
+                height="2.6"
+                rx="1.3"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <!-- keypad -->
+              <circle cx="7.75" cy="11.25" r="1" fill="currentColor" />
+              <circle cx="11.25" cy="11.25" r="1" fill="currentColor" />
+              <circle cx="14.75" cy="11.25" r="1" fill="currentColor" />
+              <circle cx="7.75" cy="14.25" r="1" fill="currentColor" />
+              <circle cx="11.25" cy="14.25" r="1" fill="currentColor" />
+              <rect
+                x="14"
+                y="13.5"
+                width="3.5"
+                height="3.5"
+                rx=".9"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+              />
+            </svg>
+          </span>
+          <div>
+            <div class="tile__title">PreisRechner</div>
+            <p class="tile__desc">
+              Tag/Nacht-Tarife&nbsp;2025, live-Berechnung.
+            </p>
+          </div>
+        </a>
+        <!-- MiniCRM -->
+        <a class="tile" href="https://aleksandrmineev.github.io/taxi-suche/">
+          <span class="tile__icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true">
+              <!-- sheet duotone -->
+              <path
+                d="M6 3.5h7.8L18.5 8v9.5A3 3 0 0 1 15.5 20.5H8A3 3 0 0 1 5 17.5V6.5A3 3 0 0 1 8 3.5z"
+                fill="currentColor"
+                opacity=".12"
+              />
+              <!-- sheet outline -->
+              <path
+                d="M6 3.5h7.8L18.5 8v9.5A3 3 0 0 1 15.5 20.5H8A3 3 0 0 1 5 17.5V6.5A3 3 0 0 1 8 3.5z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M13.8 3.5V8H18.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linejoin="round"
+              />
+              <!-- lens -->
+              <circle
+                cx="11"
+                cy="12"
+                r="3.25"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+              />
+              <line
+                x1="13.3"
+                y1="14.3"
+                x2="16.2"
+                y2="17.2"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+
+          <div>
+            <div class="tile__title">MiniCRM</div>
+            <p class="tile__desc">
+              Schnellsuche nach Bestellungen &amp; Kontakten.
+            </p>
+          </div>
+        </a>
+        <!-- SchulTransport -->
+        <a
+          class="tile"
+          href="https://aleksandrmineev.github.io/taxi-lehrlinge/"
+        >
+          <span class="tile__icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true">
+              <!-- duotone windshield -->
+              <rect
+                x="6"
+                y="5"
+                width="12"
+                height="6.2"
+                rx="1.2"
+                fill="currentColor"
+                opacity=".12"
+              />
+              <!-- bus outline -->
+              <rect
+                x="4.5"
+                y="4"
+                width="15"
+                height="12"
+                rx="3"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linejoin="round"
+              />
+              <!-- windows -->
+              <rect
+                x="6"
+                y="5"
+                width="12"
+                height="6.2"
+                rx="1.2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linejoin="round"
+              />
+              <!-- wheels -->
+              <circle cx="8.2" cy="16.8" r="1.3" fill="currentColor" />
+              <circle cx="15.8" cy="16.8" r="1.3" fill="currentColor" />
+              <!-- bumper/doors -->
+              <line
+                x1="6"
+                y1="13"
+                x2="18"
+                y2="13"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+              />
+              <line
+                x1="9.2"
+                y1="8.1"
+                x2="9.2"
+                y2="10.7"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+              />
+              <line
+                x1="14.8"
+                y1="8.1"
+                x2="14.8"
+                y2="10.7"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+
+          <div>
+            <div class="tile__title">SchulTransport</div>
+            <p class="tile__desc">
+              Touren &amp; Berichte für Schüler-/Lehrlingsfahrten.
+            </p>
+          </div>
+        </a>
+        <!-- QR-Zahlung -->
+        <a class="tile" href="qr-payment.html">
+          <span class="tile__icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true">
+              <!-- QR + €-Symbol -->
+              <rect
+                x="3"
+                y="3"
+                width="6"
+                height="6"
+                rx="1"
+                stroke="currentColor"
+                stroke-width="1.6"
+              />
+              <rect
+                x="3"
+                y="15"
+                width="6"
+                height="6"
+                rx="1"
+                stroke="currentColor"
+                stroke-width="1.6"
+              />
+              <rect
+                x="15"
+                y="3"
+                width="6"
+                height="6"
+                rx="1"
+                stroke="currentColor"
+                stroke-width="1.6"
+              />
+              <path
+                d="M15 15h2v2h-2zM18 18h3v3h-3zM15 21h2v-1h-2z"
+                fill="currentColor"
+              />
+              <!-- Euro-Symbol -->
+              <path
+                d="M9.5 10.5h1.8a3.8 3.8 0 0 1 3.7 3.8v.1a3.8 3.8 0 0 1-3.7 3.8H9.5m0-7.7h-1m1 7.7h-1"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+
+          <div>
+            <div class="tile__title">QR-Zahlung</div>
+            <p class="tile__desc">
+              Schnell bezahlen per SEPA-QR&nbsp;Code.<br />
+              Ohne Terminal.
+            </p>
+          </div>
+        </a>
+
+        <!-- Chat -->
+        <a class="tile" href="/chat.html" aria-label="Chat öffnen">
+          <span class="tile__icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4.5 4.5h15a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.8 3.2a.8.8 0 0 1-1.2-.7V7A2.5 2.5 0 0 1 4.5 4.5Z"
+                fill="currentColor"
+                opacity=".12"
+              />
+              <path
+                d="M4.5 4.5h15a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.8 3.2a.8.8 0 0 1-1.2-.7V6A1.5 1.5 0 0 1 4.5 4.5Z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linejoin="round"
+              />
+              <circle cx="8.5" cy="10.5" r="1" fill="currentColor" />
+              <circle cx="12" cy="10.5" r="1" fill="currentColor" />
+              <circle cx="15.5" cy="10.5" r="1" fill="currentColor" />
+            </svg>
+          </span>
+          <div>
+            <div class="tile__title">Chat</div>
+            <p class="tile__desc">Kommunikation & Bestellungen im Chat.</p>
+          </div>
+        </a>
+        <!-- Bestellungen -->
+        <a class="tile" href="../index.html" aria-label="Bestellungen öffnen">
+          <span class="tile__icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true">
+              <rect
+                x="4"
+                y="3"
+                width="16"
+                height="18"
+                rx="2.2"
+                fill="currentColor"
+                opacity=".12"
+              />
+              <rect
+                x="4"
+                y="3"
+                width="16"
+                height="18"
+                rx="2.2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+              />
+              <path
+                d="M8 7h8M8 11h8M8 15h5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+              />
+              <circle cx="7" cy="7" r="1" fill="currentColor" />
+              <circle cx="7" cy="11" r="1" fill="currentColor" />
+              <circle cx="7" cy="15" r="1" fill="currentColor" />
+            </svg>
+          </span>
+          <div>
+            <div class="tile__title">Bestellungen</div>
+            <p class="tile__desc">Liste & Status der Aufträge.</p>
+          </div>
+        </a>
+        <!-- Kalender -->
+        <a
+          class="tile"
+          href="https://calendar.google.com/calendar/u/0?cid=ZDk1NmMxZWJiZjMyZjg2ODY5NmMyNGFhYTljNDJmOGZiNjQwNGIzYjZlMTU1NzhmOW"
+          target="_blank"
+          rel="noopener"
+          aria-label="Kalender öffnen"
+        >
+          <span class="tile__icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true">
+              <rect
+                x="3.5"
+                y="4"
+                width="17"
+                height="16.5"
+                rx="2.5"
+                fill="currentColor"
+                opacity=".12"
+              />
+              <rect
+                x="3.5"
+                y="4"
+                width="17"
+                height="16.5"
+                rx="2.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+              />
+              <path
+                d="M3.5 8.5h17"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+              />
+              <rect
+                x="7"
+                y="11"
+                width="4.2"
+                height="3.2"
+                rx="0.6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+              />
+              <rect
+                x="12.8"
+                y="11"
+                width="4.2"
+                height="3.2"
+                rx="0.6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+              />
+              <rect
+                x="7"
+                y="15.2"
+                width="4.2"
+                height="3.2"
+                rx="0.6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+              />
+              <rect
+                x="12.8"
+                y="15.2"
+                width="4.2"
+                height="3.2"
+                rx="0.6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+              />
+              <line
+                x1="8.5"
+                y1="2.8"
+                x2="8.5"
+                y2="5.8"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+              />
+              <line
+                x1="15.5"
+                y1="2.8"
+                x2="15.5"
+                y2="5.8"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+          <div>
+            <div class="tile__title">Kalender</div>
+            <p class="tile__desc">Geplante Fahrten & Wiederholungen.</p>
+          </div>
+        </a>
+      </section>
+    </main>
+
+    <!-- ========== FOOTER ========== -->
+    <footer>
+      <div class="footer__dev">
+        <!-- Entwicklung -->
+        <a
+          href="https://t.me/aamineev"
+          aria-label="Schreiben in Telegram @aamineev"
+          class="footer__link"
+        >
+          <svg
+            class="tg-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M9.7 14.7l-.3 4.6c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.7.4 1.2.2 1.4-.6l2.6-12.2c.2-.9-.3-1.3-1-1.1L4 10.3c-.8.2-.8.7-.1.9l4.3 1.3 10-6.3c.5-.3.9-.1.5.2l-9 8.3z"
+              fill="currentColor"
+            />
+          </svg>
+          Entwicklung
+        </a>
+
+        <!-- Hilfe -->
+        <a
+          href="hilfe.html"
+          class="footer__link footer__help"
+          aria-label="Öffnen der Hilfeseite"
+        >
+          <svg
+            class="help-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm.25 17a1.25 1.25 0 1 1 1.25-1.25A1.25 1.25 0 0 1 12.25 19ZM13.5 13a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75v-.5a2.5 2.5 0 0 1 2.5-2.5 1.5 1.5 0 1 0-1.5-1.5.75.75 0 0 1-1.5 0 3 3 0 1 1 3.75 2.9Z"
+              fill="currentColor"
+            />
+          </svg>
+          Hilfe
+        </a>
+
+        <!-- Переключатель темы (нижний) -->
+        <button
+          id="theme-toggle-footer"
+          class="footer__theme"
+          aria-label="Thema umschalten"
+        >
+          <svg
+            id="theme-icon-footer"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+          ></svg>
+        </button>
+      </div>
+    </footer>
+
+    <!-- JS -->
+    <script defer src="./assets/js/theme.js"></script>
+    <script defer src="./assets/js/main.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/main/sw.js", { scope: "/main/" });
+      }
+    </script>
+  </body>
+</html>

@@ -1,9 +1,28 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" dir="ltr">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>MurtalTaxi – Chat</title>
+
+    <!-- PWA: цвет темы для адресной панели / splash (Android) -->
+    <meta name="theme-color" content="#0d5ef7" />
+    <!-- PWA: общая подсказка для UA -->
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- Meta -->
+    <meta
+      name="description"
+      content="MurtalTaxi — Vorbestellung, Chat, MiniCRM, QR-Zahlung."
+    />
+
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Taxi" />
+
+    <!-- Manifest: лучше абсолютный путь, чтобы работало со всех страниц -->
+    <link rel="manifest" href="/assets/favicon/site.webmanifest" />
 
     <!-- Favicons -->
     <link
@@ -23,7 +42,6 @@
       sizes="16x16"
       href="./assets/favicon/favicon-16x16.png"
     />
-    <link rel="manifest" href="./assets/favicon/site.webmanifest" />
 
     <!-- Font -->
     <link
@@ -31,7 +49,7 @@
       rel="stylesheet"
     />
 
-    <meta name="color-scheme" content="light dark" />
+    <!-- CSS -->
     <link rel="stylesheet" href="assets/css/global.css" />
     <link rel="stylesheet" href="assets/css/header.css" />
     <link rel="stylesheet" href="assets/css/main.css" />
@@ -40,9 +58,14 @@
     <link rel="stylesheet" href="assets/css/components.css" />
     <link rel="stylesheet" href="assets/css/chat.css" />
   </head>
+
   <body>
     <header class="site-header card" role="banner">
-      <a class="brand" href="./" aria-label="MurtalTaxi Startseite">
+      <a
+        class="brand"
+        href="./main/index.html"
+        aria-label="MurtalTaxi Startseite"
+      >
         <img
           class="brand__logo"
           src="./assets/img/logo1.png"
@@ -70,11 +93,25 @@
 
     <main class="chat-wrap">
       <header class="chat-header">
-        <strong class="chat-title">MurtalTaxi Chat</strong>
+        <!-- <strong class="chat-title">MurtalTaxi</strong> -->
+
+        <!-- <nav class="chat-tabs" aria-label="Bereiche">
+          <a class="pill pill--active" href="./chat.html" aria-current="page"
+            >Chat</a
+          >
+          <a class="pill" href="./index.html">Bestellungen</a>
+        </nav> -->
+
         <div class="chat-filter">
           <button id="btn-name" class="pill" type="button">Name</button>
-          <button id="btn-all" class="pill" aria-pressed="true">Alle</button>
-          <button id="btn-only" class="pill">Bestellungen</button>
+          <button
+            id="btn-push"
+            class="pill"
+            type="button"
+            title="Benachrichtigungen"
+          >
+            🔔
+          </button>
         </div>
       </header>
 
@@ -135,8 +172,116 @@
           </svg>
           <span class="sr-only">Senden</span>
         </button>
-        <button id="btn-push" class="pill">🔔 Уведомления</button>
       </form>
+
+      <footer class="site-footer">
+        <div class="footer-row">
+          <!-- Main -->
+          <a
+            href="./main/index.html"
+            class="footer-link"
+            aria-label="Startseite"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M3 11l9-7 9 7"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span class="footer-label">Main</span>
+          </a>
+
+          <!-- Bestellungen (на chat.html эта кнопка ведёт в заказы) -->
+          <a
+            href="./index.html"
+            class="footer-link"
+            aria-label="Bestellungen öffnen"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M9 3h6a2 2 0 0 1 2 2v1h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1V5a2 2 0 0 1 2-2Z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M8 11h8M8 15h8"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span class="footer-label">Bestellungen</span>
+          </a>
+
+          <!-- Kalender -->
+          <a
+            id="footer-gcal"
+            class="footer-link"
+            href="https://calendar.google.com/calendar/u/0?cid=ZDk1NmMxZWJiZjMyZjg2ODY5NmMyNGFhYTljNDJmOGZiNjQwNGIzYjZlMTU1NzhmOWQzZDI0MzE4NDdmMjBjM0Bncm91cC5jYWxlbmRhci5nb29nbGUuY29t"
+            target="_blank"
+            rel="noopener"
+            aria-label="Fahrten-Kalender abonnieren"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect
+                x="3"
+                y="5"
+                width="18"
+                height="16"
+                rx="2"
+                ry="2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+              />
+              <path
+                d="M16 3v4M8 3v4M3 9h18"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+              />
+              <circle cx="12" cy="15" r="2" fill="currentColor" />
+            </svg>
+            <span class="footer-label">Kalender</span>
+          </a>
+
+          <!-- Hilfe -->
+          <a href="hilfe.html" class="footer-link">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm.25 17a1.25 1.25 0 1 1 1.25-1.25A1.25 1.25 0 0 1 12.25 19ZM13.5 13a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75v-.5a2.5 2.5 0 0 1 2.5-2.5 1.5 1.5 0 1 0-1.5-1.5.75.75 0 0 1-1.5 0 3 3 0 1 1 3.75 2.9Z"
+                fill="currentColor"
+              />
+            </svg>
+            <span class="footer-label">Hilfe</span>
+          </a>
+        </div>
+      </footer>
     </main>
     <script type="module" src="./assets/js/theme.js"></script>
     <script type="module" src="./assets/js/ui/chat-ui.js"></script>

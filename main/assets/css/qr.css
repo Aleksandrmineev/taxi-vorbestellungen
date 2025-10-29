@@ -1,0 +1,461 @@
+/* Стилевой слой для QR-страницы. Использует переменные проекта. */
+
+.pay {
+  max-width: 980px;
+  width: 100%;
+  margin-inline: auto;
+  padding: clamp(18px, 5vw, 34px);
+  display: grid;
+  gap: 18px;
+}
+.pay h1 {
+  margin: 0;
+  font-size: clamp(28px, 4.2vw, 46px);
+  letter-spacing: 0.01em;
+}
+.pay .lead {
+  color: var(--muted);
+  font-size: clamp(15px, 1.7vw, 19px);
+  margin: 0 0 8px;
+}
+
+.card {
+  border: 1px solid var(--ring);
+  border-radius: var(--radius);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--card) 94%, #000 6%),
+    color-mix(in oklab, var(--card) 86%, #000 14%)
+  );
+  box-shadow: var(--shadow);
+  padding: clamp(14px, 3.2vw, 22px);
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(14px, 2.6vw, 22px);
+}
+@media (max-width: 899.98px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+.field label {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.input,
+.selectlike {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--ring);
+  background: var(--card);
+  color: var(--text);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  font-size: var(--fs-input); /* 👈 */
+  height: var(--ctr-h); /* 👈 */
+  line-height: 1.1; /* чтобы цифры не «резались» */
+}
+
+/* сумма и чаевые — ещё крупнее */
+#fare,
+#tip {
+  font-size: var(--fs-input-lg);
+  font-weight: 600;
+}
+
+.input:focus {
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--ring));
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tip-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tipbtn {
+  border: 1px solid var(--ring);
+  background: var(--card);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: transform var(--transition), border-color var(--transition);
+}
+.tipbtn:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--ring));
+}
+
+.qrbox {
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--ring);
+  border-radius: 16px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.01)
+  );
+  padding: 18px;
+}
+.qrbox .qrcanvas {
+  background: #fff;
+  padding: 10px;
+  border-radius: 12px;
+} /* белое поле для распознавания */
+.qrmeta {
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.total {
+  font-size: var(--fs-total); /* 👈 */
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.muted {
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.actions .copybtn,
+.actions .wa-btn {
+  white-space: nowrap;
+}
+
+.copybtn,
+.wa-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--ring);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform var(--transition), border-color var(--transition);
+}
+
+/* если экран совсем узкий — допускаем перенос */
+@media (max-width: 420px) {
+  .actions {
+    flex-wrap: wrap;
+  }
+}
+
+.field,
+.tip-buttons {
+  margin-bottom: 10px;
+}
+.total + .muted {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.wa-btn svg,
+.copybtn svg {
+  width: 18px;
+  height: 18px;
+  fill: var(--accent);
+}
+.copybtn:hover,
+.wa-btn:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--ring));
+}
+.wa-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.small {
+  font-size: 13px;
+}
+.sep {
+  height: 1px;
+  background: var(--ring);
+  margin: 8px 0;
+}
+
+/* мини-тост */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--ring);
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  z-index: 1000;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+/* --- отступ между полями и блоком итогов --- */
+.field,
+.tip-buttons,
+.wa-btn,
+.copybtn {
+  margin-bottom: 10px; /* было мало воздуха */
+}
+
+.row + .total,
+.total {
+  margin-top: 10px; /* от поля суммы до "Gesamt" */
+}
+
+.total {
+  font-size: clamp(18px, 2.1vw, 22px);
+  font-weight: 700;
+  margin-bottom: 8px; /* вниз перед Verwendungszweck */
+}
+
+/* --- отступ между Verwendungszweck и кнопками копирования --- */
+.total + .muted {
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* Линия отчёта: кнопки по краям, текст ниже */
+.report-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Правая кнопка уезжает вправо */
+.report-line #clearLog {
+  margin-left: auto;
+}
+
+/* Кнопки фиксированной ширины, не растягиваются */
+.report-line > .copybtn {
+  flex: 0 0 auto;
+}
+
+/* Подпись во всю ширину строкой ниже */
+.report-line .small.muted {
+  flex-basis: 100%;
+  margin-top: 6px;
+  text-align: right; /* или left, если так удобнее */
+}
+
+/* ----- Узкие поля суммы и чаевых + одна строка ----- */
+.amount-line {
+  flex-wrap: nowrap; /* не переносим на новый ряд */
+  align-items: flex-end; /* низ меток и инпутов ровно */
+  gap: 12px;
+  justify-content: space-between;
+}
+
+/* контейнеры не растягиваем */
+.amount-line .field {
+  flex: 0 0 auto !important;
+  min-width: unset !important; /* перебиваем inline min-width */
+}
+
+/* сами инпуты по ширине под 3+2 знака (e.g. 999,99) */
+#fare,
+#tip {
+  width: 11ch; /* ~11 символов с учетом запятой и пробела */
+  max-width: 11ch;
+  text-align: right; /* деньги удобнее читать справа */
+}
+
+/* на очень узких экранах немного компактнее */
+@media (max-width: 420px) {
+  #fare,
+  #tip {
+    width: 10ch;
+    max-width: 10ch;
+  }
+}
+
+/* чтобы большие системные шрифты не ломали ряд */
+@media (max-width: 360px) {
+  .amount-line {
+    gap: 8px;
+  }
+}
+
+/* ===== Поля Fahrer + Betrag + Trinkgeld в одну линию ===== */
+.pay-line {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: nowrap;
+  margin-bottom: 12px;
+}
+
+/* поля не растягиваются */
+.pay-line .field {
+  flex: 0 0 auto;
+}
+
+/* одинаковая высота и стиль */
+.pay-line .input {
+  font-size: var(--fs-input-lg);
+  height: var(--ctr-h);
+  text-align: right;
+}
+
+/* ширины под формат: Fahrer (2), Betrag (5), Trinkgeld (4) */
+#driverNo {
+  width: 6ch;
+  text-align: center;
+}
+#fare {
+  width: 11ch;
+}
+#tip {
+  width: 8ch;
+}
+
+/* немного компактнее на очень узких экранах */
+@media (max-width: 480px) {
+  .pay-line {
+    gap: 10px;
+  }
+  #fare {
+    width: 10ch;
+  }
+  #tip {
+    width: 7ch;
+  }
+}
+
+/* 1) Не даём странице уехать по оси X (safety net) */
+html,
+body {
+  overflow-x: hidden;
+}
+
+/* 2) QR-изображение никогда не вылезет за контейнер */
+.qrbox .qrcanvas img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 3) Поля Fahrer/Betrag/Trinkgeld: адаптивные ширины вместо жёстких ch */
+#driverNo {
+  width: clamp(5ch, 18vw, 6ch);
+  text-align: center;
+}
+#fare {
+  width: clamp(9ch, 32vw, 11ch);
+}
+#tip {
+  width: clamp(7ch, 26vw, 8ch);
+}
+
+/* 4) Линия полей: по умолчанию в одну строку, но на очень узких — разрешаем перенос */
+.pay-line {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+/* iPhone 12 mini и уже — если шрифт крупнее, даём перенос без горизонтального скролла */
+@media (max-width: 380px) {
+  .pay-line {
+    flex-wrap: wrap;
+  }
+  .pay-line .field {
+    flex: 1 1 48%;
+    min-width: 0;
+  }
+  #driverNo,
+  #fare,
+  #tip {
+    width: 100%;
+    max-width: 100%;
+    text-align: right;
+  }
+}
+
+/* 5) Кнопки действий: на узких экранах можно переносить, иначе — в строку */
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+@media (max-width: 420px) {
+  .actions {
+    flex-wrap: wrap;
+  }
+}
+.actions .copybtn,
+.actions .wa-btn {
+  white-space: nowrap;
+}
+
+/* 6) Строка отчёта: исключаем «выталкивания» из-за авто-растяжения */
+.report-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+.report-line #clearLog {
+  margin-left: auto;
+}
+.report-line .copybtn {
+  flex: 0 0 auto;
+}
+.report-line .small.muted {
+  flex-basis: 100%;
+  margin-top: 6px;
+  text-align: right;
+}
+
+/* 7) Чуть компактнее отступы, чтобы всё помещалось на узких экранах */
+@media (max-width: 380px) {
+  .tip-buttons {
+    gap: 6px;
+  }
+  .sep {
+    margin: 10px 0;
+  }
+}

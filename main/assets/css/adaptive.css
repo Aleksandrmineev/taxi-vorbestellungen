@@ -1,0 +1,106 @@
+/* десктоп ≥1024px — 3 колонки */
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* телефоны — 2 колонки стабильно до 900px */
+@media (max-width: 899.98px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(10px, 3vw, 16px); /* чуть компактнее, чтобы влезало */
+  }
+}
+
+/* очень узкие телефоны — 1 колонка */
+@media (max-width: 520px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* планшеты и шире — actions всегда в одну строку */
+@media (min-width: 600px) {
+  .actions {
+    flex-wrap: nowrap;
+  }
+}
+
+/* мобильники <768px — делаем плитки компактнее */
+@media (max-width: 767.98px) {
+  .header {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .pill {
+    padding: 9px 12px;
+  }
+
+  .hero {
+    padding: clamp(16px, 6vw, 28px);
+  }
+  .hero h1 {
+    font-size: clamp(24px, 7vw, 32px);
+  }
+  .hero__sub {
+    font-size: clamp(14px, 4.2vw, 16px);
+  }
+
+  /* компактные плитки */
+  .tile {
+    min-height: 120px; /* было 160px */
+    padding: 12px; /* было 16px */
+  }
+  .tile__icon {
+    width: 44px; /* было 68px */
+    height: 44px;
+    border-radius: 12px; /* чуть меньше */
+  }
+  .tile__icon svg {
+    width: 24px; /* было 34px */
+    height: 24px;
+  }
+
+  .tile__title {
+    font-size: clamp(15px, 4.6vw, 18px); /* было до 20px */
+  }
+  .tile__desc {
+    font-size: clamp(13px, 3.8vw, 15px); /* было до 16px */
+    line-height: 1.35;
+  }
+}
+
+/* десктоп — 3 колонки (дубль на случай медиа-каскада в других файлах) */
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* микроправка производительности эффекта плитки */
+.tile:after {
+  contain: paint; /* изолируем рисование псевдо-элемента */
+  will-change: transform, opacity;
+}
+
+/* ===== Верхний переключатель темы скрывать на узких экранах ===== */
+@media (max-width: 600px) {
+  #theme-toggle {
+    display: none;
+  }
+  .brand__logo {
+    width: 24px;
+    height: 24px;
+  }
+  .brand__logo img {
+    width: 24px;
+    height: 24px;
+  }
+  .brand__title {
+    font-size: 18px;
+  }
+  .pill {
+    font-size: clamp(14px, 3.5vw, 16px);
+  }
+}

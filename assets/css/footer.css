@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 14px;
+  gap: 3px;
   flex-wrap: wrap;
   border-top: 1px solid var(--border);
   padding-top: 12px;
@@ -44,4 +44,91 @@
 }
 .footer-copy a {
   color: var(--text);
+}
+
+/* WhatsApp-like bottom bar: round icons + label */
+.site-footer .footer-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.site-footer .footer-link {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  /* золотистый цвет иконок/текста берём из твоих токенов;
+     предусмотрим фоллбек на случай отсутствия */
+  color: var(--gold-600, #c9a227);
+}
+
+/* круглая "кнопка"-иконка */
+.site-footer .footer-link svg {
+  width: 28px;
+  height: 28px;
+  padding: 10px; /* создаёт внутренний отступ в кружке */
+  border-radius: 999px; /* круг */
+  box-shadow: inset 0 0 0 2px currentColor; /* обводка кругом */
+  background: transparent; /* без заливки по умолчанию */
+  display: block;
+}
+
+/* мелкая подпись как у WhatsApp */
+.site-footer .footer-link .footer-label {
+  font-size: 12px;
+  line-height: 1.1;
+  opacity: 0.9;
+}
+
+/* состояние hover/focus — лёгкая подзаливка */
+.site-footer .footer-link:hover svg,
+.site-footer .footer-link:focus-visible svg {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+/* активный таб — золотой фон и контрастная иконка */
+.site-footer .footer-link.is-active svg,
+.site-footer .footer-link[aria-current="page"] svg {
+  background: var(--gold-600, #c9a227);
+  color: var(
+    --bg,
+    #0b0b0b
+  ); /* контраст к твоей теме; var(--bg) есть в проекте */
+  box-shadow: none;
+}
+
+@media (max-width: 420px) {
+  .site-footer .footer-link svg {
+    width: 24px;
+    height: 24px;
+    padding: 9px;
+  }
+  .site-footer .footer-link .footer-label {
+    font-size: 11px;
+  }
+}
+
+:root {
+  --footer-h: 66px;
+}
+
+/* Фиксированный футер на всех страницах */
+.site-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--footer-h);
+  z-index: 998;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Чтобы контент не уходил под футер */
+body {
+  padding-bottom: var(--footer-h);
 }

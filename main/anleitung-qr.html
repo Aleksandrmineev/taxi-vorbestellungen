@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Anleitung – QR-Zahlung | TaxiApp</title>
+    <meta name="color-scheme" content="dark light" />
+
+    <!-- Favicon -->
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./assets/favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./assets/favicon/favicon-16x16.png"
+    />
+    <link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/theme.css" />
+    <link rel="stylesheet" href="assets/css/global.css" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/adaptive.css" />
+    <style>
+      /* Небольшой локальный слой для этой страницы */
+      .hilfe {
+        max-width: 980px;
+        margin-inline: auto;
+        padding: clamp(18px, 5vw, 34px);
+        display: grid;
+        gap: 20px;
+      }
+      .lead {
+        color: var(--muted);
+        font-size: var(--fs-hero-sub, clamp(16px, 2.2vw, 22px));
+        margin: 0;
+      }
+      .backline {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .headline {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .headline svg {
+        width: 22px;
+        height: 22px;
+        fill: var(--accent);
+      }
+      .hilfe__section {
+        border: 1px solid var(--ring);
+        border-radius: var(--radius);
+        background: linear-gradient(
+          180deg,
+          color-mix(in oklab, var(--card) 94%, #000 6%),
+          color-mix(in oklab, var(--card) 86%, #000 14%)
+        );
+        box-shadow: var(--shadow);
+        padding: clamp(14px, 3vw, 22px);
+        display: grid;
+        gap: 12px;
+      }
+      .steps {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding-left: 1.2em;
+      }
+      .steps li {
+        line-height: 1.5;
+      }
+      .note {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .kbd {
+        display: inline-block;
+        padding: 2px 6px;
+        border: 1px solid var(--ring);
+        border-radius: 6px;
+        background: var(--card);
+        font-size: 13px;
+      }
+      .checklist {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding-left: 1.2em;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--ring);
+        font-size: 12px;
+        margin-left: 6px;
+      }
+      .badge--info {
+        background: color-mix(in oklab, var(--accent) 14%, transparent);
+      }
+      .callout {
+        border: 1px dashed var(--ring);
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: linear-gradient(
+          145deg,
+          rgba(255, 255, 255, 0.04),
+          rgba(255, 255, 255, 0.01)
+        );
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <a class="brand" href="index.html" aria-label="MurtalTaxi Start">
+        <div class="brand__logo" aria-hidden="true">
+          <img src="./assets/img/logo1.png" alt="Logo Murtal Taxi" />
+        </div>
+        <span class="brand__title">Murtal&nbsp;TAXI</span>
+      </a>
+      <div class="spacer"></div>
+      <a
+        class="pill"
+        href="tel:+436601018101"
+        aria-label="Jetzt anrufen: +43 660 1018101"
+      >
+        <svg viewBox="0 0 24 24" role="img">
+          <path
+            d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.56.57 1 1 0 011 1v3.61a1 1 0 01-1 1A17.02 17.02 0 013 5a1 1 0 011-1h3.61a1 1 0 011 1c0 1.22.2 2.41.57 3.56a1 1 0 01-.24 1.01l-2.32 2.22z"
+          />
+        </svg>
+        <strong>+43&nbsp;660&nbsp;1018101</strong>
+      </a>
+      <button
+        id="theme-toggle"
+        class="pill"
+        type="button"
+        aria-label="Thema umschalten"
+      >
+        <svg id="theme-icon" viewBox="0 0 24 24" role="img"></svg>
+        <span class="sr-only">Thema wechseln</span>
+      </button>
+    </header>
+
+    <!-- Content -->
+    <main class="hilfe">
+      <div class="backline">
+        <a href="index.html" class="pill" aria-label="Zurück zur Startseite">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M10.828 12l4.95-4.95-1.414-1.414L8 12l6.364 6.364 1.414-1.414z"
+            />
+          </svg>
+          Zur Startseite
+        </a>
+        <p class="lead">
+          Anleitung zur <strong>QR-Zahlung</strong> in TaxiApp: Eingaben,
+          Übergabe an Kund:innen, Bestätigung und Bericht.
+        </p>
+      </div>
+
+      <!-- Wie funktioniert QR-Zahlung? -->
+      <section class="hilfe__section">
+        <div class="headline">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h3v3h-3zM17 17h3v3h-3zM13 20h3v-2h-3z"
+            />
+          </svg>
+          <h2>QR-Zahlung – so geht’s</h2>
+        </div>
+        <ol class="steps">
+          <li>
+            <strong>Fahrer-Nr.</strong> ist in der Regel bereits gespeichert (2
+            Ziffern). Bei Bedarf ändern.
+          </li>
+          <li>
+            <strong>Betrag (Taxameter)</strong> eingeben.
+            <span class="note"
+              >Feld fokussiert sich automatisch; Eingabe mit Komma oder Punkt
+              möglich.</span
+            >
+          </li>
+          <li>
+            <strong>Trinkgeld</strong> optional ergänzen (Schnellbuttons
+            <span class="kbd">+2</span>, <span class="kbd">+5</span>,
+            <span class="kbd">+10%</span> …).<br />Gesamtbetrag wird sofort
+            berechnet.
+          </li>
+          <li>
+            Der <strong>SEPA/EPC-QR-Code</strong> wird
+            <em>automatisch</em> aktualisiert. Du kannst dein Handy der/dem
+            Kund:in geben – sie/er scannt den Code im Bank-App, gibt ggf. den
+            Betrag ein und bestätigt die Überweisung.
+          </li>
+          <li>
+            Bitte die/den Kund:in um
+            <strong>kurze Bestätigung am Display</strong>
+            (Überweisungsbestätigung zeigen).
+          </li>
+          <li>
+            Tippe anschließend auf <strong>Bestätigung an WhatsApp</strong> – es
+            öffnet sich Chat an die Dispo/Leitung mit fertigem Text. Senden
+            tippen.
+            <span class="badge badge--info"
+              >Ab jetzt zählt die Zahlung in den Bericht.</span
+            >
+          </li>
+        </ol>
+        <div class="callout note">
+          Hinweis: Der Verwendungszweck im QR enthält
+          <em>„Taxi Murtal – Fahrer&nbsp;NN“</em> und erscheint in vielen
+          Bank-Apps automatisch.
+        </div>
+      </section>
+
+      <!-- Bericht & Logik -->
+      <section class="hilfe__section">
+        <div class="headline">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 3h18v2H3V3zm0 6h18v2H3V9zm0 6h12v2H3v-2z" />
+          </svg>
+          <h2>Bericht (24&nbsp;h) & Kopieren</h2>
+        </div>
+        <ul class="checklist">
+          <li>
+            <strong>Bericht (24&nbsp;h)</strong> summiert alle QR-Bestätigungen
+            der letzten 24 Stunden (nicht Kalendertag!). Es werden
+            <em>Taxameter</em>, <em>Trinkgeld</em> und <em>Gesamt</em> getrennt
+            ausgewiesen.
+          </li>
+          <li>
+            Die Summierung passiert <strong>nur</strong> für Zahlungen, bei
+            denen du auf <em>Bestätigung an WhatsApp</em> getippt hast. Erst
+            dann wird ein Eintrag im lokalen Journal erstellt.
+          </li>
+          <li>
+            Beim Klick auf <strong>Bericht (24&nbsp;h)</strong> wird die fertige
+            Zusammenfassung <strong>in die Zwischenablage kopiert</strong> – du
+            kannst sie direkt in einen Chat, eine Notiz oder in einen
+            Tagesbericht <em>einfügen</em>.
+          </li>
+          <li>
+            Das lokale <strong>Zahlungsjournal</strong> wird
+            <strong>automatisch nach 24&nbsp;Stunden</strong> bereinigt
+            (Datenschutz & Performance).
+          </li>
+        </ul>
+      </section>
+
+      <!-- Tipps -->
+      <section class="hilfe__section">
+        <div class="headline">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+            />
+          </svg>
+          <h2>Tipps für den Einsatz</h2>
+        </div>
+        <ul class="checklist">
+          <li>
+            Wenn Kund:innen <em>kein</em> Bank-App haben, kannst du die
+            <strong>Zusammenfassung kopieren</strong> und als Nachweis intern
+            verschicken.
+          </li>
+          <li>
+            Auf Wunsch kann die Leitung die Nummer für WhatsApp-Zielkontakt
+            ändern (wird lokal gespeichert).
+          </li>
+          <li>
+            Bei sehr schmalen Displays kann die Seite die Eingaben in zwei
+            Zeilen umbrechen – QR bleibt immer gut scannbar.
+          </li>
+        </ul>
+      </section>
+
+      <div class="backline">
+        <a href="index.html" class="pill" aria-label="Zurück zur Startseite">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M10.828 12l4.95-4.95-1.414-1.414L8 12l6.364 6.364 1.414-1.414z"
+            />
+          </svg>
+          Zur Startseite
+        </a>
+        <p class="lead">
+          Fragen? Schreib mir gerne – ich ergänze die Anleitung bei Bedarf.
+        </p>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer__dev">
+        <a
+          href="https://t.me/aamineev"
+          target="_blank"
+          rel="noopener"
+          aria-label="Schreiben in Telegram @aamineev"
+          class="footer__link"
+        >
+          <svg
+            class="tg-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M9.7 14.7l-.3 4.6c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.7.4 1.2.2 1.4-.6l2.6-12.2c.2-.9-.3-1.3-1-1.1L4 10.3c-.8.2-.8.7-.1.9l4.3 1.3 10-6.3c.5-.3.9-.1.5.2l-9 8.3z"
+              fill="currentColor"
+            />
+          </svg>
+          Entwicklung
+        </a>
+
+        <!-- здесь ты можешь в подвале сослаться на эту страницу: anleitung-qr.html -->
+        <a
+          href="anleitung-qr.html"
+          class="footer__link footer__help"
+          aria-label="Anleitung zur QR-Zahlung öffnen"
+        >
+          <svg
+            class="help-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm.25 17a1.25 1.25 0 1 1 1.25-1.25A1.25 1.25 0 0 1 12.25 19ZM13.5 13a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75v-.5a2.5 2.5 0 0 1 2.5-2.5 1.5 1.5 0 1 0-1.5-1.5.75.75 0 0 1-1.5 0 3 3 0 1 1 3.75 2.9Z"
+              fill="currentColor"
+            />
+          </svg>
+          Anleitung&nbsp;QR
+        </a>
+
+        <button
+          id="theme-toggle-footer"
+          class="footer__theme"
+          aria-label="Thema umschalten"
+        >
+          <svg
+            id="theme-icon-footer"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+          ></svg>
+        </button>
+      </div>
+    </footer>
+
+    <!-- JS -->
+    <script defer src="assets/js/theme.js"></script>
+    <script defer src="assets/js/main.js"></script>
+  </body>
+</html>

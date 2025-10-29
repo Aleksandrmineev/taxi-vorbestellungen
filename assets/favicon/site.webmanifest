@@ -1,27 +1,84 @@
 {
   "name": "MurtalTaxi",
-  "short_name": "MurtalTaxi",
+  "short_name": "Taxi",
+  "description": "MurtalTaxi — Vorbestellung, Schnellsuche, nächste Fahrten. MiniCRM & QR-Zahlung.",
+
+  "start_url": "/main/index.html?source=pwa",
+  "scope": "/main/",
   "display": "standalone",
+  "orientation": "portrait",
+
   "background_color": "#ffffff",
   "theme_color": "#0d5ef7",
+  "categories": ["navigation", "productivity", "business"],
+
   "icons": [
     {
       "src": "android-chrome-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "android-chrome-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "maskable-512x512.png",
+      "src": "maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
   ],
-  "start_url": "../../index.html",
-  "scope": "../../"
+
+  "shortcuts": [
+    {
+      "name": "Chat",
+      "short_name": "Chat",
+      "url": "/main/chat.html",
+      "icons": [
+        {
+          "src": "android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Vorbestellung",
+      "short_name": "Neue",
+      "url": "/main/index.html",
+      "icons": [
+        {
+          "src": "android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Suche/Listen",
+      "short_name": "Suche",
+      "url": "/main/search.html",
+      "icons": [
+        {
+          "src": "android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false,
+  "lang": "de",
+  "dir": "ltr"
 }

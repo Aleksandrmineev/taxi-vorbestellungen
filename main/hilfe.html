@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Hilfe – TaxiApp</title>
+    <meta name="color-scheme" content="dark light" />
+
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./assets/favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./assets/favicon/favicon-16x16.png"
+    />
+    <link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Marcellus+SC&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/theme.css" />
+    <link rel="stylesheet" href="assets/css/global.css" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/adaptive.css" />
+    <link rel="stylesheet" href="assets/css/hilfe.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <a class="brand" href="index.html" aria-label="MurtalTaxi Start">
+        <div class="brand__logo" aria-hidden="true">
+          <img src="./assets/img/logo1.png" alt="Logo Murtal Taxi" />
+        </div>
+        <span class="brand__title">Murtal&nbsp;TAXI</span>
+      </a>
+      <div class="spacer"></div>
+
+      <a
+        class="pill"
+        href="tel:+436601018101"
+        aria-label="Jetzt anrufen: +43 660 1018101"
+      >
+        <svg viewBox="0 0 24 24" role="img">
+          <path
+            d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.56.57 1 1 0 011 1v3.61a1 1 0 01-1 1A17.02 17.02 0 013 5a1 1 0 011-1h3.61a1 1 0 011 1c0 1.22.2 2.41.57 3.56a1 1 0 01-.24 1.01l-2.32 2.22z"
+          />
+        </svg>
+        <strong>+43&nbsp;660&nbsp;1018101</strong>
+      </a>
+
+      <!-- oberer Theme-Switch -->
+      <button
+        id="theme-toggle"
+        class="pill"
+        type="button"
+        aria-label="Thema umschalten"
+      >
+        <svg id="theme-icon" viewBox="0 0 24 24" role="img"></svg>
+        <span class="sr-only">Thema wechseln</span>
+      </button>
+    </header>
+
+    <!-- Content -->
+    <main class="hilfe">
+      <div class="backline">
+        <a href="index.html" class="pill" aria-label="Zurück zur Startseite">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M10.828 12l4.95-4.95-1.414-1.414L8 12l6.364 6.364 1.414-1.414z"
+            />
+          </svg>
+          Zur Startseite
+        </a>
+        <p class="lead">
+          Kurzbeschreibung der aktuellen Funktionen von
+          <strong>TaxiApp</strong> und Roadmap der geplanten Erweiterungen.
+        </p>
+      </div>
+
+      <section class="hilfe__section">
+        <div class="headline">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M5 3h14a2 2 0 012 2v11.5A3.5 3.5 0 0117.5 20H8A5 5 0 013 15V5a2 2 0 012-2z"
+            />
+          </svg>
+          <h2>Bereits verfügbar</h2>
+        </div>
+        <ul class="checklist">
+          <li class="checkitem is-done">
+            <strong>PreisRechner</strong> — Live-Berechnung der Taxi-Tarife
+            (Tag/Nacht/Feiertag) nach aktueller Tarifordnung.
+          </li>
+          <li class="checkitem is-done">
+            <strong>MiniCRM</strong> — Schnellsuche nach Bestellungen/Kontakten,
+            Übersicht der letzten Fahrten.
+          </li>
+          <li class="checkitem is-done">
+            <strong>SchulTransport</strong> — Routen & Berichte für
+            Schüler-/Lehrlingsfahrten.
+          </li>
+          <li class="checkitem is-done">
+            <strong>Design & Themen</strong> — Hell/Dunkel mit Speicherung,
+            modernes Premium-UI.
+          </li>
+        </ul>
+      </section>
+
+      <section class="hilfe__section">
+        <div class="headline">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 2l7 4v8c0 4.418-3.582 8-8 8S3 18.418 3 14V6l9-4zM5 8.236V14a7 7 0 0014 0V8.236l-7-4-7 4z"
+            />
+          </svg>
+          <h2>Roadmap</h2>
+        </div>
+        <ul class="checklist">
+          <li class="checkitem">
+            <strong>Online-Zahlung per QR-Code</strong>
+            <span class="badge badge--progress">In Arbeit</span>
+            <div class="hilfe__text">
+              Schnelle Rechnungserstellung und direkte Bezahlung durch
+              Kund:innen via QR.
+            </div>
+          </li>
+          <li class="checkitem">
+            <strong>Sofortbestellung (Ein-Klick)</strong>
+            <span class="badge badge--planned">Geplant</span>
+            <div class="hilfe__text">
+              Taxi sofort mit nur einer Taste anfordern.
+            </div>
+          </li>
+          <li class="checkitem">
+            <strong>MiniCRM 2.0</strong> — erweiterte DB-Funktionen
+            <span class="badge badge--planned">Geplant</span>
+            <div class="hilfe__text">
+              Verlauf, Status, Filter, bessere Datenpflege und Auswertungen.
+            </div>
+          </li>
+          <li class="checkitem">
+            <strong>Service „Alle Vorbestellungen“</strong>
+            <span class="badge badge--planned">Geplant</span>
+            <div class="hilfe__text">
+              Schnelles Anlegen regelmäßiger & vorläufiger Fahrten in den
+              <em>Fahrten-Kalender</em>, inkl. Bestätigung & Erinnerungen, auch
+              für <strong>Krankentransport</strong>.
+            </div>
+          </li>
+          <li class="checkitem">
+            <strong>Mehrsprachigkeit</strong>
+            <span class="badge badge--new">Neu</span>
+            <div class="hilfe__text">
+              Geplante Sprachen: Deutsch (Basis), Englisch, Italienisch,
+              Spanisch, Französisch, Ukrainisch, Russisch, Türkisch,
+              Kroatisch/Serbisch/Bosnisch (BKS), Ungarisch, Slowenisch,
+              Rumänisch.
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <section class="hilfe__section">
+        <div class="headline">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M20 4h-3.17A3 3 0 0014 2H10a3 3 0 00-2.83 2H4a2 2 0 00-2 2v11a3 3 0 003 3h14a3 3 0 003-3V6a2 2 0 00-2-2zM10 4h4a1 1 0 011 1v1H9V5a1 1 0 011-1z"
+            />
+          </svg>
+          <h2>Entwicklung & Kontakt</h2>
+        </div>
+        <div class="hilfe__meta">
+          <div>Entwickler: <strong>Aleksandr Mineev</strong></div>
+          <div>
+            Telegram:
+            <a
+              class="footer__link"
+              href="https://t.me/aamineev"
+              target="_blank"
+              rel="noopener"
+              >@aamineev</a
+            >
+          </div>
+        </div>
+      </section>
+
+      <div class="backline">
+        <a href="index.html" class="pill" aria-label="Zurück zur Startseite">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M10.828 12l4.95-4.95-1.414-1.414L8 12l6.364 6.364 1.414-1.414z"
+            />
+          </svg>
+          Zur Startseite
+        </a>
+        <p class="lead">
+          Kurzbeschreibung der aktuellen Funktionen von
+          <strong>TaxiApp</strong> und Roadmap der geplanten Erweiterungen.
+        </p>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer__dev">
+        <!-- Entwicklung -->
+        <a
+          href="https://t.me/aamineev"
+          target="_blank"
+          rel="noopener"
+          aria-label="Schreiben in Telegram @aamineev"
+          class="footer__link"
+        >
+          <svg
+            class="tg-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M9.7 14.7l-.3 4.6c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.7.4 1.2.2 1.4-.6l2.6-12.2c.2-.9-.3-1.3-1-1.1L4 10.3c-.8.2-.8.7-.1.9l4.3 1.3 10-6.3c.5-.3.9-.1.5.2l-9 8.3z"
+              fill="currentColor"
+            />
+          </svg>
+          Entwicklung
+        </a>
+
+        <!-- Hilfe (diese Seite) -->
+        <a
+          href="hilfe.html"
+          class="footer__link footer__help"
+          aria-label="Öffnen der Hilfeseite"
+        >
+          <svg
+            class="help-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm.25 17a1.25 1.25 0 1 1 1.25-1.25A1.25 1.25 0 0 1 12.25 19ZM13.5 13a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75v-.5a2.5 2.5 0 0 1 2.5-2.5 1.5 1.5 0 1 0-1.5-1.5.75.75 0 0 1-1.5 0 3 3 0 1 1 3.75 2.9Z"
+              fill="currentColor"
+            />
+          </svg>
+          Hilfe
+        </a>
+
+        <!-- unterer Theme-Switch -->
+        <button
+          id="theme-toggle-footer"
+          class="footer__theme"
+          aria-label="Thema umschalten"
+        >
+          <svg
+            id="theme-icon-footer"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+          ></svg>
+        </button>
+      </div>
+    </footer>
+
+    <!-- JS -->
+    <script defer src="assets/js/theme.js"></script>
+    <script defer src="assets/js/main.js"></script>
+  </body>
+</html>

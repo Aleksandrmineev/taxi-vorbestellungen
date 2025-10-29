@@ -53,27 +53,23 @@ Statuswechsel: done/cancelled → Event im Kalender wird automatisch gelöscht.
 Kalender-Link im Footer (Intent-Link für Android-Unterstützung).
 
 Projektstruktur
-.
-├── index.html
-├── hilfe.html
-├── assets/
-│ ├── css/
-│ │ ├── global.css
-│ │ ├── header.css
-│ │ ├── main.css
-│ │ ├── footer.css
-│ │ └── responsive.css
-│ ├── js/
-│ │ ├── config.js # export const API = '...GAS_WEB_APP_URL...'
-│ │ ├── api.js
-│ │ ├── theme.js
-│ │ ├── main.js
-│ │ ├── ui/
-│ │ │ ├── todoList.js
-│ │ │ ├── ordersList.js
-│ │ │ └── dialog.js # modaler Dialog für Storno-Grund (optional)
-│ └── img/ & favicon/
-└── Code.gs # Google Apps Script (Server)
+[Пользователь] 
+     │
+     ▼
+[Браузер/PWA окно]
+  ├─ Service Worker (кэш, офлайн, push handler)
+  ├─ Cache Storage (иконки, css/js, звуки)
+  └─ App (chat-ui, chat-core, api.js)
+               │
+               ▼
+        [Vercel /api]
+          └─ /api/gas.js (прокси)
+               │
+               ▼
+     [Google Apps Script Web App]
+        ├─ orders (create, updatestatus, search)
+        └─ chat   (messagesadd [POST], messageslist [GET])
+
 
 Setup – Schnellstart
 

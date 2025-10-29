@@ -1,0 +1,86 @@
+:root {
+  --gold: #c9a14a;
+  --gold-2: #d7b56a;
+  --accent: var(--gold);
+
+  /* light */
+  --bg-light: #f7f7f8;
+  --card-light: #ffffff;
+  --text-light: #1f2228;
+  --muted-light: #596273;
+  --ring-light: rgba(0, 0, 0, 0.08);
+
+  /* dark premium */
+  --bg-dark: #0b0f14;
+  --bg-grad1: rgba(160, 180, 255, 0.05);
+  --bg-grad2: rgba(0, 180, 200, 0.06);
+  --card-dark: #171b22; /* светлее фона для лучшего контраста */
+  --text-dark: #e6eef7;
+  --muted-dark: #9fb0c9;
+  --ring-dark: rgba(255, 255, 255, 0.08);
+
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial,
+    "Noto Sans", sans-serif;
+  --radius: 16px;
+  --radius-pill: 999px;
+  --shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+  --tile-gap: 18px;
+  --transition: 0.35s cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  --font-brand: "Marcellus SC", serif;
+
+  /* более деликатный золотой градиент */
+  --gold-grad: linear-gradient(
+    135deg,
+    #c9a14a 0%,
+    #d8b45c 40%,
+    #b98b2e 75%,
+    #c9a14a 100%
+  );
+  /* подзаголовки (hero__sub) */
+  --fs-hero-sub: clamp(16px, 2.2vw, 22px);
+
+  /* поля ввода */
+  --fs-input: clamp(18px, 2.4vw, 20px);
+  --fs-input-lg: clamp(20px, 2.8vw, 22px); /* для суммы и чаевых */
+  --ctr-h: clamp(46px, 6vw, 54px);
+
+  /* итоговая сумма */
+  --fs-total: clamp(24px, 3.2vw, 30px);
+}
+
+@media (max-width: 520px) {
+  :root {
+    --fs-hero-sub: clamp(18px, 4.8vw, 22px);
+    --fs-input: 20px;
+    --fs-input-lg: 22px;
+    --ctr-h: 56px;
+    --fs-total: 28px;
+  }
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --fs-hero-sub: 22px;
+    --fs-input: 20px;
+    --fs-input-lg: 22px;
+    --ctr-h: 52px;
+    --fs-total: 30px;
+  }
+}
+
+/* включение темы через data-theme у <html> */
+html[data-theme="light"] {
+  --bg: var(--bg-light);
+  --card: var(--card-light);
+  --text: var(--text-light);
+  --muted: var(--muted-light);
+  --ring: var(--ring-light);
+}
+html[data-theme="dark"] {
+  --bg: var(--bg-dark);
+  --card: var(--card-dark);
+  --text: var(--text-dark);
+  --muted: var(--muted-dark);
+  --ring: var(--ring-dark);
+}

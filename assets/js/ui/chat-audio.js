@@ -1,16 +1,13 @@
-// assets/js/ui/chat-audio.js
 // === Audio manager: system tone for send + file sounds for message/order ===
 
 let AC = null;
 let _ready = false;
 
-// Звуки для message / order из папки
 const sounds = {
   message: new Audio("./assets/sounds/message.mp3"),
   order: new Audio("./assets/sounds/order.mp3"),
 };
 
-// Подготовка
 Object.values(sounds).forEach((a) => {
   a.volume = 1.0;
   a.preload = "auto";
@@ -48,15 +45,9 @@ export function ensureUserGestureListeners() {
   );
 }
 
-export function insertEnableButton(sel = ".chat-header") {
-  const container = document.querySelector(sel) || document.body;
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "pill";
-  btn.textContent = "Ton aktivieren";
-  btn.style.marginLeft = "8px";
-  btn.addEventListener("click", unlockAudio);
-  container.appendChild(btn);
+// 🔇 Удалили кнопку: оставляем no-op для совместимости
+export function insertEnableButton() {
+  // no-op; кнопка больше не нужна
 }
 
 export function isAudioReady() {

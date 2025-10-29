@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>QR-Zahlung – TaxiApp</title>
+    <meta name="color-scheme" content="dark light" />
+
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./assets/favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./assets/favicon/favicon-16x16.png"
+    />
+    <link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Marcellus+SC&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Глобальные стили проекта -->
+    <link rel="stylesheet" href="assets/css/theme.css" />
+    <link rel="stylesheet" href="assets/css/global.css" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/adaptive.css" />
+
+    <!-- Стили этой страницы -->
+    <link rel="stylesheet" href="assets/css/qr.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <a class="brand" href="index.html" aria-label="MurtalTaxi Start">
+        <div class="brand__logo" aria-hidden="true">
+          <img src="./assets/img/logo1.png" alt="Logo Murtal Taxi" />
+        </div>
+        <span class="brand__title">Murtal&nbsp;TAXI</span>
+      </a>
+
+      <div class="spacer"></div>
+
+      <a
+        class="pill"
+        href="tel:+436601018101"
+        aria-label="Jetzt anrufen: +43 660 1018101"
+      >
+        <svg viewBox="0 0 24 24" role="img">
+          <path
+            d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.56.57 1 1 0 011 1v3.61a1 1 0 01-1 1A17.02 17.02 0 013 5a1 1 0 011-1h3.61a1 1 0 011 1c0 1.22.2 2.41.57 3.56a1 1 0 01-.24 1.01l-2.32 2.22z"
+          />
+        </svg>
+        <strong>+43&nbsp;660&nbsp;1018101</strong>
+      </a>
+
+      <!-- верхний переключатель темы -->
+      <button
+        id="theme-toggle"
+        class="pill"
+        type="button"
+        aria-label="Thema umschalten"
+      >
+        <svg id="theme-icon" viewBox="0 0 24 24" role="img"></svg>
+        <span class="sr-only">Thema wechseln</span>
+      </button>
+    </header>
+
+    <!-- Content -->
+    <main class="pay">
+      <div class="row">
+        <a href="index.html" class="pill" aria-label="Zurück zur Startseite">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M10.828 12l4.95-4.95-1.414-1.414L8 12l6.364 6.364 1.414-1.414z"
+            />
+          </svg>
+          Zur Startseite
+        </a>
+        <div class="spacer"></div>
+      </div>
+
+      <h1>QR-Zahlung</h1>
+      <p class="lead">
+        SEPA/EPC-QR wird automatisch erzeugt. Felder sind minimal: Fahrer-Nr.,
+        Betrag, Trinkgeld.
+      </p>
+
+      <section class="card grid2">
+        <div class="left">
+          <div class="row pay-line">
+            <div class="field">
+              <label for="driverNo">Fahrer-Nr.</label>
+              <input
+                id="driverNo"
+                class="input"
+                inputmode="numeric"
+                maxlength="2"
+                placeholder="00"
+              />
+            </div>
+
+            <div class="field">
+              <label for="fare">Betrag €</label>
+              <input
+                id="fare"
+                class="input"
+                inputmode="decimal"
+                placeholder="0,00"
+              />
+            </div>
+
+            <div class="field">
+              <label for="tip">Trinkgeld €</label>
+              <input
+                id="tip"
+                class="input"
+                inputmode="decimal"
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          <div class="tip-buttons">
+            <button class="tipbtn" data-tip="0">+0</button>
+            <button class="tipbtn" data-tip="2">+2</button>
+            <button class="tipbtn" data-tip="5">+5</button>
+            <button class="tipbtn" data-tip="10%">+10%</button>
+            <button class="tipbtn" data-tip="15%">+15%</button>
+            <button class="tipbtn" id="tipClear">Trinkgeld löschen</button>
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="row">
+            <div class="total">Gesamt: <span id="totalEuro">€ 0,00</span></div>
+            <div class="muted small">
+              Verwendungszweck:
+              <span id="vzPreview">Taxi Murtal – Fahrer 00</span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button
+              id="copySummary"
+              class="copybtn"
+              type="button"
+              title="Zusammenfassung kopieren"
+            >
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M16 1H4a2 2 0 00-2 2v12h2V3h12V1zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11v14z"
+                />
+              </svg>
+              Zusammenfassung
+            </button>
+
+            <button id="sendWA" class="wa-btn" type="button" disabled>
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M20.52 3.48A11.86 11.86 0 0012 .5 11.5 11.5 0 00.5 12.08c0 2 .53 3.91 1.53 5.6L.5 23.5l6-1.49A11.45 11.45 0 0012.05 23 11.5 11.5 0 0023.5 11.99a11.86 11.86 0 00-2.98-8.51zM12 21a9.36 9.36 0 01-4.77-1.29l-.34-.2-3.55.88.95-3.45-.22-.35A9.37 9.37 0 1121.37 12 9.37 9.37 0 0112 21zm5.32-6.84c-.29-.14-1.7-.84-1.96-.93-.26-.1-.45-.14-.64.14-.19.28-.74.93-.9 1.12-.17.19-.33.21-.62.07-.29-.14-1.23-.45-2.34-1.44-.86-.77-1.44-1.72-1.61-2-.17-.28-.02-.43.13-.57.13-.12.29-.33.43-.5.14-.17.19-.29.29-.48.1-.19.05-.36-.02-.5-.07-.14-.64-1.54-.88-2.1-.23-.55-.47-.48-.64-.49h-.55c-.19 0-.5.07-.76.36-.26.28-1 1-1 2.43s1.03 2.82 1.17 3.01c.14.19 2.03 3.11 4.92 4.36.69.3 1.23.48 1.65.62.69.22 1.32.19 1.81.12.55-.08 1.7-.7 1.94-1.38.24-.67.24-1.24.17-1.38-.07-.14-.26-.22-.55-.36z"
+                />
+              </svg>
+              Bestätigung
+            </button>
+          </div>
+          <div class="small muted">An: +43 650 6367662</div>
+        </div>
+
+        <div class="right">
+          <div class="qrbox">
+            <div id="qr" class="qrcanvas" aria-label="SEPA QR Code"></div>
+          </div>
+          <div class="qrmeta">
+            IBAN:
+            <strong>AT62&nbsp;2081&nbsp;5000&nbsp;4093&nbsp;4572</strong> · BIC:
+            <strong>STSPAT2GXXX</strong><br />
+            Empfänger: <strong>Michael&nbsp;Kleißner</strong>
+          </div>
+        </div>
+        <div class="sep"></div>
+
+        <div class="row report-line">
+          <button
+            id="report24h"
+            class="copybtn"
+            type="button"
+            title="Bericht der letzten 24 Stunden"
+          >
+            <svg viewBox="0 0 24 24">
+              <path d="M3 3h18v2H3V3zm0 6h18v2H3V9zm0 6h12v2H3v-2z" />
+            </svg>
+            Bericht (24&nbsp;h)
+          </button>
+
+          <button
+            id="clearLog"
+            class="copybtn"
+            type="button"
+            title="Lokales Zahlungsjournal löschen"
+          >
+            <svg viewBox="0 0 24 24">
+              <path d="M6 7h12l-1 13H7L6 7zm3-4h6l1 2H8l1-2z" />
+            </svg>
+            Log
+          </button>
+
+          <!-- <div class="spacer"></div> -->
+          <div class="small muted">
+            Speicherung: Das Zahlungsjournal wird lokal im Browser gehalten und
+            <strong>nach 24&nbsp;Stunden automatisch bereinigt</strong>.
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer__dev">
+        <a
+          href="https://t.me/aamineev"
+          target="_blank"
+          rel="noopener"
+          aria-label="Schreiben in Telegram @aamineev"
+          class="footer__link"
+        >
+          <svg
+            class="tg-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M9.7 14.7l-.3 4.6c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.7.4 1.2.2 1.4-.6l2.6-12.2c.2-.9-.3-1.3-1-1.1L4 10.3c-.8.2-.8.7-.1.9l4.3 1.3 10-6.3c.5-.3.9-.1.5.2l-9 8.3z"
+              fill="currentColor"
+            />
+          </svg>
+          Entwicklung
+        </a>
+
+        <a
+          href="anleitung-qr.html"
+          class="footer__link footer__help"
+          aria-label="Öffnen der Hilfeseite"
+        >
+          <svg
+            class="help-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm.25 17a1.25 1.25 0 1 1 1.25-1.25A1.25 1.25 0 0 1 12.25 19ZM13.5 13a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75v-.5a2.5 2.5 0 0 1 2.5-2.5 1.5 1.5 0 1 0-1.5-1.5.75.75 0 0 1-1.5 0 3 3 0 1 1 3.75 2.9Z"
+              fill="currentColor"
+            />
+          </svg>
+          Hilfe
+        </a>
+
+        <button
+          id="theme-toggle-footer"
+          class="footer__theme"
+          aria-label="Thema umschalten"
+        >
+          <svg
+            id="theme-icon-footer"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+          ></svg>
+        </button>
+      </div>
+    </footer>
+
+    <!-- QR lib (локально) -->
+    <script src="assets/js/vendor/qrcode.min.js"></script>
+    <script src="assets/js/vendor/qrcode_UTF8.min.js"></script>
+
+    <!-- Глобальные скрипты -->
+    <script defer src="assets/js/theme.js"></script>
+    <script defer src="assets/js/main.js"></script>
+
+    <!-- JS этой страницы -->
+    <script defer src="assets/js/qr.js"></script>
+  </body>
+</html>

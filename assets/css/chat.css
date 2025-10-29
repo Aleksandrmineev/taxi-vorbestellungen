@@ -1,11 +1,21 @@
 /* ========= Chat (theme-aware via tokens) ========= */
 
-/* Не даём iOS менять размер текста */
+/* iOS не меняет размер текста */
 html {
   -webkit-text-size-adjust: 100%;
 }
 
-/* Layout */
+/* ---- Общие размеры фикс-элементов ---- */
+:root {
+  /* высота фиксированного футера (навигация) */
+  --footer-h: 56px;
+  /* высота send-бара: если не задана где-то ещё — 90px по умолчанию */
+  --sendbar-h: var(--sendbar-h, 90px);
+  /* суммарный «резерв» снизу под оба бара */
+  --sticky-bottom: calc(var(--sendbar-h) + var(--footer-h));
+}
+
+/* ===== Layout ===== */
 .chat-wrap {
   display: flex;
   flex-direction: column;
@@ -15,10 +25,17 @@ html {
   padding: 0 var(--gap);
   background: var(--bg);
   color: var(--text);
-  overflow-x: hidden; /* защита от горскролла */
+  overflow-x: hidden; /* защита от горизонтального скролла */
 }
 
-/* Header */
+/* Когда открыта мобильная клавиатура — учитываем svh */
+@supports (height: 100svh) {
+  .chat-wrap {
+    min-height: 100svh;
+  }
+}
+
+/* ===== Header ===== */
 .chat-header {
   position: sticky;
   top: 0;
@@ -33,27 +50,37 @@ html {
 .chat-title {
   font-weight: 700;
 }
+.chat-tabs {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
 .chat-filter {
   margin-left: auto;
   display: flex;
   gap: 8px;
 }
+.pill--active {
+  outline: 2px solid var(--primary);
+}
 
-/* Body / list */
+/* ===== Body / list ===== */
 .chat-body {
   flex: 1 1 auto;
   overflow: auto;
   overscroll-behavior: contain;
-  scroll-behavior: smooth; /* мягкий автоскролл вниз */
+  scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   padding: 12px 0;
   background: linear-gradient(180deg, var(--surface-2), var(--surface));
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  overflow-x: hidden; /* защита от горскролла */
+  overflow-x: hidden;
+  /* резерв под send-бар + футер + безопасная зона */
+  padding-bottom: calc(var(--sticky-bottom) + env(safe-area-inset-bottom, 0px));
 }
 
-/* Message bubble */
+/* ===== Message bubble ===== */
 .msg {
   max-width: 82%;
   margin: 10px 12px;
@@ -75,7 +102,7 @@ html {
   background: var(--surface);
 }
 
-/* Order/system look */
+/* Заказы / системные */
 .msg.order {
   border-color: var(--gold-border);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold-600) 20%, transparent);
@@ -99,30 +126,42 @@ html {
   margin-top: 4px;
 }
 
-/* Input area */
+/* ===== Input area (send-bar) ===== */
 .chat-send {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--footer-h); /* поднят над фикс-футером */
+  z-index: 999; /* выше футера */
   display: flex;
   align-items: flex-end;
   gap: 6px;
-  background: var(--bg); /* последнее значение */
-  padding: 8px;
+
+  background: var(--bg);
   border-top: 1px solid var(--border);
-  position: sticky;
-  bottom: 0;
-  width: 100%;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
+
+  /* безопасные зоны + отступы */
+  padding-left: calc(env(safe-area-inset-left, 0px) + var(--gap));
+  padding-right: calc(env(safe-area-inset-right, 0px) + var(--gap));
+  padding-top: 8px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+
   box-sizing: border-box;
-  overflow-x: hidden; /* не даём вылезать вправо */
-  flex: 0 0 auto;
-  /* безопасная зона на iOS */
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px));
-  /* тень для разделения от списка */
-  box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.04);
+  overflow-x: hidden;
 }
 .chat-send > * {
   min-width: 0;
-} /* дети могут сужаться в flex */
+}
 
-/* Multiline message field */
+/* Управление из JS при visualViewport */
+.chat-send.fixed.is-vv {
+  left: auto;
+  right: auto;
+  width: auto; /* управляет JS */
+}
+
+/* Многострочное поле */
 #msg {
   flex: 1;
   resize: none;
@@ -133,11 +172,11 @@ html {
   background: var(--surface);
   color: var(--text);
   caret-color: var(--primary);
-  font-size: 16px; /* >=16px чтобы не было авто-зума */
+  font-size: 16px; /* >=16px — без авто-зума на iOS */
   line-height: 1.4;
   font-family: var(--font-sans);
   min-height: 40px;
-  min-width: 0; /* важно для flex, чтобы не раздувало ширину */
+  min-width: 0; /* не раздувать flex-строку */
   --ta-line: 1.35em;
   --ta-max-rows: 5;
 }
@@ -145,7 +184,7 @@ html {
   color: var(--text-muted);
 }
 
-/* Buttons */
+/* Кнопки */
 .chat-btn {
   height: 40px;
   padding: 0 14px;
@@ -162,7 +201,6 @@ html {
 .chat-btn--send:active {
   transform: translateY(1px);
 }
-
 .chat-btn--voice {
   background: var(--surface-2);
   color: var(--text-muted);
@@ -176,7 +214,7 @@ html {
   color: var(--primary);
 }
 
-/* Recording pulse */
+/* Индикация записи */
 .chat-btn--voice[aria-pressed="true"]::before,
 .chat-btn--voice[aria-pressed="true"]::after {
   content: "";
@@ -194,7 +232,7 @@ html {
   animation-delay: 0.3s;
 }
 
-/* Highlight input area while recording */
+/* Подсветка send-бара при записи */
 .chat-send.recording #msg {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
 }
@@ -210,7 +248,7 @@ html {
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 18%, transparent);
 }
 
-/* Animations */
+/* Анимации */
 @keyframes pulse {
   0% {
     transform: scale(0.85);
@@ -228,7 +266,7 @@ html {
   }
 }
 
-/* A11y utility */
+/* A11y утилита */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -241,9 +279,48 @@ html {
   border: 0;
 }
 
-/* Когда открыта мобильная клавиатура, делаем форму максимально «дышащей» */
-@supports (height: 100svh) {
-  .chat-wrap {
-    min-height: 100svh;
-  }
+/* ===== Фиксированный футер (навигация) ===== */
+.site-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--footer-h);
+  z-index: 998; /* ниже .chat-send */
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Контент футера — в пределах контейнера, без растяжения на 100vw */
+.site-footer .footer-row {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 8px;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 calc(env(safe-area-inset-left, 0px) + var(--gap)) 0
+    calc(env(safe-area-inset-right, 0px) + var(--gap));
+}
+
+.site-footer .footer-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.site-footer .footer-link svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--gold-600);
+  fill: none;
+}
+.site-footer .footer-link.is-active {
+  color: var(--gold-600);
 }
