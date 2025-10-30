@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Hilfe · Lehrlingsfahrten MurtalTaxi</title>
+
+    <!-- фавиконки и манифест как на основной странице -->
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./assets/favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./assets/favicon/favicon-16x16.png"
+    />
+    <link rel="manifest" href="./assets/favicon/site.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400..900&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./assets/css/theme.css" />
+    <link rel="stylesheet" href="./assets/css/global.css" />
+    <link rel="stylesheet" href="./assets/css/layout.css" />
+    <link rel="stylesheet" href="./assets/css/components.css" />
+    <link rel="stylesheet" href="./assets/css/responsive.css" />
+  </head>
+  <body>
+    <main class="page">
+      <div class="container" style="max-width: 860px">
+        <!-- ======= MOBILE HEADER ======= -->
+        <header
+          class="page__header"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+          "
+        >
+          <h1 style="margin: 0; font-size: clamp(20px, 5vw, 26px)">Hilfe</h1>
+          <nav
+            class="help__nav"
+            style="
+              display: flex;
+              gap: 12px;
+              align-items: center;
+              flex-wrap: wrap;
+            "
+          >
+            <a
+              href="./index.html"
+              class="btn-link"
+              aria-label="Zurück zur Anwendung"
+              >🏠 Start</a
+            >
+            <a
+              href="./recent.html"
+              class="btn-link"
+              aria-label="Letzte Berichte anzeigen"
+              >🗂 Berichte</a
+            >
+          </nav>
+        </header>
+
+        <!-- ======= INHALT ======= -->
+        <section class="card" style="padding: 16px">
+          <h2 style="margin-top: 0">Was macht die App?</h2>
+          <p>
+            Die Anwendung dient zur einfachen Erfassung täglicher
+            <b>Lehrlings-Fahrten</b>. Fahrer wählen Route, Punkte und Schicht,
+            die Daten werden automatisch an den Server übertragen und
+            gespeichert.
+          </p>
+
+          <h3>Bedienung</h3>
+          <ul>
+            <li><b>Route wählen:</b> Oben zwischen Route 1 / 2 umschalten.</li>
+            <li>
+              <b>Punkte sortieren:</b> Per Drag &amp; Drop ordnen, aktivieren
+              oder deaktivieren.
+            </li>
+            <li><b>Gesamtstrecke:</b> wird automatisch berechnet.</li>
+            <li>
+              <b>Speichern:</b> Button <i>Speichern</i> sendet Daten an den
+              Server.
+            </li>
+            <li>
+              <b>Berichte:</b> Unter <a href="./recent.html">Berichte</a> sind
+              die letzten Einträge abrufbar.
+            </li>
+            <li>
+              <b>Darstellung:</b> Hell/Dunkel-Modus über den Button 🌙 / ☀️.
+            </li>
+          </ul>
+
+          <h3>Technik (Kurzinfo)</h3>
+          <ul>
+            <li><b>Frontend:</b> HTML / CSS / Vanilla JS</li>
+            <li><b>Backend:</b> Google Apps Script (GAS) mit JSON-API</li>
+            <li>
+              <b>Hauptdateien:</b> <code>api.js</code>, <code>main.js</code>,
+              <code>function.js</code>
+            </li>
+            <li>
+              <b>Endpoints:</b> <code>?fn=getdata</code>,
+              <code>?fn=recent</code>, <code>POST submit</code>
+            </li>
+            <li>
+              <b>Speicherung:</b> Tabelle <code>Submissions</code> (Google
+              Sheets)
+            </li>
+          </ul>
+
+          <hr
+            style="
+              border: none;
+              border-top: 1px solid var(--line, #2a3342);
+              margin: 16px 0;
+            "
+          />
+
+          <p style="margin: 0">
+            <b>Entwicklung:</b>
+            <a href="https://t.me/aamineev" target="_blank" rel="noopener"
+              >@aamineev</a
+            >
+          </p>
+        </section>
+
+        <footer style="margin: 24px 0 0; text-align: center; opacity: 0.8">
+          <a
+            class="btn-link"
+            href="./index.html"
+            aria-label="Zurück zur Anwendung"
+            >⟵ Zurück</a
+          >
+          ·
+          <a class="btn-link" href="./recent.html" aria-label="Berichte öffnen"
+            >🗂 Berichte</a
+          >
+        </footer>
+      </div>
+    </main>
+
+    <script src="./assets/js/theme.js" defer></script>
+  </body>
+</html>
