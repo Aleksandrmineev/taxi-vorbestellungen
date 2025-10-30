@@ -214,7 +214,9 @@ export function initForm({ onCreated }) {
         return;
       }
 
-      const { id, conflicts, gcal_event_id } = res.data || {};
+      const payload = res.data || res;
+      const { id, conflicts, gcal_event_id } = payload || {};
+
       let linkHTML = "";
       if (gcal_event_id) {
         linkHTML = `<div class="toast__msg">

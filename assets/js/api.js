@@ -26,6 +26,7 @@ async function getJSON(paramsObj) {
   return res.json();
 }
 
+// js/api.js
 async function postJSON(bodyObj) {
   const res = await fetch(API, {
     method: "POST",
@@ -33,11 +34,43 @@ async function postJSON(bodyObj) {
     cache: "no-store",
     body: JSON.stringify({ ...bodyObj, ts: Date.now() }),
   });
-  if (!res.ok) {
+
+  // 1) HTTP-уровень
+  const ct = res.headers.get("content-type") || "";
+  let data;
+
+  // 2) Пытаемся прочитать корректно в любом формате
+  if (ct.includes("application/json")) {
+    data = await res.json().catch(() => null);
+  } else {
     const text = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status} ${res.statusText} — ${text}`);
+    // a) сервер мог вернуть "OK" — считаем это успехом
+    if (res.ok && (text.trim().toUpperCase() === "OK" || text.trim() === "")) {
+      data = { ok: true, raw: text };
+    } else {
+      // b) вдруг это JSON с неверным content-type
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { ok: res.ok, raw: text };
+      }
+    }
   }
-  return res.json();
+
+  // 3) Если HTTP не ок — кидаем осмысленную ошибку
+  if (!res.ok) {
+    const msg =
+      (data && (data.error || data.message || data.raw)) ||
+      `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  // 4) Приводим форматы к единому виду
+  if (data == null) data = { ok: true };
+  if (data.ok === false) {
+    throw new Error(data.error || "Server reported failure");
+  }
+  return data;
 }
 
 // ---- API ----

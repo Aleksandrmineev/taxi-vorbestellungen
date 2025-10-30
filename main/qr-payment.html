@@ -132,12 +132,18 @@
           </div>
 
           <div class="tip-buttons">
-            <button class="tipbtn" data-tip="0">+0</button>
-            <button class="tipbtn" data-tip="2">+2</button>
-            <button class="tipbtn" data-tip="5">+5</button>
-            <button class="tipbtn" data-tip="10%">+10%</button>
-            <button class="tipbtn" data-tip="15%">+15%</button>
-            <button class="tipbtn" id="tipClear">Trinkgeld löschen</button>
+            <button type="button" class="tipbtn" data-tip="0">+0</button>
+            <button type="button" class="tipbtn" data-tip="round1">
+              auf €
+            </button>
+            <button type="button" class="tipbtn" data-tip="round1+1">
+              auf € + 1
+            </button>
+            <button type="button" class="tipbtn" data-tip="round5">
+              auf 5 €
+            </button>
+            <button type="button" class="tipbtn" data-tip="10%up">+10 %</button>
+            <button type="button" class="tipbtn" data-tip="15%up">+15 %</button>
           </div>
 
           <div class="sep"></div>
@@ -288,11 +294,10 @@
     <script src="assets/js/vendor/qrcode.min.js"></script>
     <script src="assets/js/vendor/qrcode_UTF8.min.js"></script>
 
+    <!-- JS этой страницы -->
+    <script defer src="assets/js/qr.js"></script>
     <!-- Глобальные скрипты -->
     <script defer src="assets/js/theme.js"></script>
     <script defer src="assets/js/main.js"></script>
-
-    <!-- JS этой страницы -->
-    <script defer src="assets/js/qr.js"></script>
   </body>
 </html>

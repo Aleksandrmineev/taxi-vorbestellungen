@@ -136,7 +136,8 @@ html {
   display: flex;
   align-items: flex-end;
   gap: 6px;
-
+  max-width: var(--container-max);
+  margin: 0 auto;
   background: var(--bg);
   border-top: 1px solid var(--border);
   box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
@@ -277,50 +278,4 @@ html {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-/* ===== Фиксированный футер (навигация) ===== */
-.site-footer {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: var(--footer-h);
-  z-index: 998; /* ниже .chat-send */
-  background: var(--bg);
-  border-top: 1px solid var(--border);
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
-}
-
-/* Контент футера — в пределах контейнера, без растяжения на 100vw */
-.site-footer .footer-row {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  gap: 8px;
-  max-width: var(--container-max);
-  margin: 0 auto;
-  padding: 0 calc(env(safe-area-inset-left, 0px) + var(--gap)) 0
-    calc(env(safe-area-inset-right, 0px) + var(--gap));
-}
-
-.site-footer .footer-link {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--text-muted);
-  text-decoration: none;
-}
-.site-footer .footer-link svg {
-  width: 22px;
-  height: 22px;
-  stroke: var(--gold-600);
-  fill: none;
-}
-.site-footer .footer-link.is-active {
-  color: var(--gold-600);
 }
