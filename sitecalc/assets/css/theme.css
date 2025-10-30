@@ -1,0 +1,71 @@
+/* ===== Тёмная (по умолчанию) ===== */
+:root {
+  --bg: #0b0f14;
+
+  /* поверхности */
+  --card: #121821;
+  --surface-2: #0e141c;
+  --surface-3: #1b2738;
+  --border: var(--surface-3);
+
+  /* текст/цвета */
+  --text: #e6eef7;
+  --muted: #a8b3c5;
+  --placeholder: #8ea0b8;
+
+  --accent: #4da3ff;
+  --green: #35d07f;
+  --danger: #7a2b2b;
+
+  /* фокус/оверлеи */
+  --focus-ring: color-mix(in srgb, var(--accent) 20%, transparent);
+  --overlay-scrim: rgba(0, 0, 0, 0.45);
+
+  /* кнопки вторичные */
+  --btn-sec-bg: #2b3b52;
+  --btn-sec-text: #fff;
+
+  --radius: 16px;
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+
+  /* футер */
+  --footer-text: #e6eef7;
+  --footer-bg: #0b0f14;
+}
+
+/* ===== Светлая ===== */
+[data-theme="light"] {
+  --bg: #f6f8fb;
+
+  --card: #ffffff;
+  --surface-2: #f3f6fb;
+  --surface-3: #e2e8f0;
+  --border: var(--surface-3);
+
+  --text: #1a1a1a;
+  --muted: #555;
+  --placeholder: #7a808a;
+
+  --accent: #007aff;
+  --green: #2ca463;
+  --danger: #b34141;
+
+  --focus-ring: color-mix(in srgb, var(--accent) 28%, transparent);
+  /* светлой теме делаем более лёгкий скрим */
+  --overlay-scrim: rgba(0, 0, 0, 0.25);
+
+  --btn-sec-bg: #e7edf6;
+  --btn-sec-text: #0f172a;
+
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+
+  --footer-text: #222;
+  --footer-bg: #e6eef7;
+}
+
+/* базовые переходы */
+body {
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.3s, color 0.3s;
+}

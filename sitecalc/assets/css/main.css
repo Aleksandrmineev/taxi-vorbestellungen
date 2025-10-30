@@ -1,0 +1,304 @@
+/* ===== Темы ===== */
+:root {
+  /* базовые */
+  --bg: #0b0f14;
+  --card: #121821;
+  --text: #e6eef7;
+  --muted: #a8b3c5;
+  --accent: #4da3ff;
+
+  /* поверхности/границы */
+  --surface-2: #162942;
+  --surface-3: #1b2738;
+  --border: var(--surface-3);
+
+  /* доп. цвета */
+  --green: #35d07f;
+  --footer-text: #e6eef7;
+  --footer-bg: var(--bg);
+
+  /* эффекты */
+  --radius: 16px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  /* плавность */
+  --transition-base: 0.3s ease;
+
+  /* системные подсказки */
+  color-scheme: dark light;
+
+  --container-max: 720px; /* базовая ширина контейнера */
+  --container-pad: clamp(12px, 4vw, 24px);
+  --section-gap: clamp(16px, 4vw, 28px);
+}
+
+/* Светлая тема */
+[data-theme="light"] {
+  --bg: #f6f8fb;
+  --card: #ffffff;
+  --text: #1a1a1a;
+  --muted: #555;
+  --accent: #007aff;
+
+  --surface-2: #f3f6fb;
+  --surface-3: #e2e8f0;
+  --border: var(--surface-3);
+
+  --green: #2ca463;
+  --footer-text: #222;
+  --footer-bg: #e6eef7;
+
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* ===== База ===== */
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font: 500 16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial,
+    sans-serif;
+  color: var(--text);
+  background: radial-gradient(
+      1200px 600px at 50% -20%,
+      color-mix(in srgb, var(--accent) 15%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      800px 400px at 80% 120%,
+      color-mix(in srgb, var(--accent) 10%, transparent),
+      transparent 60%
+    ),
+    var(--bg);
+  display: grid;
+  place-items: center;
+  transition: background var(--transition-base), color var(--transition-base);
+}
+
+/* === Контейнер и токены === */
+:root {
+  --container-max: 720px; /* базовая ширина контейнера */
+  --container-pad: clamp(12px, 4vw, 24px);
+  --section-gap: clamp(16px, 4vw, 28px);
+}
+
+/* Центрированный адаптивный контейнер */
+.container {
+  /* ширина: не более max и не ближе к краям, чем внутренние отступы */
+  inline-size: min(var(--container-max), 100% - (var(--container-pad) * 2));
+  margin-inline: auto;
+  /* padding-inline: max(var(--container-pad), env(safe-area-inset-left));
+  padding-block: var(--container-pad); */
+}
+
+/* Варианты ширины при необходимости */
+.container.is-narrow {
+  --container-max: 560px;
+}
+.container.is-wide {
+  --container-max: 860px;
+}
+
+/* Разделы внутри контейнера (если нужны вертикальные отступы) */
+.container > * + * {
+  margin-block-start: var(--section-gap);
+}
+
+/* Карточка заполняет контейнер по ширине */
+
+.card {
+  width: min(680px, 100%);
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  /* padding: clamp(20px, 4vw, 32px); */
+  inline-size: 100%;
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-weight: 700;
+  font-size: clamp(28px, 4.2vw, 40px);
+  letter-spacing: 0.2px;
+  text-align: center;
+}
+
+.subtitle {
+  color: var(--muted);
+  text-align: center;
+  font-size: clamp(14px, 2.4vw, 16px);
+}
+
+.input-center {
+  display: grid;
+  place-items: center;
+}
+
+input[type="number"] {
+  width: clamp(200px, 60%, 300px);
+  font: 600 clamp(22px, 5vw, 28px) / 1.2 system-ui;
+  color: var(--text);
+  text-align: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    background var(--transition-base), color var(--transition-base);
+}
+input[type="number"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.formula {
+  margin-top: 18px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px dashed var(--surface-3);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.formula code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 520px) {
+  .totals {
+    grid-template-columns: 1fr 1fr;
+  }
+  input[type="number"] {
+    width: 100%;
+  }
+}
+
+.total {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+}
+.total span {
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.2px;
+}
+.total strong {
+  font-size: clamp(22px, 3.6vw, 28px);
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.rates {
+  margin-top: 18px;
+  font-size: 14px;
+  color: var(--muted);
+  display: grid;
+  gap: 6px;
+}
+
+.footnote {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.85;
+  text-align: center;
+}
+
+.surcharge {
+  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+#surchargeBtn {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  font-weight: 700;
+  transition: background var(--transition-base), color var(--transition-base),
+    filter 0.2s ease;
+}
+#surchargeBtn:hover {
+  filter: brightness(1.05);
+}
+#surchargeCount {
+  margin-left: 6px;
+  color: var(--green);
+}
+
+.footer__dev {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.footer__dev a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--footer-text);
+  font-size: 14px;
+  text-decoration: none;
+  transition: opacity 0.25s ease;
+}
+.footer__dev a:hover {
+  opacity: 0.7;
+}
+.footer__dev svg {
+  flex-shrink: 0;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.back-btn:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+}
+
+.back-btn svg {
+  width: 18px;
+  height: 18px;
+}

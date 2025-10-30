@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MurtalTaxi – Fahrpreisrechner</title>
+
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./assets/favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./assets/favicon/favicon-16x16.png"
+    />
+    <link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+    <!-- Boot: Thema früh setzen (keine „Flashes“) -->
+    <script>
+      (function () {
+        try {
+          const saved = localStorage.getItem("theme");
+          const prefersDark = matchMedia(
+            "(prefers-color-scheme: dark)"
+          ).matches;
+          const theme = saved || (prefersDark ? "dark" : "light");
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="./assets/css/theme.css" />
+    <link rel="stylesheet" href="./assets/css/main.css" />
+  </head>
+  <body>
+    <main class="card" role="main">
+      <div class="container">
+        <button
+          class="back-btn"
+          type="button"
+          onclick="goBack()"
+          aria-label="Zurück zur vorherigen Seite"
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path
+              d="M15 18l-6-6 6-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span>Zurück</span>
+        </button>
+        <h1>MurtalTaxi – Fahrpreisrechner</h1>
+        <p class="subtitle">Steiermärkische Fahrpreistarife</p>
+
+        <div class="input-center">
+          <input
+            id="km"
+            name="km"
+            type="number"
+            step="0.1"
+            min="0"
+            inputmode="decimal"
+            placeholder="0,0"
+            aria-label="Entfernung in Kilometern"
+            autofocus
+          />
+          <p class="footnote">Hinweis: Geben Sie die Fahrtstrecke ein.</p>
+        </div>
+
+        <section class="totals" aria-live="polite" aria-atomic="true">
+          <div class="total" id="total-day">
+            <span>Tag</span>
+            <strong>0,00 €</strong>
+          </div>
+          <div class="total" id="total-night">
+            <span>Nacht / Feiertag</span>
+            <strong>0,00 €</strong>
+          </div>
+        </section>
+
+        <section class="formula" aria-live="polite" aria-atomic="true">
+          <div id="formula-day">
+            <code
+              >Tag: 5,00 € + 2,90 € × min(km, 5) + 2,80 € × max(km − 5, 0)</code
+            >
+          </div>
+          <div id="formula-night" style="margin-top: 6px">
+            <code
+              >Nacht/Feiertag: 5,00 € + 3,30 € × min(km, 5) + 2,80 € × max(km −
+              5, 0)</code
+            >
+          </div>
+        </section>
+
+        <div class="surcharge">
+          <button id="surchargeBtn" type="button" aria-live="polite">
+            Zuschlag +2,70 € <strong id="surchargeCount">× 0</strong>
+          </button>
+          <span class="muted"
+            >Mehr als 4 Pers., Schneeketten, Sportgeräte-Transporte</span
+          >
+        </div>
+
+        <!-- <div class="rates">
+          <div>
+            Bis 5 km:
+            <span class="muted">Tag 2,90 €/km · Nacht/Feiertag 3,30 €/km</span>
+          </div>
+          <div>
+            Über 5 km:
+            <span class="muted">Tag 2,80 €/km · Nacht/Feiertag 2,80 €/km</span>
+          </div>
+          <div>
+            Nachttarif: <span class="muted">20:00 – 6:00</span> Feiertage:
+            <span class="muted">Feiertage, sonntags</span>
+          </div>
+        </div> -->
+      </div>
+      <div class="footer__dev">
+        <!-- 1️⃣ Entwicklung -->
+        <a
+          href="https://t.me/aamineev"
+          target="_blank"
+          rel="noopener"
+          aria-label="Schreiben in Telegram @aamineev"
+        >
+          <svg
+            class="tg-icon"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M9.7 14.7l-.3 4.6c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.7.4 1.2.2 1.4-.6l2.6-12.2c.2-.9-.3-1.3-1-1.1L4 10.3c-.8.2-.8.7-.1.9l4.3 1.3 10-6.3c.5-.3.9-.1.5.2l-9 8.3z"
+              fill="currentColor"
+            />
+          </svg>
+          Entwicklung
+        </a>
+
+        <!-- 2️⃣ Hilfe -->
+        <a
+          href="hilfe.html"
+          class="footer__help"
+          aria-label="Öffnen der Hilfeseite"
+        >
+          <svg
+            class="help-icon"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm.25 17a1.25 1.25 0 1 1 1.25-1.25A1.25 1.25 0 0 1 12.25 19ZM13.5 13a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75v-.5a2.5 2.5 0 0 1 2.5-2.5 1.5 1.5 0 1 0-1.5-1.5.75.75 0 0 1-1.5 0 3 3 0 1 1 3.75 2.9Z"
+              fill="currentColor"
+            />
+          </svg>
+          Hilfe
+        </a>
+
+        <!-- 3️⃣ Переключатель темы -->
+        <button
+          id="themeToggle"
+          class="footer__theme"
+          aria-label="Thema umschalten"
+        >
+          🌙 Dunkel
+        </button>
+      </div>
+    </main>
+    <script src="./assets/js/main.js" defer></script>
+  </body>
+</html>
