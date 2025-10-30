@@ -1,0 +1,50 @@
+DE:
+
+### WhatsApp → Auftragsdatenbank → Suchseite (MVP)
+
+* WhatsApp-Chat als **TXT** exportieren.
+* Python-Skript **parse_whatsapp.py** wandelt TXT in **data.json** (Telefon, Adresse, Datum).
+* **index.html** lädt data.json, ermöglicht Telefonsuche und zeigt die letzten 10 Aufträge.
+
+---
+
+#### 1) WhatsApp-Export
+
+In WhatsApp: Chat öffnen → **Mehr → Chat exportieren → Ohne Medien** → `.txt` speichern.
+Datei neben das Skript legen, Name: `chat.txt`.
+
+#### 2) Parser starten
+
+```bash
+py -3 parse_whatsapp.py -i chat.txt -o data.json -c stopnames.json
+```
+
+Er extrahiert:
+
+* **phone** – normalisierte Telefonnummer (+ und Ziffern),
+* **address** – geschätzte Adresse nach Schlüsselwörtern,
+* **timestamp** – Datum/Uhrzeit der Nachricht (Format: `DD.MM.YYYY, HH:MM – Name: Nachricht`).
+
+Nach dem Lauf entsteht **data.json**.
+
+
+RU:
+WhatsApp → База заказов → Страница поиска (MVP)
+
+- Экспорт чата WhatsApp → TXT.
+- Скрипт-парсер (Python) преобразует TXT в data.json (телефон, адрес, дата).
+- Статическая страница index.html загружает data.json, даёт поиск по цифрам телефона и показывает последние 10 заказов.
+
+1) Экспорт чата WhatsApp
+
+В WhatsApp выберите чат → Ещё → Экспорт чата → Без медиа → сохраните .txt.
+Поместите файл рядом со скриптом, chat.txt.
+
+2) Парсер: parse_whatsapp.py
+Базовый запуск: py -3 parse_whatsapp.py -i chat.txt -o data.json -c stopnames.json
+
+Извлекает:
+- phone — нормализованные цифры телефона (оставляем только + и цифры, для поиска используем только цифры),
+- address — эвристика: текст после ключевых слов (Abholung/abholen/Adresse/von/pickup/откуда/адрес и т.п.),
+- timestamp — дата/время сообщения (поддержка типичной формы экспорта WhatsApp: DD.MM.YYYY, HH:MM - Name: Message).
+- После запуска появится data.json.

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Weiterleitung an WhatsApp…</title>
+    <script>
+      const to = new URLSearchParams(location.search).get("to");
+      if (to) {
+        // перенаправляем
+        location.href = decodeURIComponent(to);
+        // через 4 секунды закрываем вкладку (если браузер позволит)
+        setTimeout(() => window.close(), 4000);
+      }
+    </script>
+  </head>
+  <body
+    style="
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: #eee;
+      background: #0e141c;
+    "
+  >
+    <p>Weiterleitung an WhatsApp…</p>
+  </body>
+</html>

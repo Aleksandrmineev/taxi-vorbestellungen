@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WhatsApp Parser – Hilfe & Beschreibung</title>
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./favicon/favicon-16x16.png"
+    />
+    <link rel="manifest" href="./favicon/site.webmanifest" />
+    <script>
+      (function () {
+        const saved = localStorage.getItem("theme");
+        const prefersDark = matchMedia("(prefers-color-scheme: dark)").matches;
+        const theme = saved || (prefersDark ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+    <link rel="stylesheet" href="./assets/css/theme.css" />
+    <link rel="stylesheet" href="./assets/css/main.css" />
+    <link rel="stylesheet" href="./assets/css/hilfe.css" />
+  </head>
+  <body>
+    <main class="card">
+      <div class="container">
+        <h1>WhatsApp → Auftragsdatenbank → Suchseite (MVP)</h1>
+
+        <ul>
+          <li>WhatsApp-Chat als <strong>TXT</strong> exportieren.</li>
+          <li>
+            Python-Skript <strong>parse_whatsapp.py</strong> wandelt TXT in
+            <strong>data.json</strong> (Telefon, Adresse, Datum).
+          </li>
+          <li>
+            <strong>index.html</strong> lädt data.json, ermöglicht Telefonsuche
+            und zeigt die letzten 10 Aufträge.
+          </li>
+        </ul>
+
+        <hr />
+
+        <h2>1) WhatsApp-Export</h2>
+        <p>
+          In WhatsApp: Chat öffnen →
+          <strong>Mehr → Chat exportieren → Ohne Medien</strong> →
+          <code>.txt</code> speichern.<br />
+          Datei neben das Skript legen, Name: <code>chat.txt</code>.
+        </p>
+
+        <h2>2) Parser starten</h2>
+        <pre><code>py -3 parse_whatsapp.py -i chat.txt -o data.json -c stopnames.json</code></pre>
+
+        <p>Er extrahiert:</p>
+        <ul>
+          <li>
+            <strong>phone</strong> – normalisierte Telefonnummer (+ und
+            Ziffern),
+          </li>
+          <li>
+            <strong>address</strong> – geschätzte Adresse nach Schlüsselwörtern,
+          </li>
+          <li>
+            <strong>timestamp</strong> – Datum/Uhrzeit der Nachricht (Format:
+            <code>DD.MM.YYYY, HH:MM – Name: Nachricht</code>).
+          </li>
+        </ul>
+
+        <p>Nach dem Lauf entsteht <strong>data.json</strong>.</p>
+
+        <hr />
+
+        <h2>📘 Beschreibung</h2>
+        <p>
+          Ein leichtes, lokales Web-Tool zur Unterstützung eines
+          Taxi-Disponenten (oder Fahrers), der Anrufe entgegennimmt und häufige
+          Kunden schneller zuordnen möchte.
+        </p>
+
+        <p>Während eines Telefonats kann der Disponent:</p>
+        <ul>
+          <li>ein paar Ziffern der Telefonnummer eingeben,</li>
+          <li>den zuletzt gespeicherten Auftrag finden,</li>
+          <li>
+            per Klick den Telefon- und Adress-Text in die Zwischenablage
+            kopieren (um ihn direkt im WhatsApp- oder Telegram-Chat an Fahrer zu
+            senden),
+          </li>
+          <li>
+            bei Bedarf einen neuen Auftrag hinzufügen, der im Browser
+            gespeichert bleibt.
+          </li>
+        </ul>
+
+        <h3>✳️ Hauptfunktionen</h3>
+        <ul>
+          <li>
+            🔍 Sofortsuche nach Teilnummern (z. B. „6601“ findet „+43 660 123
+            4567“)
+          </li>
+          <li>✨ Hervorhebung der gefundenen Ziffern im Ergebnis</li>
+          <li>📋 Ein-Klick-Kopie („+43 660 123 4567 Bahnhof Knittelfeld“)</li>
+          <li>💾 Letzte Suchanfragen (automatisch gespeichert, klickbar)</li>
+          <li>
+            ➕ Neuer Auftrag über ein modales Formular (lokal gespeichert im
+            Browser)
+          </li>
+          <li>
+            ⚙️ Offline-fähig, läuft komplett lokal mit <code>index.html</code> +
+            <code>data.json</code>
+          </li>
+          <li>
+            🎯 Mobile-optimiert (große Bedienelemente, numerische Tastatur)
+          </li>
+          <li>💡 Automatischer Fokus beim Öffnen der Seite</li>
+        </ul>
+
+        <h3>📁 Struktur</h3>
+        <pre><code>project/
+    │
+    ├── index.html → Haupt-Anwendung (JS, CSS inline)
+    ├── data.json → Auftragsdaten (WhatsApp-Parser-Ergebnis)
+    ├── parse_whatsapp.py → Parser für exportierte WhatsApp-Chats
+    ├── stopnames.json → Wörterbuch zum Bereinigen von Namen u. Füllwörtern
+    └── README.md → Projektbeschreibung</code></pre>
+
+        <h3>🚀 Verwendung</h3>
+        <ol>
+          <li>
+            <strong>data.json</strong> aus WhatsApp-Chat generieren (mit
+            <code>parse_whatsapp.py</code>).
+          </li>
+          <li>
+            <strong>index.html</strong> + <strong>data.json</strong> in
+            beliebigen Ordner oder Webserver legen (z. B.
+            <code>https://taxi-suche.de/lookup</code>).
+          </li>
+          <li>
+            Seite öffnen → 3–4 Ziffern eingeben → Klick → Adresse kopieren.
+          </li>
+        </ol>
+
+        <h3>🔧 Zukünftige Erweiterungen</h3>
+        <ul>
+          <li>Synchronisation mit Google Sheets oder Supabase</li>
+          <li>Automatisches Laden neuer Chat-Daten</li>
+          <li>Integration mit WhatsApp API / Telegram-Bot</li>
+          <li>Karten-Button (Google Maps Route)</li>
+          <li>Zentrale Datenhaltung für mehrere Dispatcher</li>
+        </ul>
+
+        <h3>👨‍💻 Entwickler</h3>
+        <p>
+          Erstellt von <strong>Aleksandr Mineev</strong>, 2025.<br />
+          Verwendung und Anpassung für betriebsinterne Zwecke erlaubt.
+        </p>
+
+        <hr />
+
+        <button class="btn" onclick="window.location.href='index.html'">
+          ← Zurück zur Suche
+        </button>
+      </div>
+      <div class="footer__dev">
+        <!-- 1️⃣ Entwicklung -->
+        <a
+          href="https://t.me/aamineev"
+          target="_blank"
+          rel="noopener"
+          aria-label="Schreiben in Telegram @aamineev"
+        >
+          <svg
+            class="tg-icon"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M9.7 14.7l-.3 4.6c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.7.4 1.2.2 1.4-.6l2.6-12.2c.2-.9-.3-1.3-1-1.1L4 10.3c-.8.2-.8.7-.1.9l4.3 1.3 10-6.3c.5-.3.9-.1.5.2l-9 8.3z"
+              fill="currentColor"
+            />
+          </svg>
+          Entwicklung
+        </a>
+
+        <!-- 2️⃣ Hilfe -->
+        <a
+          href="hilfe.html"
+          class="footer__help"
+          aria-label="Öffnen der Hilfeseite"
+        >
+          <svg
+            class="help-icon"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm.25 17a1.25 1.25 0 1 1 1.25-1.25A1.25 1.25 0 0 1 12.25 19ZM13.5 13a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75v-.5a2.5 2.5 0 0 1 2.5-2.5 1.5 1.5 0 1 0-1.5-1.5.75.75 0 0 1-1.5 0 3 3 0 1 1 3.75 2.9Z"
+              fill="currentColor"
+            />
+          </svg>
+          Hilfe
+        </a>
+      </div>
+    </main>
+    <script src="./main.js" defer></script>
+  </body>
+</html>

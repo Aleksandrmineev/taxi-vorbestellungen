@@ -1,0 +1,129 @@
+/* Контейнер общего типа — как на остальных страницах */
+.container {
+  width: min(var(--max-width, 1200px), 100%);
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 32px);
+  box-sizing: border-box;
+}
+
+/* Карточка инструкции */
+.card {
+  background: var(--card);
+  border-radius: var(--radius, 16px);
+  box-shadow: var(--shadow);
+  padding: clamp(20px, 4vw, 40px);
+  color: var(--text);
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.5;
+}
+
+/* Заголовки */
+.card h1,
+.card h2,
+.card h3 {
+  color: var(--accent);
+  line-height: 1.3;
+}
+
+.card h1 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  margin-bottom: 1rem;
+}
+
+.card h2 {
+  font-size: clamp(1.3rem, 2.5vw, 1.8rem);
+  margin-top: 2rem;
+}
+
+.card h3 {
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  margin-top: 1.5rem;
+}
+
+/* Текст и списки */
+.card p {
+  margin-bottom: 1rem;
+}
+
+.card ul,
+.card ol {
+  margin: 0 0 1.5rem 1.2rem;
+  padding: 0;
+}
+
+.card li {
+  margin-bottom: 0.5rem;
+}
+
+/* Блоки кода и inline-код */
+.card pre {
+  /* было: rgba(255,255,255,.05) */
+  background: var(
+    --code-bg,
+    color-mix(in srgb, var(--surface-3) 18%, var(--card))
+  );
+  border: 1px solid var(--surface-3);
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  max-width: 100%;
+}
+
+.card code {
+  /* было: rgba(255,255,255,.08) */
+  background: var(
+    --code-inline-bg,
+    color-mix(in srgb, var(--surface-3) 22%, transparent)
+  );
+  color: var(--text);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-size: 0.95em;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Кнопка */
+.card .btn {
+  display: inline-block;
+  margin-top: 1.5rem;
+  padding: 10px 20px;
+  background: var(--accent);
+  color: var(--btn-prim-text, #fff);
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: filter 0.25s ease, transform 0.2s ease;
+}
+
+.card .btn:hover {
+  /* было: #5bb7ff */
+  /* делаем универсальный ховер без хардкода */
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+}
+
+/* Горизонтальный разделитель */
+.card hr {
+  border: none;
+  /* было: 1px solid rgba(255,255,255,.1) */
+  border-top: 1px solid color-mix(in srgb, var(--surface-3) 60%, transparent);
+  margin: 2rem 0;
+}
+
+/* Адаптив */
+@media (max-width: 600px) {
+  .card {
+    border-radius: var(--radius-sm, 12px);
+    padding: 20px;
+  }
+
+  .card .btn {
+    width: 100%;
+    text-align: center;
+  }
+}

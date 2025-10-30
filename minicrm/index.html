@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bestell-Suche</title>
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./favicon/favicon-16x16.png"
+    />
+    <link rel="manifest" href="./favicon/site.webmanifest" />
+    <script>
+      (function () {
+        const saved = localStorage.getItem("theme");
+        const prefersDark = matchMedia("(prefers-color-scheme: dark)").matches;
+        const theme = saved || (prefersDark ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+    <link rel="stylesheet" href="./assets/css/theme.css" />
+    <link rel="stylesheet" href="./assets/css/main.css" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="card">
+      <button
+        class="back-btn"
+        type="button"
+        onclick="goBack()"
+        aria-label="Zurück zur vorherigen Seite"
+      >
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path
+            d="M15 18l-6-6 6-6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span>Zurück</span>
+      </button>
+      <h1>Suche nach Telefon</h1>
+      <button class="btn-add" id="btnAdd">+ Auftrag</button>
+
+      <div class="search">
+        <div class="input-wrap">
+          <input
+            id="q"
+            placeholder="Nur Ziffern eingeben…"
+            inputmode="numeric"
+            pattern="[0-9]*"
+          />
+          <button
+            id="clear"
+            class="clear-btn"
+            aria-label="Eingabe löschen"
+            type="button"
+          >
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M18 6L6 18M6 6l12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="recent" id="recent"></div>
+        <p class="muted" id="hint">
+          Geben Sie einige Ziffern der Telefonnummer ein.
+        </p>
+      </div>
+
+      <ul id="list"></ul>
+    </main>
+
+    <div id="toast" class="toast">Kopiert</div>
+
+    <!-- Modal Add New -->
+    <dialog id="dlg">
+      <h3>Neuer Auftrag</h3>
+
+      <!-- Только цифры: digits-only клавиатура на iOS/Android -->
+      <input
+        id="newPhone"
+        type="text"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        autocomplete="tel"
+        placeholder="Telefonnummer"
+      />
+
+      <!-- Адрес на 3 строки -->
+      <textarea id="newAddr" rows="3" placeholder="Telefon, Adresse"></textarea>
+
+      <div class="modal-buttons">
+        <button class="btn btn-cancel" id="cancelAdd">Abbrechen</button>
+        <button class="btn btn-save" id="saveAdd">Speichern</button>
+      </div>
+    </dialog>
+
+    <div class="footer__dev">
+      <!-- 0️⃣ Schicht -->
+      <a
+        href="#"
+        id="btnShift"
+        class="footer__help footer__item"
+        aria-label="Schicht öffnen"
+      >
+        <svg
+          class="shift-icon"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 22A10 10 0 1 1 22 12 10.011 10.011 0 0 1 12 22Zm0-18a8 8 0 1 0 8 8 8.009 8.009 0 0 0-8-8Zm.75 4.5a.75.75 0 0 0-1.5 0v4.25c0 .2.08.39.22.53l2.5 2.5a.75.75 0 1 0 1.06-1.06L12.75 12.9Z"
+            fill="currentColor"
+          />
+        </svg>
+        Schicht
+      </a>
+
+      <!-- 0️⃣ Protokoll -->
+      <a
+        href="#"
+        id="btnLog"
+        class="footer__help footer__item"
+        aria-label="Protokoll öffnen"
+      >
+        <svg
+          class="log-icon"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M7 3h8a3 3 0 0 1 3 3v13.5a.5.5 0 0 1-.8.4L14 17H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h7.2l2.8 2.1V6a1 1 0 0 0-1-1ZM8 7.5h6a.75.75 0 0 1 0 1.5H8a.75.75 0 0 1 0-1.5Zm0 3h6a.75.75 0 0 1 0 1.5H8a.75.75 0 0 1 0-1.5Z"
+            fill="currentColor"
+          />
+        </svg>
+        Protokoll
+      </a>
+
+      <!-- 1️⃣ Entwicklung -->
+      <a
+        href="https://t.me/aamineev"
+        target="_blank"
+        rel="noopener"
+        aria-label="Schreiben in Telegram @aamineev"
+      >
+        <svg
+          class="tg-icon"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M9.7 14.7l-.3 4.6c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.7.4 1.2.2 1.4-.6l2.6-12.2c.2-.9-.3-1.3-1-1.1L4 10.3c-.8.2-.8.7-.1.9l4.3 1.3 10-6.3c.5-.3.9-.1.5.2l-9 8.3z"
+            fill="currentColor"
+          />
+        </svg>
+        Entwicklung
+      </a>
+
+      <!-- 2️⃣ Hilfe -->
+      <a
+        href="hilfe.html"
+        class="footer__help"
+        aria-label="Öffnen der Hilfeseite"
+      >
+        <svg
+          class="help-icon"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm.25 17a1.25 1.25 0 1 1 1.25-1.25A1.25 1.25 0 0 1 12.25 19ZM13.5 13a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75v-.5a2.5 2.5 0 0 1 2.5-2.5 1.5 1.5 0 1 0-1.5-1.5.75.75 0 0 1-1.5 0 3 3 0 1 1 3.75 2.9Z"
+            fill="currentColor"
+          />
+        </svg>
+        Hilfe
+      </a>
+
+      <!-- 3️⃣ Переключатель темы -->
+      <button
+        id="themeToggle"
+        class="footer__theme"
+        aria-label="Thema umschalten"
+      >
+        🌙 Dunkel
+      </button>
+    </div>
+
+    <script src="./main.js" defer></script>
+  </body>
+</html>
