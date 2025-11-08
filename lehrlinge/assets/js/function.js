@@ -94,45 +94,112 @@
     App.dom.nowEl.textContent = App.fmt.dateTime.format(new Date());
   };
 
-  // Рендер списка точек
+  // Рендер списка точек (старт — все включены; дальше — восстановление последнего выбора)
   App.render = function () {
-    const { list } = App.dom || {};
-    const { points } = App.state || {};
+    const { list, drvSel } = App.dom || {};
+    const { points, route } = App.state || {};
     if (!list) return;
+
+    const PFX = "mt:points";
+    const lastDriverLS = localStorage.getItem("mt:lastDriver") || "";
+    const driver = (drvSel && drvSel.value) || lastDriverLS || "d_any";
+    const key = (d) => `${PFX}:r${route || "1"}:d${d}`;
+
+    const readSaved = () => {
+      const tryKeys = [key(driver)];
+      if (lastDriverLS && lastDriverLS !== driver)
+        tryKeys.push(key(lastDriverLS));
+      tryKeys.push(key("d_any"));
+      for (const k of tryKeys) {
+        try {
+          const arr = JSON.parse(localStorage.getItem(k) || "null");
+          if (Array.isArray(arr)) return new Set(arr.map(String));
+        } catch {}
+      }
+      return null;
+    };
+
+    const savedSet = readSaved();
+    const isChecked = (id) => (savedSet ? savedSet.has(String(id)) : true);
 
     list.innerHTML = (points || [])
       .map(
         (p) => `
-<div class="row" data-id="${p.id}">
-  <input class="chk" type="checkbox" checked aria-label="Einbeziehen">
-  <div class="badge" title="Zum Verschieben gedrückt halten">${p.id}</div>
-  <div class="name">${p.name}</div>
-  <div class="leg"></div>
-</div>`
+  <div class="row" data-id="${p.id}">
+    <input class="chk" type="checkbox" data-point-id="${p.id}"${
+          isChecked(p.id) ? " checked" : ""
+        } aria-label="Einbeziehen">
+    <div class="badge" title="Zum Verschieben gedrückt halten">${p.id}</div>
+    <div class="name">${p.name}</div>
+    <div class="leg"></div>
+  </div>`
       )
       .join("");
 
-    // checkbox toggle
-    list.querySelectorAll(".chk").forEach((ch) => {
-      ch.addEventListener("change", (e) => {
-        e.target.closest(".row").classList.toggle("off", !e.target.checked);
-        App.updateTotal();
-      });
+    list.querySelectorAll(".row").forEach((row) => {
+      const ch = row.querySelector(".chk");
+      row.classList.toggle("off", !ch.checked);
     });
 
-    // drag & drop по бейджу (стабильный для мобайл/десктоп)
+    const idOf = (el) => {
+      const row = el.closest ? el.closest(".row") : el;
+      const chk = el.matches?.(".chk") ? el : row?.querySelector(".chk");
+      return (
+        chk?.getAttribute("data-point-id") ||
+        row?.dataset?.id ||
+        chk?.value ||
+        chk?.id ||
+        chk?.name ||
+        ""
+      );
+    };
+
+    const saveCurrent = () => {
+      const ids = [...list.querySelectorAll('.chk[type="checkbox"]')]
+        .filter((b) => b.checked)
+        .map(idOf)
+        .filter(Boolean);
+      const json = JSON.stringify(ids);
+      const k1 = key(driver);
+      const k2 = key("d_any");
+      localStorage.setItem(k1, json);
+      if (k2 !== k1) localStorage.setItem(k2, json);
+    };
+
+    // 👉 Экспортируем, чтобы вызывать перед сменой маршрута
+    App.savePointsSelection = saveCurrent;
+
+    if (!list._persistBound) {
+      list.addEventListener(
+        "change",
+        (e) => {
+          const t = e.target;
+          if (
+            !(t instanceof HTMLInputElement) ||
+            t.type !== "checkbox" ||
+            !t.classList.contains("chk")
+          )
+            return;
+          t.closest(".row")?.classList.toggle("off", !t.checked);
+          App.updateTotal?.();
+          saveCurrent();
+        },
+        true
+      );
+      list._persistBound = true;
+    }
+
+    // DnD как раньше...
     list.querySelectorAll(".badge").forEach((badge) => {
       let dragging = null,
         startY = 0,
         ph = null,
         ghostH = 0;
-
       const onMove = (e) => {
         if (!dragging) return;
         const y = e.touches ? e.touches[0].clientY : e.clientY;
         const dy = y - startY;
         dragging.style.transform = `translateY(${dy}px)`;
-
         const rows = [...list.querySelectorAll(".row:not(.drag)")];
         const mid = dragging.getBoundingClientRect().top + ghostH / 2 + dy;
         let target = null;
@@ -146,7 +213,6 @@
         if (!target) list.appendChild(ph);
         else list.insertBefore(ph, target);
       };
-
       const endDrag = () => {
         if (!dragging) return;
         dragging.classList.remove("drag");
@@ -159,21 +225,19 @@
         dragging = null;
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", endDrag);
-        App.updateTotal();
+        App.updateTotal?.();
+        saveCurrent();
       };
-
       badge.addEventListener("pointerdown", (e) => {
         e.preventDefault();
         try {
           e.target.setPointerCapture(e.pointerId);
-        } catch (_) {}
-
+        } catch {}
         const row = e.target.closest(".row");
         dragging = row;
         startY = e.clientY;
         ghostH = row.offsetHeight;
         row.classList.add("drag");
-
         ph = document.createElement("div");
         const cs = getComputedStyle(row);
         ph.style.height = ghostH + "px";
@@ -182,26 +246,65 @@
         ph.style.borderRadius = cs.borderRadius;
         ph.style.background = "transparent";
         list.insertBefore(ph, row.nextSibling);
-
         window.addEventListener("pointermove", onMove, { passive: true });
         window.addEventListener("pointerup", endDrag, { once: true });
       });
     });
 
-    App.updateTotal();
+    // если сохранения ещё не было — зафиксируем стартовое «все включены»
+    if (!savedSet) App.savePointsSelection();
+
+    App.updateTotal?.();
   };
 
   // Селект водителей
+  // Селекты водителей: не зависят от Route, помним глобально последний выбор
   App.renderDrivers = function () {
-    const { drivers } = App.state || {};
-    const { drvSel } = App.dom || {};
-    if (!drvSel) return;
+    const drivers = (App.state && App.state.drivers) || [];
+    // поддержим несколько селектов водителя
+    const selects = Array.from(
+      document.querySelectorAll("select#driver, select[data-driver]")
+    );
+    if (!selects.length) return;
 
-    drvSel.innerHTML =
+    // 1) определяем, что ставить как выбранное
+    const saved = localStorage.getItem("mt:lastDriver") || "";
+    // если в каком-то селекте уже есть значение (например, до перерендеринга) — приоритет current
+    const current = selects.find((s) => s && s.value)?.value || "";
+    const prefer = current || saved || ""; // глобальный выбор, НЕ зависящий от Route
+
+    // 2) рендерим опции во все селекты одинаково
+    const optionsHtml =
       '<option value="">—</option>' +
-      (drivers || [])
-        .map((d) => `<option value="${d.id}">${d.name}</option>`)
+      drivers
+        .map((d) => `<option value="${String(d.id)}">${d.name}</option>`)
         .join("");
+
+    selects.forEach((sel) => {
+      sel.innerHTML = optionsHtml;
+
+      // проставляем prefer, если такая опция существует
+      const hasPrefer = Array.from(sel.options).some((o) => o.value === prefer);
+      if (hasPrefer) {
+        sel.value = prefer;
+      } else if (
+        saved &&
+        Array.from(sel.options).some((o) => o.value === saved)
+      ) {
+        // fallback к сохранённому, если current отсутствует в новом списке
+        sel.value = saved;
+      } else {
+        // иначе оставляем пусто
+        sel.value = "";
+      }
+    });
+
+    // 3) если удалось выбрать что-то осмысленное — сразу обновим localStorage (глобально)
+    const finalVal = selects[0]?.value || "";
+    if (finalVal) localStorage.setItem("mt:lastDriver", finalVal);
+
+    // 4) оповестим остальной код (если нужно что-то дорендерить)
+    window.dispatchEvent(new CustomEvent("drivers:loaded"));
   };
 
   // Текущая последовательность включённых

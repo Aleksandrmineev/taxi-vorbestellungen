@@ -68,10 +68,21 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   App.dom.seg1?.addEventListener("click", () => {
-    if (App.state.route !== "1") load("1");
+    if (App.state.route !== "1") {
+      // сначала сохраним выбор для текущего маршрута
+      if (typeof App.savePointsSelection === "function")
+        App.savePointsSelection();
+      load("1");
+    }
   });
+
   App.dom.seg2?.addEventListener("click", () => {
-    if (App.state.route !== "2") load("2");
+    if (App.state.route !== "2") {
+      // сначала сохраним выбор для текущего маршрута
+      if (typeof App.savePointsSelection === "function")
+        App.savePointsSelection();
+      load("2");
+    }
   });
 
   // ========== Выбрать/снять всё ==========
@@ -130,6 +141,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // Рендерим
       if (typeof App.renderDrivers === "function") App.renderDrivers();
       if (typeof App.render === "function") App.render();
+      // после любой перерисовки — восстановить чекбоксы
+      if (typeof App.pointsRestoreStrong === "function")
+        App.pointsRestoreStrong();
     } catch (err) {
       console.error("load() error:", err);
       const box = App.dom.confirmBox;
@@ -221,11 +235,83 @@ document.addEventListener("DOMContentLoaded", () => {
   load("1");
 });
 
-function goBack() {
-  if (document.referrer && !document.referrer.includes(location.href)) {
-    history.back();
-  } else {
-    // если открыто напрямую — переход на главную
-    window.location.href = "index.html";
-  }
+function goHome() {
+  window.location.href = "../index.html";
 }
+
+// ===== Сохранение выбора водителя в localStorage и синхронизация между селектами =====
+(() => {
+  const STORAGE_KEY = "mt:lastDriver";
+  // Поддержим оба ваших селекта (id="driver") и возможные future-атрибуты
+  const driverSelectors = "select#driver, select[data-driver]";
+
+  const getAllDriverSelects = () =>
+    Array.from(document.querySelectorAll(driverSelectors))
+      // фильтр на живые в DOM узлы
+      .filter((s) => document.body.contains(s));
+
+  // Сохранение
+  const saveDriver = (val) => {
+    if (val != null) localStorage.setItem(STORAGE_KEY, String(val));
+  };
+
+  // Применить значение ко всем селектам, если такая опция есть
+  const applyToAll = (val) => {
+    const selects = getAllDriverSelects();
+    selects.forEach((sel) => {
+      const has = Array.from(sel.options).some((o) => o.value === val);
+      if (has) sel.value = val;
+    });
+  };
+
+  // Восстановление (первичная попытка)
+  const restoreOnce = () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+    applyToAll(saved);
+  };
+
+  // Синхронизация: при изменении любого селекта
+  const onChange = (e) => {
+    if (!(e.target instanceof HTMLSelectElement)) return;
+    const val = e.target.value;
+    saveDriver(val);
+    applyToAll(val);
+  };
+
+  // Наблюдатель: если опции подгрузились позже — повторно попробуем применить saved
+  const setupObservers = () => {
+    const selects = getAllDriverSelects();
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return [];
+
+    return selects.map((sel) => {
+      const mo = new MutationObserver(() => {
+        // как только появилась нужная опция — применяем и больше не слушаем
+        const has = Array.from(sel.options).some((o) => o.value === saved);
+        if (has) {
+          sel.value = saved;
+          mo.disconnect();
+        }
+      });
+      mo.observe(sel, { childList: true, subtree: true });
+      return mo;
+    });
+  };
+
+  // Инициализация
+  document.addEventListener("DOMContentLoaded", () => {
+    // 1) первичное восстановление (если опции уже есть)
+    restoreOnce();
+
+    // 2) подписка на изменения
+    document.addEventListener("change", onChange, true);
+
+    // 3) наблюдение за подгрузкой опций (если они приходят асинхронно)
+    setupObservers();
+
+    // 4) Дополнительно: если ваш код диспатчит событие после загрузки водителей,
+    // то применим сохранённое и здесь:
+    window.addEventListener("drivers:loaded", restoreOnce);
+  });
+})();
