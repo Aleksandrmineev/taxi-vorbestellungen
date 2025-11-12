@@ -155,10 +155,14 @@ export function initForm({ onCreated }) {
   const submitBtn = f.querySelector(".icon-btn--primary");
 
   // 1) Дефолты
-  f.elements.date.value = todayISO();
   f.elements.type.addEventListener("change", () => {
     const dur = f.elements["duration_min"];
-    if (f.elements.type.value === "KT") {
+    const type = f.elements.type.value;
+
+    if (type === "KT") {
+      dur.value = 120;
+      dur.step = "1";
+    } else if (type === "RE") {
       dur.value = 120;
       dur.step = "1";
     } else {
@@ -166,6 +170,7 @@ export function initForm({ onCreated }) {
       dur.step = "1";
     }
   });
+
   f.elements.type.dispatchEvent(new Event("change"));
 
   // 2) Время + нормализация

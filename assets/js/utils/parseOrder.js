@@ -172,8 +172,22 @@ function extractPhone(raw) {
 }
 
 function detectType(raw) {
-  const s = raw.toLowerCase();
+  const s = String(raw || "").toLowerCase();
+
+  // 1) Krankentransport
   if (/\b(kt|krankentransport|krankenfahrt)\b/.test(s)) return "KT";
+
+  // 2) Rechnungsfahrt (избегаем "Abrechnung")
+  const hasAbrechnung = /\babrechnung/.test(s);
+  const isRechnungsfahrt =
+    /\brechnungsfahrt\b/.test(s) ||
+    /\bauf\s+rechnung\b/.test(s) ||
+    (/\brechnung(s)?\b/.test(s) && /\bfahrt(en)?\b/.test(s)) || // "Rechnung Fahrt"
+    /\brf\b/.test(s); // опционально: короткая аббревиатура
+
+  if (!hasAbrechnung && isRechnungsfahrt) return "RE";
+
+  // 3) По умолчанию
   return "Orts";
 }
 
