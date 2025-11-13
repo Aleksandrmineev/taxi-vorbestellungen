@@ -120,10 +120,33 @@ export const Api = {
   /** Создать заказ */
   async createOrder(data) {
     const { deviceId, displayName } = identity();
+
+    // --- нормализация типа (KT / RE / Orts) ---
+    let type = String(data.type || "")
+      .toUpperCase()
+      .trim();
+    if (type === "KT" || /krankentransport|krankenfahrt/.test(type)) {
+      type = "KT";
+    } else if (
+      type === "RE" ||
+      /\brechnungsfahrt\b/i.test(type) ||
+      /\bauf\s+rechnung\b/i.test(type) ||
+      /\brf\b/i.test(type) ||
+      /\bflughafenfahrt(en)?\b/i.test(type) ||
+      /\bairportfahrt(en)?\b/i.test(type) ||
+      /\bzum\s+flughafen\b/i.test(type)
+    ) {
+      type = "RE";
+    } else {
+      type = "Orts";
+    }
+
     const payload = Object.assign({}, data, {
+      type, // ← гарантируем корректный тип
       created_by_name: displayName,
       created_by_device: deviceId,
     });
+
     // можно и GET, но POST надёжнее для длинных тел
     return postJSON({ action: "create", data: payload });
   },

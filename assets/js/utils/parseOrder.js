@@ -129,37 +129,39 @@ function normTime(h, min) {
   return `${pad2(h)}:${pad2(min || 0)}`;
 }
 
+function normalizeColons(s) {
+  // 19 : 30 → 19:30 (не трогаем нечисловые случаи)
+  return String(s).replace(/(\d)\s*:\s*(\d)/g, "$1:$2");
+}
+
 /** Ищем время. stripRanges — массив [a,b] отрезков, которые нужно замаскировать (дата). */
 function findTime(raw, stripRanges = []) {
-  let s = raw;
+  // нормализуем пробелы вокруг ":" заранее
+  let s = normalizeColons(raw);
 
-  // замещаем найденные участки пробелами — длина не меняется
+  // замещаем найденные участки даты пробелами — длина не меняется
   for (const [a, b] of stripRanges) {
     s = s.slice(0, a) + " ".repeat(Math.max(0, b - a)) + s.slice(b);
   }
   const low = s.toLowerCase();
 
-  // 1) явный HH:MM
+  // 1) явный HH:MM (разрешаем пробелы вокруг :)
   {
-    const m = /(^|[^\d])(\d{1,2}):(\d{2})($|[^\d])/i.exec(low);
+    const m = /(^|[^\d])(\d{1,2})\s*:\s*(\d{2})($|[^\d])/i.exec(low);
     if (m) return { time: normTime(m[2], m[3]) };
   }
 
-  // 2) "um 4 uhr" / "um 4:15 uhr" / "um 4"
+  // 2) "um 4 uhr" / "um 4:15 uhr" / "um 4" (с пробелами вокруг :)
   {
-    const m = /\bum\s+(\d{1,2})(?::(\d{2}))?\s*(uhr)?\b/i.exec(low);
+    const m = /\bum\s+(\d{1,2})(?:\s*:\s*(\d{2}))?\s*(uhr)?\b/i.exec(low);
     if (m) return { time: normTime(m[1], m[2]) };
   }
 
-  // 3) просто "4 uhr" / "4:15 uhr"
+  // 3) просто "4 uhr" / "4:15 uhr" (с пробелами вокруг :)
   {
-    const r = /\b(\d{1,2})(?::(\d{2}))\s*uhr\b|\b(\d{1,2})\s*uhr\b/i;
+    const r = /\b(\d{1,2})(?:\s*:\s*(\d{2}))?\s*uhr\b/i;
     const m = r.exec(low);
-    if (m) {
-      const h = m[1] || m[3];
-      const mi = m[2] || 0;
-      return { time: normTime(h, mi) };
-    }
+    if (m) return { time: normTime(m[1], m[2] || 0) };
   }
 
   // точка как разделитель времени не используем — чтобы "27.10" не стало "27:10"
@@ -177,17 +179,28 @@ function detectType(raw) {
   // 1) Krankentransport
   if (/\b(kt|krankentransport|krankenfahrt)\b/.test(s)) return "KT";
 
-  // 2) Rechnungsfahrt (избегаем "Abrechnung")
-  const hasAbrechnung = /\babrechnung/.test(s);
-  const isRechnungsfahrt =
-    /\brechnungsfahrt\b/.test(s) ||
+  // общий паттерн для "Rechnungsfahrt" с пробелом/дефисом/разными тире
+  const reRechnungsfahrt = /\brechnungs[-–—\s]?fahrt(en)?\b/;
+
+  // 2) RE — явные формулировки + аэропорт
+  if (
+    reRechnungsfahrt.test(s) ||
     /\bauf\s+rechnung\b/.test(s) ||
-    (/\brechnung(s)?\b/.test(s) && /\bfahrt(en)?\b/.test(s)) || // "Rechnung Fahrt"
-    /\brf\b/.test(s); // опционально: короткая аббревиатура
+    /\brf\b/.test(s) ||
+    /\bflughafenfahrt(en)?\b/.test(s) ||
+    /\bzum\s+flughafen\b/.test(s) ||
+    /\bairportfahrt(en)?\b/.test(s)
+  ) {
+    return "RE";
+  }
 
-  if (!hasAbrechnung && isRechnungsfahrt) return "RE";
+  // 3) RE — комбинация "rechnung" + "fahrt" (без "abrechnung"), допускаем разделители
+  const hasAbrechnung = /\babrechnung(s)?\b/.test(s);
+  const hasRechnung = /\brechnung(s)?\b/.test(s);
+  const hasFahrt = /\bfahrt(en)?\b/.test(s);
+  if (!hasAbrechnung && hasRechnung && hasFahrt) return "RE";
 
-  // 3) По умолчанию
+  // 4) По умолчанию — Ortsfahrt
   return "Orts";
 }
 
@@ -195,8 +208,11 @@ export function parseOrderCandidate(text) {
   const raw = String(text || "");
   if (!raw.trim()) return { is_order: false };
 
+  // НОРМАЛИЗУЕМ двоеточия, чтобы и парсер, и зачистка видели одинаковую строку
+  const rawNorm = normalizeColons(raw);
+
   // 1) дата
-  const d = findDate(raw);
+  const d = findDate(rawNorm);
   const strip = [];
   let dateISO = "";
   if (d) {
@@ -205,7 +221,7 @@ export function parseOrderCandidate(text) {
   }
 
   // 2) время
-  const t = findTime(raw, strip);
+  const t = findTime(rawNorm, strip);
   let timeHM = t ? t.time : "";
 
   // 3) бизнес-правило "что считаем заказом"
@@ -220,11 +236,11 @@ export function parseOrderCandidate(text) {
   // 4) дефолты и нормализация
   if (!timeHM) timeHM = "00:00";
 
-  const phone = extractPhone(raw);
-  const type = detectType(raw);
+  const phone = extractPhone(rawNorm);
+  const type = detectType(rawNorm);
 
   // 5) чистим сообщение от даты/времени/телефона
-  let message = raw;
+  let message = rawNorm;
 
   // — вырезаем точно найденный участок даты
   if (d) {
@@ -233,8 +249,13 @@ export function parseOrderCandidate(text) {
   }
 
   // — вырезаем конструкции времени (оба варианта: "um 4 uhr" и "HH:MM")
-  message = message.replace(/\bum\s+\d{1,2}(?::\d{2})?\s*(uhr)?\b/gi, " ");
-  message = message.replace(/\b\d{1,2}:\d{2}\b/g, " ");
+  message = message.replace(
+    /\bum\s+\d{1,2}(?:\s*:\s*\d{2})?\s*(uhr)?\b/gi,
+    " "
+  );
+  message = message.replace(/\b\d{1,2}\s*:\s*\d{2}\b/gi, " ");
+  // — страховка: убрать осиротевшие ": 30 (Uhr)", если час был срезан
+  message = message.replace(/(^|[^\d]):\s*\d{2}\s*(uhr)?\b/gi, " ");
 
   // — ключевые слова, если именно они дали дату
   message = message.replace(/\bheute\b/gi, " ");
