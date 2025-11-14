@@ -97,20 +97,35 @@ document.addEventListener("DOMContentLoaded", () => {
   const formatDateDE = (d) =>
     d instanceof Date && !isNaN(d) ? d.toLocaleDateString("de-AT") : "—";
 
-  /* ===== дата по умолчанию: последние 2 дня ===== */
+  /* ===== дата по умолчанию: весь прошлый месяц ===== */
   const initDefaultDates = () => {
     const qs = new URLSearchParams(location.search);
 
-    const today = new Date();
-    const yest = new Date(today);
-    yest.setDate(today.getDate() - 1);
+    // helper: YYYY-MM-DD с учётом таймзоны
     const toISO = (d) =>
       new Date(d.getTime() - d.getTimezoneOffset() * 60000)
         .toISOString()
         .slice(0, 10);
 
-    if (!fFrom.value) fFrom.value = qs.get("from") || toISO(yest);
-    if (!fTo.value) fTo.value = qs.get("to") || toISO(today);
+    // если в query уже есть значения — используем их
+    const qsFrom = qs.get("from") || qs.get("start");
+    const qsTo = qs.get("to") || qs.get("end");
+
+    if (qsFrom || qsTo) {
+      if (!fFrom.value) fFrom.value = qsFrom || "";
+      if (!fTo.value) fTo.value = qsTo || "";
+    } else {
+      // диапазон по умолчанию: ПРЕДЫДУЩИЙ месяц целиком
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth(); // 0–11, текущий месяц
+
+      const firstPrev = new Date(year, month - 1, 1); // 1-е прошлого месяца
+      const lastPrev = new Date(year, month, 0); // последний день прошлого месяца
+
+      if (!fFrom.value) fFrom.value = toISO(firstPrev);
+      if (!fTo.value) fTo.value = toISO(lastPrev);
+    }
 
     if (qs.get("route") != null) fRoute.value = qs.get("route") || "";
     if (qs.get("shift") != null) fShift.value = qs.get("shift") || "";
