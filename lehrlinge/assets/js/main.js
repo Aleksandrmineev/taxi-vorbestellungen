@@ -188,12 +188,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // === ОБЯЗАТЕЛЬНЫЕ ПОЛЯ ===
       if (!drvId) {
-        alert("Bitte Fahrer auswählen.\nПожалуйста, выберите водителя.");
+        alert("Bitte Fahrer auswählen");
         return;
       }
 
       if (!carId) {
-        alert("Bitte Kennzeichen auswählen.\nПожалуйста, выберите номер авто.");
+        alert("Bitte Kennzeichen auswählen");
         return;
       }
 
