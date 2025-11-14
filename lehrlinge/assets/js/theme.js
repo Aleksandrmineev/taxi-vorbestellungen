@@ -29,11 +29,14 @@
   // 1) Стартовое применение темы
   applyTheme(resolveInitialTheme());
 
-  // 2) Если есть кнопка — навешиваем обработчик
+  // 2) Если есть кнопка/ссылка — навешиваем обработчик
   document.addEventListener("DOMContentLoaded", () => {
     const btn = document.getElementById("theme-toggle");
     if (!btn) return;
-    btn.addEventListener("click", () => {
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault(); // <— обязательно для <a href="#">!
+
       const next = html.dataset.theme === "light" ? "dark" : "light";
       localStorage.setItem(STORAGE_KEY, next);
       applyTheme(next);

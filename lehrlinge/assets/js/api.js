@@ -182,7 +182,7 @@ const TTL = {
   recent: 90_000, // 1.5 мин
 };
 
-/** Загрузка данных для маршрута: points, dist, drivers, pointNameById
+/** Загрузка данных для маршрута: points, dist, drivers, pointNameById, cars
  */
 async function loadData(route) {
   const r = String(route || "1");
@@ -233,6 +233,8 @@ async function saveSubmission(payload) {
       driverName: payload.driverName || "",
       shift: payload.shift || "",
       reportDate: payload.reportDate || "",
+      carId: payload.carId || "",
+      carPlate: payload.carPlate || "",
     },
     { retries: 0, timeoutMs: 12000 }
   );
@@ -244,10 +246,7 @@ async function saveSubmission(payload) {
   // Инвалидация recent для маршрута (в т.ч. разных лимитов)
   const r = String(payload.route || "");
   for (const k of _memCache.keys()) {
-    if (
-      k.startsWith("fn=recent&") &&
-      k.includes(`&route=${String(payload.route || "")}`)
-    ) {
+    if (k.startsWith("fn=recent&") && k.includes(`&route=${r}`)) {
       _memCache.delete(k);
     }
   }

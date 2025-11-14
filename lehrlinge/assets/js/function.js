@@ -257,7 +257,6 @@
     App.updateTotal?.();
   };
 
-  // Селект водителей
   // Селекты водителей: не зависят от Route, помним глобально последний выбор
   App.renderDrivers = function () {
     const drivers = (App.state && App.state.drivers) || [];
@@ -305,6 +304,51 @@
 
     // 4) оповестим остальной код (если нужно что-то дорендерить)
     window.dispatchEvent(new CustomEvent("drivers:loaded"));
+  };
+
+  // Селект Kennzeichen (машины)
+  App.renderCars = function () {
+    const cars = (App.state && App.state.cars) || [];
+    const sel = document.getElementById("car");
+    if (!sel) return;
+
+    const STORAGE_KEY = "mt:lastCar";
+    const saved = localStorage.getItem(STORAGE_KEY) || "";
+
+    const optionsHtml =
+      '<option value="">—</option>' +
+      cars
+        .map(
+          (c) =>
+            `<option value="${String(c.id)}">${
+              c.plate || String(c.id)
+            }</option>`
+        )
+        .join("");
+
+    sel.innerHTML = optionsHtml;
+
+    // восстановление выбора
+    if (
+      saved &&
+      Array.from(sel.options).some((o) => String(o.value) === String(saved))
+    ) {
+      sel.value = saved;
+    } else {
+      sel.value = "";
+    }
+
+    if (!sel._carBound) {
+      sel.addEventListener("change", () => {
+        const v = sel.value;
+        if (v) {
+          localStorage.setItem(STORAGE_KEY, v);
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      });
+      sel._carBound = true;
+    }
   };
 
   // Текущая последовательность включённых
@@ -374,19 +418,22 @@
       return;
     }
     const dtStr = App.fmtDateTime(parseDateSafe(p.timestamp));
+    const carText = p.car_plate || p.car_id || "—";
+
     box.style.display = "block";
     box.innerHTML = `
-<div class="card">
-  <h3>Gesendet</h3>
-  <div class="kv">
-    <div><span>Datum:</span> <b>${dtStr}</b></div>
-    <div><span>Route:</span> <b>${p.route ?? "—"}</b></div>
-    <div><span>Fahrer:</span> <b>${p.driver_name || "—"}</b></div>
-    <div><span>Zeit:</span> <b>${p.shift || "—"}</b></div>
-    <div><span>km:</span> <b>${App.formatKm(p.total_km)}</b></div>
-  </div>
-  <div class="seq">${p.sequence_names || p.sequence || ""}</div>
-</div>`;
+  <div class="card">
+    <h3>Gesendet</h3>
+    <div class="kv">
+      <div><span>Datum:</span> <b>${dtStr}</b></div>
+      <div><span>Route:</span> <b>${p.route ?? "—"}</b></div>
+      <div><span>Fahrer:</span> <b>${p.driver_name || "—"}</b></div>
+      <div><span>Auto:</span> <b>${carText}</b></div>
+      <div><span>Zeit:</span> <b>${p.shift || "—"}</b></div>
+      <div><span>km:</span> <b>${App.formatKm(p.total_km)}</b></div>
+    </div>
+    <div class="seq">${p.sequence_names || p.sequence || ""}</div>
+  </div>`;
   };
 
   // Блок недавних отправок

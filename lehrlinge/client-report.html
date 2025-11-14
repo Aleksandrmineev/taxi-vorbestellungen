@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: light)"
+      content="#ffffff"
+    />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: dark)"
+      content="#0b0f14"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>Fahrtenbericht – MurtalTaxi</title>
+
+    <!-- фавиконки и манифест как на основной странице -->
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./assets/favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./assets/favicon/favicon-16x16.png"
+    />
+    <link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+    <!-- шрифт и стили проекта -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400..900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="preload" href="./assets/css/theme.css" as="style" />
+    <link rel="stylesheet" href="./assets/css/theme.css" />
+    <link rel="stylesheet" href="./assets/css/global.css" />
+    <link rel="stylesheet" href="./assets/css/layout.css" />
+    <link rel="stylesheet" href="./assets/css/components.css" />
+    <link rel="stylesheet" href="./assets/css/responsive.css" />
+    <link rel="stylesheet" href="./assets/css/client-report.css" />
+  </head>
+  <body>
+    <main class="page">
+      <div class="container">
+        <header class="page-header">
+          <div class="page-title">
+            <h1>Zellstoff Pöls AG Lehrlings-Schuttle</h1>
+          </div>
+          <div id="summary" class="summary-line">Bericht wird geladen…</div>
+        </header>
+
+        <section class="toolbar" aria-label="Filter">
+          <div class="filters">
+            <div class="ctrl">
+              <label for="f_from">von</label>
+              <input id="f_from" type="date" />
+            </div>
+            <div class="ctrl">
+              <label for="f_to">bis</label>
+              <input id="f_to" type="date" />
+            </div>
+
+            <div class="ctrl">
+              <label for="f_route">Route</label>
+              <select id="f_route">
+                <option value="">Alle Routen</option>
+                <option value="1">Route 1</option>
+                <option value="2">Route 2</option>
+              </select>
+            </div>
+
+            <div class="ctrl">
+              <label for="f_shift">Zeit</label>
+              <select id="f_shift">
+                <option value="">Alle Zeiten</option>
+                <option value="Früh">Früh</option>
+                <option value="Nachmittag">Nachmittag</option>
+              </select>
+            </div>
+
+            <div class="ctrl">
+              <label for="f_car">Auto</label>
+              <select id="f_car">
+                <option value="">Alle Autos</option>
+              </select>
+            </div>
+
+            <div class="ctrl">
+              <label for="f_limit">Anzahl</label>
+              <select id="f_limit">
+                <option>100</option>
+                <option selected>300</option>
+                <option>600</option>
+                <option>1000</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="toolbar-actions">
+            <button class="btn" id="apply">Anwenden</button>
+            <button class="btn" id="btnPrint">Als PDF speichern</button>
+          </div>
+        </section>
+
+        <section>
+          <div class="report-table-wrapper">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Datum</th>
+                  <th>Zeit</th>
+                  <th>Route</th>
+                  <th>Auto</th>
+                  <th>km</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+
+          <div id="empty" class="empty" hidden>Keine Einträge</div>
+
+          <div id="totalFooter" class="footer-total" hidden>
+            Gesamtstrecke: <span id="totalKm">0 km</span>
+          </div>
+          <div id="now" class="meta"></div>
+        </section>
+      </div>
+    </main>
+
+    <!-- <script src="./assets/js/theme.js" defer></script> -->
+    <script src="./assets/js/api.js" defer></script>
+    <script src="./assets/js/client-report.js" defer></script>
+  </body>
+</html>

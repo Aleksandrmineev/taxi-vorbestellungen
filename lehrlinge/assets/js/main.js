@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Глобальные форматтеры/состояние/DOM
   App.nf =
     App.nf || new Intl.NumberFormat("de-AT", { maximumFractionDigits: 1 });
-  App.state = { dist: {}, points: [], drivers: [], route: "1" };
+  App.state = { dist: {}, points: [], drivers: [], cars: [], route: "1" };
 
   App.dom = {
     list: document.getElementById("list"),
@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     seg1: document.getElementById("seg1"),
     seg2: document.getElementById("seg2"),
     drvSel: document.getElementById("driver"),
+    carSel: document.getElementById("car"),
     shiftSel: document.getElementById("shift"),
     saveBtn: document.getElementById("save"),
     nowEl: document.getElementById("now"),
@@ -133,13 +134,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const points = Array.isArray(res?.points) ? res.points : [];
       const dist = res?.dist && typeof res.dist === "object" ? res.dist : {};
       const drivers = Array.isArray(res?.drivers) ? res.drivers : [];
+      const cars = Array.isArray(res?.cars) ? res.cars : [];
 
       App.state.points = points;
       App.state.dist = dist;
       App.state.drivers = drivers;
+      App.state.cars = cars;
 
       // Рендерим
       if (typeof App.renderDrivers === "function") App.renderDrivers();
+      if (typeof App.renderCars === "function") App.renderCars();
       if (typeof App.render === "function") App.render();
       // после любой перерисовки — восстановить чекбоксы
       if (typeof App.pointsRestoreStrong === "function")
@@ -178,6 +182,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const shift = App.dom.shiftSel?.value || "";
       const reportDate = App.dom.dateEl?.value || ""; // YYYY-MM-DD
 
+      const carId = App.dom.carSel?.value || "";
+      const carPlate =
+        App.dom.carSel?.selectedOptions?.[0]?.textContent?.trim() || "";
+
       const btn = App.dom.saveBtn;
       const prevText = btn.textContent;
       btn.disabled = true;
@@ -192,6 +200,8 @@ document.addEventListener("DOMContentLoaded", () => {
           driverName: drvName,
           shift,
           reportDate,
+          carId,
+          carPlate,
         });
 
         // UI-обратная связь на кнопке
@@ -210,6 +220,8 @@ document.addEventListener("DOMContentLoaded", () => {
             shift,
             total_km: km,
             sequence: Array.isArray(seq) ? seq.join(">") : String(seq || ""),
+            car_id: carId,
+            car_plate: carPlate,
           });
         }
       } catch (e) {

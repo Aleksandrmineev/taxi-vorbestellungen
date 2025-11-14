@@ -1,0 +1,196 @@
+/* ===== Заголовок страницы и панель фильтров ===== */
+
+.page-header {
+  margin: 16px 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.page-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.page-title h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.page-title .meta {
+  font-size: 13px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  flex: 1 1 auto;
+}
+
+.filters .ctrl {
+  display: grid;
+  gap: 6px;
+  min-width: 150px;
+}
+
+.toolbar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toolbar-actions .btn {
+  width: 160px;
+}
+
+.summary-line {
+  font-size: 14px;
+  color: var(--clr-text-light, #6b7280);
+  margin-bottom: 8px;
+}
+
+/* ===== Таблица отчёта ===== */
+
+.report-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius, 12px);
+  box-shadow: var(--shadow-card, 0 2px 12px rgba(0, 0, 0, 0.06));
+  background: var(--card, #fff);
+}
+
+table.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+table.report-table thead {
+  background: var(--clr-light-bg, #f3f4f6);
+}
+
+/* заголовок таблицы */
+table.report-table thead th {
+  text-align: left;
+  font-weight: 700;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+/* ячейки */
+table.report-table th,
+table.report-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  text-align: left;
+  vertical-align: top;
+}
+
+/* первая строка записи (мета) + вторая (Strecke) */
+
+table.report-table tr.row-meta td {
+  border-bottom: none; /* не разделяем meta и Strecke */
+}
+.row-meta {
+  font-weight: 500;
+}
+.row-strecke {
+  font-weight: 300;
+}
+
+table.report-table tr.row-strecke td {
+  border-top: none;
+  padding-top: 2px;
+  padding-bottom: 10px;
+  font-size: 13px;
+  color: var(--clr-text-light, #6b7280);
+}
+
+/* зебру отключаем, чтобы не путалась между парами строк */
+table.report-table tbody tr:nth-child(even) {
+  background: transparent;
+}
+
+/* компактные ширины колонок */
+table.report-table th:nth-child(1) {
+  /* Datum */
+  width: 90px;
+}
+
+table.report-table th:nth-child(2) {
+  /* Zeit */
+  width: 110px;
+}
+
+table.report-table th:nth-child(3) {
+  /* Route */
+  width: 60px;
+}
+
+table.report-table th:nth-child(4) {
+  /* Auto */
+  width: 60px;
+}
+
+table.report-table th:nth-child(5) {
+  /* km */
+  width: 50px;
+}
+
+/* ===== Пустой список и подвал ===== */
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.footer-total {
+  margin-top: 12px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.footer-total span {
+  font-weight: 700;
+}
+
+/* ===== Печатная версия ===== */
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .toolbar,
+  #theme-toggle {
+    display: none !important;
+  }
+
+  .page {
+    padding-top: 0;
+  }
+
+  .report-table-wrapper {
+    box-shadow: none;
+  }
+
+  .container {
+    max-width: 100%;
+  }
+}
+
+#now {
+  font-weight: 300;
+  font-size: 14px;
+}

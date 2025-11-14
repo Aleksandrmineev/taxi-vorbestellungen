@@ -390,3 +390,47 @@ input[type="date"]:focus {
     height: 20px;
   }
 }
+
+.links-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.link-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+  font-size: 12px;
+}
+
+.icon-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--clr-light-bg, #e5e7eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--general-text, #222);
+  transition: background 0.2s, color 0.2s;
+}
+
+.icon-circle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.link-item:hover .icon-circle {
+  background: var(--clr-accent, #0d5ef7);
+  color: white;
+}
+
+.label {
+  font-size: 11px;
+  opacity: 0.85;
+}
