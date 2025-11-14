@@ -186,6 +186,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const carPlate =
         App.dom.carSel?.selectedOptions?.[0]?.textContent?.trim() || "";
 
+      // === ОБЯЗАТЕЛЬНЫЕ ПОЛЯ ===
+      if (!drvId) {
+        alert("Bitte Fahrer auswählen.\nПожалуйста, выберите водителя.");
+        return;
+      }
+
+      if (!carId) {
+        alert("Bitte Kennzeichen auswählen.\nПожалуйста, выберите номер авто.");
+        return;
+      }
+
       const btn = App.dom.saveBtn;
       const prevText = btn.textContent;
       btn.disabled = true;
@@ -211,7 +222,6 @@ document.addEventListener("DOMContentLoaded", () => {
           btn.disabled = false;
         }, 900);
 
-        // Показать карточку подтверждения (из function.js)
         if (typeof App.renderConfirmation === "function") {
           App.renderConfirmation({
             timestamp: saved?.timestamp || Date.now(),
@@ -248,7 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function goHome() {
-  location.href = "../index.html?v=20251108a"; // поменяй суффикс при каждом деплое
+  location.href = "../index.html?v=20251114a"; // поменяй суффикс при каждом деплое
 }
 
 // ===== Сохранение выбора водителя в localStorage и синхронизация между селектами =====
