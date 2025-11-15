@@ -1,4 +1,33 @@
-// main.js
+// ===== Google Apps Script endpoint (общий с Lehrlinge) =====
+const GS_ENDPOINT =
+  "https://script.google.com/macros/s/AKfycbxpGn11PT70usKYe0xE7S28FlwNIrJhXXEzaeK022VPZx7RObBEMvjq4ghpewnRyPGa/exec";
+const API_SECRET_QR = "102030";
+
+// Тихая отправка записи в Google Sheets (лист QR_Zahlungen)
+async function sendToSheet(entry) {
+  try {
+    const params = new URLSearchParams();
+    params.set("action", "qr_payment");
+    params.set("secret", API_SECRET_QR);
+
+    params.set("ts", entry.ts);
+    params.set("driver", entry.driver || "");
+    params.set("fare", String(entry.fare ?? ""));
+    params.set("tip", String(entry.tip ?? ""));
+    params.set("total", String(entry.total ?? ""));
+    params.set("method", entry.method || "QR");
+    params.set("iban", entry.iban || "");
+
+    await fetch(GS_ENDPOINT, {
+      method: "POST",
+      body: params, // БЕЗ headers → simple request, без CORS preflight
+    });
+  } catch (err) {
+    console.error("QR payment → Sheet error", err);
+  }
+}
+
+// ===== Основная логика страницы QR-Zahlung =====
 (() => {
   // DOM
   const elDriver = document.getElementById("driverNo");
@@ -11,10 +40,7 @@
   const copyBtn = document.getElementById("copySummary");
   const tipClear = document.getElementById("tipClear");
   const qrBox = document.getElementById("qr");
-
-  // Доп. кнопки/элементы отчёта
-  const btnReport24h = document.getElementById("report24h");
-  const btnClearLog = document.getElementById("clearLog");
+  const elRecent = document.getElementById("qrRecent");
 
   // Прочее
   const DEFAULT_WA = "436506367662"; // +43 650 6367662 без плюса
@@ -23,7 +49,6 @@
   const LS = {
     driver: "taxapp.driverNo",
     waBoss: "taxapp.whatsAppBoss",
-    log: "taxapp.shiftLog",
   };
 
   // Инициализация WA получателя по умолчанию
@@ -46,6 +71,7 @@
     const n = parseFloat(v);
     return isFinite(n) ? n : 0;
   };
+
   const toMoney = (n) => nfEUR.format(n);
   const two = (n) => Math.round(n * 100) / 100;
 
@@ -71,6 +97,7 @@
       }, 0);
     });
   }
+
   elFare.addEventListener("focus", selectAll);
   elTip.addEventListener("focus", selectAll);
 
@@ -90,50 +117,98 @@
     }
   });
 
-  // ===== Локальный журнал =====
-  function readLog() {
+  // ===== Загрузка последних платежей =====
+  async function fetchQrRecent(limit = 5) {
+    if (!elRecent || !GS_ENDPOINT) return;
+
+    // Состояние загрузки
+    elRecent.innerHTML =
+      '<div class="qr-recent__loading">Daten werden geladen …</div>';
+
     try {
-      return JSON.parse(localStorage.getItem(LS.log) || "[]");
-    } catch {
-      return [];
+      const url = `${GS_ENDPOINT}?fn=qr_recent&limit=${encodeURIComponent(
+        limit
+      )}&secret=${encodeURIComponent(API_SECRET_QR)}`;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      const items = data.items || [];
+      renderQrRecent(items);
+    } catch (err) {
+      console.error("qr_recent error", err);
+      elRecent.innerHTML =
+        '<div class="qr-recent__loading qr-recent__loading--error">Fehler beim Laden der Daten.</div>';
     }
-  }
-  function writeLog(list) {
-    localStorage.setItem(LS.log, JSON.stringify(list));
-  }
-  function pruneLog() {
-    const list = readLog();
-    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-    const filtered = list.filter((e) => {
-      const t = Date.parse(e.ts);
-      return isFinite(t) ? t >= cutoff : false;
-    });
-    if (filtered.length !== list.length) writeLog(filtered);
-    return filtered;
-  }
-  function appendLog(entry) {
-    const list = pruneLog();
-    list.push(entry);
-    writeLog(list);
-  }
-  function last24hSummary() {
-    const list = pruneLog();
-    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-    let count = 0,
-      fare = 0,
-      tip = 0,
-      total = 0;
-    for (const e of list) {
-      const t = Date.parse(e.ts);
-      if (!isFinite(t) || t < cutoff) continue;
-      count += 1;
-      fare += Number(e.fare) || 0;
-      tip += Number(e.tip) || 0;
-      total += Number(e.total) || 0;
-    }
-    return { count, fare: two(fare), tip: two(tip), total: two(total) };
   }
 
+  function renderQrRecent(items) {
+    if (!elRecent) return;
+    if (!items.length) {
+      elRecent.textContent = "Noch keine Daten.";
+      return;
+    }
+
+    const nf = new Intl.NumberFormat("de-AT", {
+      style: "currency",
+      currency: "EUR",
+    });
+
+    const rows = items.map((it) => {
+      const dt =
+        it.timestamp instanceof Date ? it.timestamp : new Date(it.timestamp);
+
+      // короткий формат: только день.месяц и время
+      const date = dt.toLocaleDateString("de-AT", {
+        day: "2-digit",
+        month: "2-digit",
+      });
+      const time = dt.toLocaleTimeString("de-AT", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const dtLabel = `${date} ${time}`;
+
+      const fareVal = Number(it.fare || 0);
+      const tipVal = Number(it.tip || 0);
+      const totalVal = fareVal + tipVal;
+
+      const totalFormatted = nf.format(totalVal);
+      const parts =
+        `(${fareVal.toFixed(2).replace(".", ",")} + ` +
+        `${tipVal.toFixed(2).replace(".", ",")})`;
+
+      const driver = it.driver || "00";
+
+      return `
+        <div class="qr-recent__item">
+          <div class="qr-recent__line">
+            <span class="qr-recent__datetime">${dtLabel}</span>
+            <span class="qr-recent__driver">№ ${driver}</span>
+            <span class="qr-recent__amount">
+              ${totalFormatted}
+              <span class="qr-recent__parts">${parts}</span>
+            </span>
+          </div>
+        </div>
+      `;
+    });
+
+    elRecent.innerHTML = rows.join("");
+  }
+
+  // Авто-обновление при возврате на страницу (из WhatsApp и т.п.)
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      fetchQrRecent(5);
+    }
+  });
+
+  window.addEventListener("focus", () => {
+    fetchQrRecent(5);
+  });
+
+  // ===== VZ-превью =====
   function updateVzPreview(driverNo) {
     elVZ.textContent = `Taxi Murtal – Fahrer ${driverNo || "00"}`;
   }
@@ -253,6 +328,7 @@
   const toast = document.createElement("div");
   toast.className = "toast";
   document.body.appendChild(toast);
+
   function showToast(text) {
     toast.textContent = text;
     toast.classList.add("show");
@@ -290,10 +366,10 @@
     }
   });
 
-  // Отправка в WhatsApp
+  // Отправка в WhatsApp + отправка в Google Sheets
   const getBossWa = () => localStorage.getItem(LS.waBoss) || DEFAULT_WA;
 
-  sendWA.addEventListener("click", () => {
+  sendWA.addEventListener("click", async () => {
     const fare = toNumber(elFare.value);
     const tip = toNumber(elTip.value);
     const total = two(fare + tip);
@@ -318,43 +394,26 @@
     const url = `https://wa.me/${getBossWa()}?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank", "noopener");
 
-    appendLog({
+    const entry = {
       ts: new Date().toISOString(),
       driver: elDriver.value || "00",
       fare: two(fare),
       tip: two(tip),
       total: two(total),
       method: "QR",
-    });
-  });
+      iban: "AT932081500043192756",
+    };
 
-  // Отчёт за последние 24 часа
-  btnReport24h?.addEventListener("click", async () => {
-    const s = last24hSummary();
-    const txt = [
-      "MurtalTaxi – Bericht (letzte 24 Stunden)",
-      `Transaktionen: ${s.count}`,
-      `Taxameter: ${toMoney(s.fare)}`,
-      `Trinkgeld: ${toMoney(s.tip)}`,
-      `Gesamt: ${toMoney(s.total)}`,
-    ].join("\n");
+    // дожидаемся записи в таблицу
+    await sendToSheet(entry);
+    // маленький буфер, чтобы Apps Script точно успел
+    await new Promise((resolve) => setTimeout(resolve, 400));
 
-    try {
-      await navigator.clipboard.writeText(txt);
-      showToast("Bericht (24 h) kopiert");
-    } catch {
-      showToast("Bericht: Kopieren fehlgeschlagen");
-    }
-  });
-
-  // Очистка лога
-  btnClearLog?.addEventListener("click", () => {
-    writeLog([]);
-    showToast("Lokaler Log gelöscht");
+    // обновляем список
+    fetchQrRecent(10);
   });
 
   // ===== Старт: авто-режим чаевых включён, 5% с округлением ИТОГА до целого €
-  pruneLog();
   if (!elDriver.value) elDriver.value = "00";
   elFare.value = elFare.value || "0,00";
 
@@ -366,8 +425,10 @@
 
   recalc();
   window.addEventListener("load", recalc);
+  fetchQrRecent(5);
 })();
 
+// ===== Вспомогательная функция для tip-buttons (глобальная) =====
 function getTipKindFromBtn(el) {
   // data-tip, иначе текст, обрезаем пробелы и в нижний регистр
   return (el.dataset.tip || el.textContent || "")

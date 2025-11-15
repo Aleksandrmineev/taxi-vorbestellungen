@@ -3,10 +3,11 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 14px clamp(12px, 3vw, 28px);
-  border-bottom: 1px solid var(--ring);
-  backdrop-filter: saturate(140%) blur(6px);
+  padding: 14px var(--pad-inline-main);
+  border-bottom: var(--border-soft);
+  backdrop-filter: var(--backdrop-strong);
 }
+
 .brand {
   display: flex;
   align-items: center;
@@ -14,6 +15,7 @@
   color: inherit;
   text-decoration: none;
 }
+
 .brand__logo {
   width: 44px;
   height: 44px;
@@ -25,9 +27,10 @@
   position: relative;
   overflow: hidden;
 }
+
 .brand__logo img {
-  width: 44px;
-  height: 44px;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
@@ -39,21 +42,13 @@
   letter-spacing: 0.03em;
   text-transform: uppercase;
 
-  /* Золотой градиент */
-  background: linear-gradient(
-    120deg,
-    #b8902d 0%,
-    #d9b654 25%,
-    #b8902d 50%,
-    #f1d27b 75%,
-    #b8902d 100%
-  );
+  background: var(--gold-grad);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-fill-color: transparent;
 
-  animation: goldMove 8s linear infinite; /* 👈 плавное переливание */
+  animation: goldMove 8s linear infinite;
 }
 
 /* 🔄 Анимация движения золота */
@@ -73,14 +68,14 @@
 .hero {
   display: grid;
   gap: 14px;
-  padding: clamp(18px, 5vw, 34px);
+  padding: var(--pad-hero);
   max-width: 1100px;
   width: 100%;
   margin-inline: auto;
 }
+
 .hero h1 {
   margin: 0;
-  /* было: clamp(28px, 4vw, 44px) */
   font-size: clamp(34px, 4.6vw, 52px);
   letter-spacing: 0.01em;
 }
@@ -90,39 +85,37 @@
   font-size: var(--fs-hero-sub);
 }
 
-/* grid */
+/* grid (одна версия, без дублей) */
 .grid {
   display: grid;
   gap: var(--tile-gap);
-  grid-template-columns: repeat(2, 1fr); /* моб./планшет по умолчанию */
-  margin-top: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* не ломаемся по X */
 }
 
 /* tiles */
 .tile {
   position: relative;
   isolation: isolate;
-  display: grid; /* центр иконки сверху, текст внизу */
-  grid-template-rows: auto 1fr auto; /* icon / spacer / text */
+  display: grid; /* icon / spacer / text */
+  grid-template-rows: auto 1fr auto;
   align-content: stretch;
   min-height: 180px;
   padding: 20px;
   border-radius: var(--radius);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--card) 92%, #000 8%),
-    color-mix(in oklab, var(--card) 86%, #000 14%)
-  );
-  border: 1px solid var(--ring);
+  background: var(--tile-bg);
+  border: var(--border-soft);
   text-decoration: none;
   color: var(--text);
   box-shadow: var(--shadow);
   transition: transform var(--transition), box-shadow var(--transition),
     border-color var(--transition), background var(--transition);
   overflow: hidden;
+  min-width: 0;
+  contain: paint; /* эффекты не выталкивают по X */
 }
+
 /* мягкая аура снизу */
-.tile:after {
+.tile::after {
   content: "";
   position: absolute;
   inset: auto -20% -40% -20%;
@@ -139,6 +132,7 @@
   transition: transform var(--transition), opacity var(--transition);
   z-index: -1;
 }
+
 /* цикличное «переливание» раз в ~3.6с */
 .tile::before {
   content: "";
@@ -155,6 +149,7 @@
   opacity: 0;
   pointer-events: none;
 }
+
 @keyframes tile-sheen {
   0% {
     transform: translateX(-130%);
@@ -178,15 +173,16 @@
   border-color: color-mix(in oklab, var(--accent) 50%, var(--ring));
   box-shadow: 0 22px 45px rgba(0, 0, 0, 0.45);
 }
-.tile:hover:after {
+
+.tile:hover::after {
   transform: translateY(0);
   opacity: 0.55;
 }
 
 /* icon — крупнее и по центру */
 .tile__icon {
-  width: 76px;
-  height: 76px;
+  width: var(--tile-icon-size);
+  height: var(--tile-icon-size);
   border-radius: 18px;
   display: grid;
   place-items: center;
@@ -195,13 +191,16 @@
     rgba(255, 255, 255, 0.06),
     rgba(255, 255, 255, 0.02)
   );
-  border: 1px solid var(--ring);
+  border: var(--border-soft);
   margin: 6px auto 0;
   color: var(--accent);
 }
+
 .tile__icon svg {
-  width: 38px;
-  height: 38px;
+  width: 70%;
+  height: 70%;
+  max-width: 100%;
+  display: block;
   fill: var(--accent);
   filter: drop-shadow(0 1px 1.2px rgba(0, 0, 0, 0.25));
 }
@@ -215,49 +214,43 @@
   font-size: clamp(18px, 2.1vw, 22px);
   font-weight: 700;
   margin: 6px 0;
+  line-height: 1.25;
 
-  /* перенос по слогам и мягкий перенос длинных слов */
   hyphens: auto;
   overflow-wrap: break-word;
   word-break: break-word;
-
-  /* для Safari/iOS */
   -webkit-hyphens: auto;
   -ms-hyphens: auto;
-
-  /* чуть улучшим ритм */
-  line-height: 1.25;
 }
 
 .tile__desc {
-  /* было: clamp(13px, 1.6vw, 15px) */
   font-size: clamp(14px, 1.7vw, 17px);
   color: var(--muted);
   margin: 0;
-  /* перенос по слогам и мягкий перенос длинных слов */
+
   hyphens: auto;
   overflow-wrap: break-word;
   word-break: break-word;
-
-  /* для Safari/iOS */
   -webkit-hyphens: auto;
   -ms-hyphens: auto;
 }
 
 /* footer */
 footer {
-  padding: 16px clamp(12px, 3vw, 28px);
+  padding: 16px var(--pad-inline-main);
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  border-top: 1px solid var(--ring);
+  border-top: var(--border-soft);
 }
+
 footer a {
   color: var(--text);
   text-decoration: none;
 }
+
 footer .muted {
   color: var(--muted);
 }
@@ -269,19 +262,10 @@ footer .muted {
   justify-content: center;
   gap: 24px;
   flex-wrap: wrap;
-  padding: 20px clamp(12px, 3vw, 28px);
-  border-top: 1px solid var(--ring);
+  padding: 20px var(--pad-inline-main);
+  border-top: var(--border-soft);
 }
-.footer__link {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  color: var(--text);
-  text-decoration: none;
-  transition: color var(--transition);
-}
+
 .footer__link {
   position: relative;
   display: inline-flex;
@@ -311,6 +295,7 @@ footer .muted {
 .footer__link:hover {
   color: var(--accent);
 }
+
 .footer__link:hover::after {
   transform: scaleX(1);
 }
@@ -320,6 +305,7 @@ footer .muted {
   fill: var(--accent);
   transition: transform var(--transition);
 }
+
 .footer__link:hover svg {
   transform: translateY(-2px);
 }
@@ -332,14 +318,16 @@ footer .muted {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  border: 1px solid var(--ring);
+  border: var(--border-soft);
   background: var(--card);
   cursor: pointer;
   transition: transform var(--transition), border-color var(--transition);
 }
+
 .footer__theme svg {
   fill: var(--accent);
 }
+
 .footer__theme:hover {
   transform: translateY(-2px);
   border-color: color-mix(in oklab, var(--accent) 55%, var(--ring));
@@ -352,45 +340,201 @@ footer .muted {
   .iconbtn {
     transition: none;
   }
+
   .tile:hover {
     transform: none;
   }
+
   .tile::before {
     animation: none;
   }
-}
-
-/* сетка плиток — безопасно для узких экранов */
-.grid {
-  display: grid;
-  gap: var(--tile-gap);
-  grid-template-columns: repeat(
-    2,
-    minmax(0, 1fr)
-  ); /* minmax(0,1fr) убирает переполнение */
-}
-
-/* плитка не «растягивает» контейнер при блюрах/градиентах */
-.tile {
-  min-width: 0;
-  contain: paint; /* изоляция эффектов ::after/blur, не выталкивает страницу по X */
-  overflow: hidden; /* у тебя уже было — оставляем */
-}
-
-/* иконка и svg — никогда не шире своей плитки */
-.tile__icon {
-  width: clamp(56px, 7vw, 72px);
-  height: clamp(56px, 7vw, 72px);
-}
-.tile__icon svg {
-  width: 70%;
-  height: 70%;
-  max-width: 100%;
-  display: block;
 }
 
 /* подстраховка от любых «виновников» */
 html,
 body {
   overflow-x: hidden;
+}
+
+/* Контейнер списка */
+#qrRecent {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 10px;
+  font-family: var(--font);
+  color: var(--text);
+}
+
+/* Одна запись */
+.qr-recent__item {
+  position: relative;
+  padding: 12px 14px 12px 22px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  display: block;
+  transition: background var(--transition), border-color var(--transition),
+    transform 0.2s ease-out;
+}
+
+/* Золотой маркер */
+.qr-recent__item::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* Hover эффект */
+.qr-recent__item:hover {
+  background: radial-gradient(
+      circle at top left,
+      rgba(200, 161, 74, 0.12),
+      transparent 55%
+    ),
+    rgba(255, 255, 255, 0.03);
+  border-color: rgba(201, 161, 74, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Дата и время */
+.qr-recent__datetime {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* Сумма */
+.qr-recent__amount {
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+}
+
+/* Fahrer */
+.qr-recent__driver {
+  color: var(--text);
+  opacity: 0.95;
+  font-size: 0.95rem;
+}
+
+.qr-recent__loading {
+  padding: 10px 4px;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* маленький «спиннер» слева */
+.qr-recent__loading::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--accent);
+  animation: qr-spin 0.7s linear infinite;
+}
+
+.qr-recent__loading--error::before {
+  border-top-color: #c84b4b;
+}
+
+/* анимация вращения */
+@keyframes qr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.qr-recent__parts {
+  font-size: 0.78rem;
+  opacity: 0.55;
+  margin-left: 6px;
+  color: var(--muted);
+}
+
+.qr-recent__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+/* Каждый кусок — единый блок, перенос между ними */
+.qr-recent__datetime,
+.qr-recent__driver,
+.qr-recent__amount {
+  white-space: nowrap;
+}
+
+/* Контейнер */
+.confirm-wrap {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Премиальная кнопка подтверждения */
+.wa-btn {
+  width: 100%;
+  max-width: 400px;
+  height: 54px;
+
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+
+  background: var(--gold-grad);
+  color: #ffffff;
+
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.15),
+    0 0 12px rgba(201, 161, 74, 0.35), 0 8px 18px rgba(0, 0, 0, 0.45);
+
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.wa-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.wa-btn:hover:enabled {
+  transform: translateY(-2px);
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.22),
+    0 0 22px rgba(201, 161, 74, 0.5), 0 12px 24px rgba(0, 0, 0, 0.35);
+}
+
+.wa-btn:active:enabled {
+  transform: scale(0.98);
+  box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.1),
+    0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+/* Отключено */
+.wa-btn:disabled {
+  opacity: 0.55;
+  box-shadow: none;
+  background: var(--wa-disabled-bg);
+  border: 1px solid var(--wa-disabled-border);
+  color: #ddd;
 }
