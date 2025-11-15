@@ -29,7 +29,7 @@ async function sendToSheet(entry) {
 
 // ===== Основная логика страницы QR-Zahlung =====
 (() => {
-  // DOM
+  // --- 1. DOM-элементы ---
   const elDriver = document.getElementById("driverNo");
   const elFare = document.getElementById("fare");
   const elTip = document.getElementById("tip");
@@ -42,16 +42,31 @@ async function sendToSheet(entry) {
   const qrBox = document.getElementById("qr");
   const elRecent = document.getElementById("qrRecent");
 
-  // Прочее
+  // Защита: если это не страница QR-Zahlung → выходим, чтобы не падать
+  if (
+    !elDriver ||
+    !elFare ||
+    !elTip ||
+    !elTotal ||
+    !elVZ ||
+    !qrBox ||
+    !sendWA ||
+    !copyBtn
+  ) {
+    console.warn(
+      "[QR] main.js: необходимые элементы не найдены — инициализация QR-Zahlung пропущена."
+    );
+    return;
+  }
+
+  // --- 2. Константы и LocalStorage ---
   const DEFAULT_WA = "436506367662"; // +43 650 6367662 без плюса
 
-  // LocalStorage ключи
   const LS = {
     driver: "taxapp.driverNo",
     waBoss: "taxapp.whatsAppBoss",
   };
 
-  // Инициализация WA получателя по умолчанию
   if (!localStorage.getItem(LS.waBoss)) {
     localStorage.setItem(LS.waBoss, DEFAULT_WA);
   }
@@ -59,7 +74,7 @@ async function sendToSheet(entry) {
   // Восстановление номера водителя
   elDriver.value = localStorage.getItem(LS.driver) || "";
 
-  // ===== helpers: parse/format/round =====
+  // --- 3. Helpers: parse/format/round ---
   const nfEUR = new Intl.NumberFormat("de-AT", {
     style: "currency",
     currency: "EUR",
@@ -85,7 +100,7 @@ async function sendToSheet(entry) {
     return two(Math.max(0, targetTotal - fare));
   }
 
-  // --- авто-выделение суммы/чаевых при фокусе + автофокус на сумме ---
+  // --- 4. UX фокус/выделение сумм ---
   function selectAll(e) {
     const el = e.target;
     requestAnimationFrame(() => {
@@ -108,7 +123,7 @@ async function sendToSheet(entry) {
     }
   });
 
-  // удобство: Enter в сумме → в «Чаевые»
+  // Enter в сумме → в «Чаевые»
   elFare.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -117,11 +132,10 @@ async function sendToSheet(entry) {
     }
   });
 
-  // ===== Загрузка последних платежей =====
+  // --- 5. Загрузка последних платежей ---
   async function fetchQrRecent(limit = 5) {
     if (!elRecent || !GS_ENDPOINT) return;
 
-    // Состояние загрузки
     elRecent.innerHTML =
       '<div class="qr-recent__loading">Daten werden geladen …</div>';
 
@@ -158,7 +172,6 @@ async function sendToSheet(entry) {
       const dt =
         it.timestamp instanceof Date ? it.timestamp : new Date(it.timestamp);
 
-      // короткий формат: только день.месяц и время
       const date = dt.toLocaleDateString("de-AT", {
         day: "2-digit",
         month: "2-digit",
@@ -197,7 +210,6 @@ async function sendToSheet(entry) {
     elRecent.innerHTML = rows.join("");
   }
 
-  // Авто-обновление при возврате на страницу (из WhatsApp и т.п.)
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
       fetchQrRecent(5);
@@ -208,12 +220,11 @@ async function sendToSheet(entry) {
     fetchQrRecent(5);
   });
 
-  // ===== VZ-превью =====
+  // --- 6. VZ-превью + пересчёт ---
   function updateVzPreview(driverNo) {
     elVZ.textContent = `Taxi Murtal – Fahrer ${driverNo || "00"}`;
   }
 
-  // ===== Пересчёт =====
   function recalc() {
     const fare = toNumber(elFare.value);
     const tip = toNumber(elTip.value);
@@ -222,18 +233,16 @@ async function sendToSheet(entry) {
     elTotal.textContent = toMoney(total);
     updateVzPreview(elDriver.value);
 
-    // EPC + QR — через QrPay (из qr.js)
     const epc = QrPay.buildEpcString(total, elDriver.value);
     QrPay.renderQR(qrBox, epc);
 
     sendWA.disabled = !(total > 0 && /^\d{1,2}$/.test(elDriver.value.trim()));
   }
 
-  // ===== ЛОГИКА TIP-BUTTONS =====
+  // --- 7. Логика tip-buttons ---
   function computeTipByKind(kind) {
     const fare = toNumber(elFare.value);
 
-    // Универсально: 10%up / +10% / 10% / 15%up → итог = ceil(fare * (1 + p))
     const m = /^(\+)?(\d{1,2})%(?:up)?$/.exec(
       String(kind).toLowerCase().replace(/\s+/g, "")
     );
@@ -258,7 +267,6 @@ async function sendToSheet(entry) {
         const targetTotal = Math.ceil(fare / 5) * 5;
         return two(Math.max(0, targetTotal - fare));
       }
-      // поддержим прямые ключи на всякий случай
       case "10%up": {
         const targetTotal = Math.ceil(fare * 1.1);
         return two(Math.max(0, targetTotal - fare));
@@ -273,7 +281,6 @@ async function sendToSheet(entry) {
     }
   }
 
-  // Клики по кнопкам чаевых — ручное действие → авто-режим off
   tipBtns.forEach((btn) => {
     if (btn === tipClear) return;
     btn.addEventListener("click", (e) => {
@@ -286,7 +293,6 @@ async function sendToSheet(entry) {
     });
   });
 
-  // Сброс чаевых — тоже ручное действие
   tipClear?.addEventListener(
     "click",
     () => {
@@ -297,12 +303,11 @@ async function sendToSheet(entry) {
     { passive: true }
   );
 
-  // Ручное редактирование чаевых → авто-режим off
   elTip.addEventListener("input", () => {
     autoTip = false;
   });
 
-  // Сохранение номера водителя
+  // --- 8. Сохранение номера водителя ---
   elDriver.addEventListener("input", () => {
     const clean = elDriver.value.replace(/\D/g, "").slice(0, 2);
     elDriver.value = clean;
@@ -310,7 +315,7 @@ async function sendToSheet(entry) {
     recalc();
   });
 
-  // Поля денег → автопересчёт
+  // --- 9. Пересчёт при изменении сумм ---
   ["input", "change"].forEach((evt) => {
     elFare.addEventListener(evt, () => {
       const fare = toNumber(elFare.value);
@@ -324,7 +329,7 @@ async function sendToSheet(entry) {
     elTip.addEventListener(evt, recalc);
   });
 
-  // Мини-тост
+  // --- 10. Мини-тост ---
   const toast = document.createElement("div");
   toast.className = "toast";
   document.body.appendChild(toast);
@@ -335,7 +340,7 @@ async function sendToSheet(entry) {
     setTimeout(() => toast.classList.remove("show"), 2000);
   }
 
-  // Копирование сводки
+  // --- 11. Копирование сводки ---
   copyBtn.addEventListener("click", async () => {
     const fare = toNumber(elFare.value);
     const tip = toNumber(elTip.value);
@@ -366,7 +371,7 @@ async function sendToSheet(entry) {
     }
   });
 
-  // Отправка в WhatsApp + отправка в Google Sheets
+  // --- 12. Отправка в WhatsApp + запись в таблицу ---
   const getBossWa = () => localStorage.getItem(LS.waBoss) || DEFAULT_WA;
 
   sendWA.addEventListener("click", async () => {
@@ -404,16 +409,12 @@ async function sendToSheet(entry) {
       iban: "AT932081500043192756",
     };
 
-    // дожидаемся записи в таблицу
     await sendToSheet(entry);
-    // маленький буфер, чтобы Apps Script точно успел
     await new Promise((resolve) => setTimeout(resolve, 400));
-
-    // обновляем список
     fetchQrRecent(10);
   });
 
-  // ===== Старт: авто-режим чаевых включён, 5% с округлением ИТОГА до целого €
+  // --- 13. Стартовое состояние ---
   if (!elDriver.value) elDriver.value = "00";
   elFare.value = elFare.value || "0,00";
 
@@ -430,7 +431,6 @@ async function sendToSheet(entry) {
 
 // ===== Вспомогательная функция для tip-buttons (глобальная) =====
 function getTipKindFromBtn(el) {
-  // data-tip, иначе текст, обрезаем пробелы и в нижний регистр
   return (el.dataset.tip || el.textContent || "")
     .trim()
     .toLowerCase()
