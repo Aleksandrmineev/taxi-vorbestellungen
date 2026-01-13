@@ -283,8 +283,36 @@ form {
 .sub {
   grid-column: 1 / -1;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 18px;
 }
+
+/* описание заказа */
+.item .sub {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--muted, #565958);
+
+  /* чтобы показывалось начало, а не конец */
+  overflow: hidden;
+
+  /* максимум 5 строк */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 10;
+
+  /* аккуратные переносы */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* телефон: 16px */
+@media (max-width: 768px) {
+  .item .sub {
+    font-size: 16px;
+  }
+}
+
 .btns {
   display: flex;
   gap: 8px;
@@ -357,5 +385,70 @@ html[data-theme="dark"] .badge.cancelled {
   .layout.layout--aside-left > aside {
     position: static;
     top: auto;
+  }
+}
+
+.item__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.item__dt {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.item__date {
+  font-weight: 600;
+}
+
+.item__time {
+  font-weight: 700;
+}
+
+.item__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.item__bottom {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.item__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  opacity: 0.85;
+  font-size: 13px;
+}
+
+.item__id {
+  font-weight: 600;
+}
+
+.item__type {
+  white-space: nowrap;
+}
+
+/* на узких экранах не разваливаемся */
+@media (max-width: 420px) {
+  .item__dt {
+    gap: 8px;
+  }
+  .item__meta {
+    font-size: 12px;
   }
 }
