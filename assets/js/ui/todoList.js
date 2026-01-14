@@ -59,61 +59,60 @@ export function initTodoList({ fillForm }) {
                data-phone="${display || ""}"
                data-message="${(it.message || "").replace(/"/g, "&quot;")}"
                data-start="${it.start_iso}">
-            <h4>#${it.order_id || "—"} — ${dateHuman} ${time} — ${
-            it.type || "Bestellung"
-          } — ${phoneHtml} ${badge}</h4>
-            ${it.message ? `<div class="sub">${it.message}</div>` : ``}
-
-            <div class="btns">
-              <!-- Wiederholen -->
-              <button class="icon-btn todo-repeat" title="Wiederholen" aria-label="Wiederholen">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M20 12a8 8 0 1 1-2.35-5.65"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                  <polyline
-                    points="20 4 20 9 15 9"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
-
-              <!-- Bestätigen -->
-              <button class="icon-btn icon-btn--primary todo-done"${disabled} title="Erledigt" aria-label="Erledigt">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M5 12.5l4 4 10-10"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
-
-              <!-- Stornieren -->
-              <button class="icon-btn todo-cancel"${disabled} title="Stornieren" aria-label="Stornieren">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M18 6L6 18M6 6l12 12"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
+        
+            <div class="item__top">
+              <div class="item__dt">
+                <span class="item__date">${dateHuman}</span>
+                <span class="item__time">${time}</span>
+              </div>
+        
+              <div class="item__right">
+                ${phoneHtml}
+                ${badge}
+              </div>
             </div>
+        
+            ${it.message ? `<div class="sub">${it.message}</div>` : ``}
+        
+            <div class="item__bottom">
+              <div class="btns">
+                <!-- Wiederholen -->
+                <button class="icon-btn todo-repeat" title="Wiederholen" aria-label="Wiederholen">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M20 12a8 8 0 1 1-2.35-5.65"
+                          fill="none" stroke="currentColor" stroke-width="1.8"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="20 4 20 9 15 9"
+                              fill="none" stroke="currentColor" stroke-width="1.8"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+        
+                <!-- Bestätigen -->
+                <button class="icon-btn icon-btn--primary todo-done"${disabled} title="Erledigt" aria-label="Erledigt">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12.5l4 4 10-10"
+                          fill="none" stroke="currentColor" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+        
+                <!-- Stornieren -->
+                <button class="icon-btn todo-cancel"${disabled} title="Stornieren" aria-label="Stornieren">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"
+                          stroke="currentColor" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+        
+              <div class="item__meta">
+                <span class="item__id">#${it.order_id || "—"}</span>
+                <span class="item__type">${it.type || "Bestellung"}</span>
+              </div>
+            </div>
+        
           </div>`;
         })
         .join("") || '<div class="item">Keine Aufgaben.</div>';
