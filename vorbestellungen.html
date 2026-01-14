@@ -51,14 +51,14 @@
     />
 
     <!-- CSS -->
-    <link rel="stylesheet" href="assets/css/global.css" />
-    <link rel="stylesheet" href="assets/css/header.css" />
-    <link rel="stylesheet" href="assets/css/main.css?v=20260113-2" />
-    <link rel="stylesheet" href="assets/css/footer.css" />
-    <link rel="stylesheet" href="assets/css/responsive.css" />
-    <link rel="stylesheet" href="assets/css/components.css" />
-    <link rel="stylesheet" href="assets/css/modal.css" />
-    <link rel="stylesheet" href="assets/css/toast.css" />
+    <link rel="stylesheet" href="assets/css/global.css?v=20260114" />
+    <link rel="stylesheet" href="assets/css/header.css?v=20260114" />
+    <link rel="stylesheet" href="assets/css/main.css?v=20260114" />
+    <link rel="stylesheet" href="assets/css/footer.css?v=20260114" />
+    <link rel="stylesheet" href="assets/css/responsive.css?v=20260114" />
+    <link rel="stylesheet" href="assets/css/components.css?v=20260114" />
+    <link rel="stylesheet" href="assets/css/modal.css?v=20260114" />
+    <link rel="stylesheet" href="assets/css/toast.css?v=20260114" />
   </head>
 
   <body>
@@ -585,9 +585,18 @@
         </a>
       </div>
     </footer>
+    <!-- Версии заменять тут -->
+    <script type="importmap">
+      {
+        "imports": {
+          "/assets/js/main.js": "/assets/js/main.js?v=20260114",
+          "/assets/js/ui/ordersList.js": "/assets/js/ui/ordersList.js?v=20260114",
+          "/assets/js/ui/todoList.js": "/assets/js/ui/todoList.js?v=20260114",
+          "/assets/js/ui/search.js": "/assets/js/ui/search.js?v=20260114"
+        }
+      }
+    </script>
 
-    <!-- JS -->
-    <script type="module" src="./assets/js/theme.js"></script>
-    <script type="module" src="./assets/js/main.js?v=20260114"></script>
+    <script type="module" src="/assets/js/main.js"></script>
   </body>
 </html>

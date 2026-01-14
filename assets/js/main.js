@@ -1,8 +1,8 @@
-import { initForm } from "./ui/form.js";
-import { initOrdersList } from "./ui/ordersList.js";
-import { initTodoList } from "./ui/todoList.js";
-import { initSearch } from "./ui/search.js";
-import { initMainTabs } from "./ui/tabs.js";
+import { initForm } from "/assets/js/ui/form.js";
+import { initOrdersList } from "/assets/js/ui/ordersList.js";
+import { initTodoList } from "/assets/js/ui/todoList.js";
+import { initSearch } from "/assets/js/ui/search.js";
+import { initMainTabs } from "/assets/js/ui/tabs.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   // === 1) Форма
