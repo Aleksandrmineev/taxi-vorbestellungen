@@ -84,11 +84,8 @@
   will-change: transform, opacity;
 }
 
-/* ===== Верхний переключатель темы скрывать на узких экранах ===== */
+/* ===== Узкие экраны ===== */
 @media (max-width: 600px) {
-  #theme-toggle {
-    display: none;
-  }
   .brand__logo {
     width: 24px;
     height: 24px;

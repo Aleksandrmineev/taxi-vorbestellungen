@@ -29,6 +29,7 @@
       href="https://fonts.googleapis.com/css2?family=Marcellus+SC&display=swap"
       rel="stylesheet"
     />
+    <script src="../assets/js/theme-boot.js"></script>
 
     <!-- CSS -->
     <link rel="stylesheet" href="assets/css/theme.css" />
@@ -62,16 +63,6 @@
           <strong>+43&nbsp;660&nbsp;1018101</strong>
         </a>
 
-        <!-- верхний переключатель темы -->
-        <button
-          id="theme-toggle"
-          class="pill"
-          type="button"
-          aria-label="Thema umschalten"
-        >
-          <svg id="theme-icon" viewBox="0 0 24 24" role="img"></svg>
-          <span class="sr-only">Thema wechseln</span>
-        </button>
       </header>
     </div>
 
@@ -425,21 +416,23 @@
         <!-- Переключатель темы (нижний) -->
         <button
           id="theme-toggle-footer"
-          class="footer__theme"
+          class="footer__theme theme-toggle"
           aria-label="Thema umschalten"
         >
-          <svg
-            id="theme-icon-footer"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-          ></svg>
+          <span class="theme-toggle-shell" aria-hidden="true">
+            <svg
+              id="theme-icon-footer"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+            ></svg>
+          </span>
         </button>
       </div>
     </footer>
 
     <!-- JS -->
-    <script defer src="./assets/js/theme.js"></script>
+    <script type="module" defer src="./assets/js/theme.js"></script>
     <script src="./assets/js/main.js?v=20260114a" defer></script>
     <script>
       if ("serviceWorker" in navigator) {

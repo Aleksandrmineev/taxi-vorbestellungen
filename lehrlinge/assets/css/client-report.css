@@ -56,7 +56,7 @@
 
 .summary-line {
   font-size: 14px;
-  color: var(--clr-text-light, #6b7280);
+  color: var(--text-muted);
   margin-bottom: 8px;
 }
 
@@ -64,9 +64,9 @@
 
 .report-table-wrapper {
   overflow-x: auto;
-  border-radius: var(--radius, 12px);
-  box-shadow: var(--shadow-card, 0 2px 12px rgba(0, 0, 0, 0.06));
-  background: var(--card, #fff);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: var(--surface-1);
 }
 
 table.report-table {
@@ -76,7 +76,7 @@ table.report-table {
 }
 
 table.report-table thead {
-  background: var(--clr-light-bg, #f3f4f6);
+  background: var(--surface-2);
 }
 
 /* заголовок таблицы */
@@ -91,7 +91,7 @@ table.report-table thead th {
 table.report-table th,
 table.report-table td {
   padding: 8px 10px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 40%, transparent);
   text-align: left;
   vertical-align: top;
 }
@@ -113,7 +113,7 @@ table.report-table tr.row-strecke td {
   padding-top: 2px;
   padding-bottom: 10px;
   font-size: 13px;
-  color: var(--clr-text-light, #6b7280);
+  color: var(--text-muted);
 }
 
 /* зебру отключаем, чтобы не путалась между парами строк */
@@ -183,6 +183,7 @@ table.report-table th:nth-child(5) {
 
   .report-table-wrapper {
     box-shadow: none;
+    background: #fff;
   }
 
   .container {

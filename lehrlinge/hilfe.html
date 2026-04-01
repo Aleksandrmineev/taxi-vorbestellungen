@@ -121,6 +121,63 @@
             </li>
           </ul>
 
+          <h3>Admin benutzen</h3>
+          <ul>
+            <li>
+              <b>Punkte:</b> Hier lassen sich Haltepunkte anlegen,
+              umbenennen, aktivieren/deaktivieren und in der Reihenfolge
+              verschieben.
+            </li>
+            <li>
+              <b>Matrix:</b> Hier werden die Kilometer zwischen den Punkten
+              gepflegt. Für neue Punkte müssen mindestens die realen
+              Nachbar-Strecken eingetragen werden.
+            </li>
+            <li>
+              <b>Fahrer:</b> Fahrer-IDs, Namen und Aktiv-Status verwalten.
+            </li>
+            <li>
+              <b>Autos:</b> Kennzeichen und Fahrzeug-IDs verwalten.
+            </li>
+          </ul>
+
+          <h3>Neue Haltestelle anlegen</h3>
+          <ul>
+            <li>
+              In <a href="./admin.html">Admin</a> zuerst unter
+              <b>Punkte</b> die neue Haltestelle anlegen, z. B.
+              <code>2R1a</code>.
+            </li>
+            <li>
+              Danach unter <b>Matrix</b> die Strecken ergänzen, z. B.
+              <code>2R1 → 2R1a</code> und <code>2R1a → 2R2</code>.
+            </li>
+            <li>
+              Wenn die Strecke auch rückwärts genutzt wird, auch die
+              Gegenrichtung pflegen.
+            </li>
+            <li>
+              Erst danach auf <b>Alles speichern</b> klicken.
+            </li>
+          </ul>
+
+          <h3>Wichtig</h3>
+          <ul>
+            <li>
+              Die normale Fahrten-Seite rechnet nur sauber, wenn für die
+              genutzten Punkt-Kombinationen Werte in der Matrix vorhanden sind.
+            </li>
+            <li>
+              Route 1 und Route 2 werden getrennt genutzt. Es müssen also nur
+              die Strecken gepflegt werden, die im jeweiligen Ablauf wirklich
+              vorkommen.
+            </li>
+            <li>
+              Nach Änderungen in der Admin-Seite die normale App kurz neu
+              laden, damit die aktuellen Daten sichtbar sind.
+            </li>
+          </ul>
+
           <h3>Technik (Kurzinfo)</h3>
           <ul>
             <li><b>Frontend:</b> HTML / CSS / Vanilla JS</li>
@@ -174,6 +231,6 @@
       </div>
     </main>
 
-    <script src="./assets/js/theme.js" defer></script>
+    <script type="module" src="./assets/js/theme.js" defer></script>
   </body>
 </html>

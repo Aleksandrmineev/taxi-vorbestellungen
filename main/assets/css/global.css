@@ -24,6 +24,62 @@ body {
   min-height: 100%;
 }
 
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+.btn-base {
+  appearance: none;
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
+  color: var(--button-text);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--button-shadow);
+  transition: transform var(--transition), box-shadow var(--transition),
+    border-color var(--transition), background var(--transition),
+    color var(--transition);
+}
+
+button:hover,
+.btn-base:hover {
+  background: var(--button-hover-bg);
+  box-shadow: var(--button-shadow-hover);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: var(--focus);
+  outline-offset: 2px;
+}
+
+input,
+select,
+textarea,
+.field-control {
+  appearance: none;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text);
+  box-shadow: var(--input-shadow);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--transition), box-shadow var(--transition),
+    background var(--transition), color var(--transition);
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.field-control:focus {
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--ring));
+  box-shadow: var(--input-focus-ring);
+}
+
 /* утилиты */
 .spacer {
   flex: 1;
@@ -48,11 +104,12 @@ body {
   padding: 10px 14px;
   border-radius: var(--radius-pill);
   text-decoration: none;
-  color: var(--text);
-  background: var(--card);
-  border: 1px solid var(--ring);
+  color: var(--button-text);
+  background: var(--button-bg);
+  border: 1px solid var(--button-border);
+  box-shadow: var(--button-shadow);
   transition: transform var(--transition), box-shadow var(--transition),
-    border-color var(--transition);
+    border-color var(--transition), background var(--transition);
   will-change: transform;
 }
 .pill svg {
@@ -63,7 +120,50 @@ body {
 .pill:hover {
   transform: translateY(-1px);
   border-color: color-mix(in oklab, var(--accent) 45%, var(--ring));
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  background: var(--button-hover-bg);
+  box-shadow: var(--button-shadow-hover);
+}
+
+.theme-toggle {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  min-width: 44px;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  border-radius: 14px;
+  background: transparent;
+  border: 1px solid color-mix(in oklab, var(--accent) 18%, var(--ring));
+  box-shadow: none;
+}
+
+.theme-toggle > svg,
+.theme-toggle > span > svg {
+  width: 16px;
+  height: 16px;
+}
+
+.theme-toggle:hover {
+  border-color: color-mix(in oklab, var(--accent) 50%, var(--ring));
+  box-shadow: var(--shadow-soft-hover);
+}
+
+.theme-toggle-shell {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: color-mix(in oklab, var(--button-bg) 88%, transparent);
+  box-shadow: var(--theme-toggle-inner-shadow);
+}
+
+.theme-toggle svg {
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .iconbtn {

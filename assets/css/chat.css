@@ -167,11 +167,7 @@ html {
   flex: 1;
   resize: none;
   overflow-y: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
   padding: 10px 12px;
-  background: var(--surface);
-  color: var(--text);
   caret-color: var(--primary);
   font-size: 16px; /* >=16px — без авто-зума на iOS */
   line-height: 1.4;
@@ -189,7 +185,6 @@ html {
 .chat-btn {
   height: 40px;
   padding: 0 14px;
-  border: none;
   border-radius: var(--radius-md);
   font-weight: 600;
   cursor: pointer;

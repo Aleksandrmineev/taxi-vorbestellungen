@@ -22,11 +22,7 @@
 .card {
   border: 1px solid var(--ring);
   border-radius: var(--radius);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--card) 94%, #000 6%),
-    color-mix(in oklab, var(--card) 86%, #000 14%)
-  );
+  background: var(--surface-panel);
   box-shadow: var(--shadow);
   padding: clamp(14px, 3.2vw, 22px);
 }
@@ -54,12 +50,7 @@
 .input,
 .selectlike {
   padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--ring);
-  background: var(--card);
-  color: var(--text);
   outline: none;
-  transition: border-color var(--transition), box-shadow var(--transition);
   font-size: var(--fs-input); /* 👈 */
   height: var(--ctr-h); /* 👈 */
   line-height: 1.1; /* чтобы цифры не «резались» */
@@ -70,11 +61,6 @@
 #tip {
   font-size: var(--fs-input-lg);
   font-weight: 600;
-}
-
-.input:focus {
-  border-color: color-mix(in oklab, var(--accent) 55%, var(--ring));
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 18%, transparent);
 }
 
 .row {
@@ -90,9 +76,6 @@
   flex-wrap: wrap;
 }
 .tipbtn {
-  border: 1px solid var(--ring);
-  background: var(--card);
-  color: var(--text);
   border-radius: 12px;
   padding: 8px 10px;
   cursor: pointer;
@@ -100,7 +83,6 @@
 }
 .tipbtn:hover {
   transform: translateY(-2px);
-  border-color: color-mix(in oklab, var(--accent) 55%, var(--ring));
 }
 
 .qrbox {
@@ -108,15 +90,11 @@
   place-items: center;
   border: 1px dashed var(--ring);
   border-radius: 16px;
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.04),
-    rgba(255, 255, 255, 0.01)
-  );
+  background: var(--qrbox-bg);
   padding: 18px;
 }
 .qrbox .qrcanvas {
-  background: #fff;
+  background: var(--qrcanvas-bg);
   padding: 10px;
   border-radius: 12px;
 } /* белое поле для распознавания */
@@ -155,9 +133,6 @@
   gap: 8px;
   padding: 10px 14px;
   border-radius: var(--radius-pill);
-  border: 1px solid var(--ring);
-  background: var(--card);
-  color: var(--text);
   cursor: pointer;
   text-decoration: none;
   transition: transform var(--transition), border-color var(--transition);
@@ -188,7 +163,6 @@
 .copybtn:hover,
 .wa-btn:hover {
   transform: translateY(-2px);
-  border-color: color-mix(in oklab, var(--accent) 55%, var(--ring));
 }
 .wa-btn[disabled] {
   opacity: 0.5;
@@ -210,7 +184,7 @@
   left: 50%;
   bottom: 22px;
   transform: translateX(-50%);
-  background: var(--card);
+  background: var(--surface-panel-strong);
   color: var(--text);
   border: 1px solid var(--ring);
   padding: 10px 14px;

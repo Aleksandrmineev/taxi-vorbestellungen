@@ -4,7 +4,8 @@
   align-items: center;
   gap: 16px;
   padding: 14px var(--pad-inline-main);
-  border-bottom: var(--border-soft);
+  border-bottom: 1px solid var(--header-border);
+  background: var(--header-bg);
   backdrop-filter: var(--backdrop-strong);
 }
 
@@ -22,7 +23,7 @@
   border-radius: 50%;
   display: inline-grid;
   place-items: center;
-  background: linear-gradient(145deg, #1b2028, #0e1217);
+  background: var(--logo-shell-grad);
   box-shadow: inset 0 0 0 2px var(--ring);
   position: relative;
   overflow: hidden;
@@ -103,10 +104,10 @@
   padding: 20px;
   border-radius: var(--radius);
   background: var(--tile-bg);
-  border: var(--border-soft);
+  border: 1px solid var(--tile-border);
   text-decoration: none;
   color: var(--text);
-  box-shadow: var(--shadow);
+  box-shadow: var(--tile-shadow);
   transition: transform var(--transition), box-shadow var(--transition),
     border-color var(--transition), background var(--transition);
   overflow: hidden;
@@ -141,7 +142,7 @@
   background: linear-gradient(
     120deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.08) 18%,
+    var(--sheen-color) 18%,
     transparent 36%
   );
   transform: translateX(-130%);
@@ -170,8 +171,8 @@
 
 .tile:hover {
   transform: translateY(-4px);
-  border-color: color-mix(in oklab, var(--accent) 50%, var(--ring));
-  box-shadow: 0 22px 45px rgba(0, 0, 0, 0.45);
+  border-color: var(--tile-border-hover);
+  box-shadow: var(--tile-shadow-hover);
 }
 
 .tile:hover::after {
@@ -186,12 +187,8 @@
   border-radius: 18px;
   display: grid;
   place-items: center;
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.06),
-    rgba(255, 255, 255, 0.02)
-  );
-  border: var(--border-soft);
+  background: var(--tile-icon-bg);
+  border: 1px solid var(--tile-icon-border);
   margin: 6px auto 0;
   color: var(--accent);
 }
@@ -202,7 +199,7 @@
   max-width: 100%;
   display: block;
   fill: var(--accent);
-  filter: drop-shadow(0 1px 1.2px rgba(0, 0, 0, 0.25));
+  filter: var(--icon-shadow);
 }
 
 /* текстовый блок закрепляем к низу */
@@ -243,7 +240,7 @@ footer {
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  border-top: var(--border-soft);
+  border-top: 1px solid var(--header-border);
 }
 
 footer a {
@@ -263,32 +260,20 @@ footer .muted {
   gap: 24px;
   flex-wrap: wrap;
   padding: 20px var(--pad-inline-main);
-  border-top: var(--border-soft);
+  border-top: 1px solid var(--header-border);
 }
 
 .footer__link {
-  position: relative;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  font-weight: 500;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.15;
   color: var(--text);
   text-decoration: none;
   transition: color var(--transition);
-}
-
-/* золотое подчеркивание */
-.footer__link::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -2px;
-  width: 100%;
-  height: 1.5px;
-  background: var(--accent);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.35s ease;
 }
 
 /* hover-эффект */
@@ -296,18 +281,26 @@ footer .muted {
   color: var(--accent);
 }
 
-.footer__link:hover::after {
-  transform: scaleX(1);
-}
-
 /* чтобы SVG тоже слегка оживал */
 .footer__link svg {
-  fill: var(--accent);
-  transition: transform var(--transition);
+  width: 38px;
+  height: 38px;
+  padding: 10px;
+  border-radius: 50%;
+  display: block;
+  background: color-mix(in oklab, var(--button-bg) 88%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 14%, var(--button-border));
+  color: var(--text);
+  fill: none;
+  stroke: currentColor;
+  transition: background var(--transition), color var(--transition),
+    border-color var(--transition);
 }
 
 .footer__link:hover svg {
-  transform: translateY(-2px);
+  background: var(--accent);
+  color: var(--primary-contrast);
+  border-color: color-mix(in oklab, var(--accent) 70%, transparent);
 }
 
 /* кнопка темы внизу */
@@ -315,22 +308,8 @@ footer .muted {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: var(--border-soft);
-  background: var(--card);
-  cursor: pointer;
-  transition: transform var(--transition), border-color var(--transition);
-}
-
-.footer__theme svg {
-  fill: var(--accent);
-}
-
-.footer__theme:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in oklab, var(--accent) 55%, var(--ring));
+  width: 44px;
+  height: 44px;
 }
 
 /* доступность: уважение reduce-motion */
@@ -370,8 +349,8 @@ body {
   position: relative;
   padding: 12px 14px 12px 22px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--recent-item-bg);
+  border: 1px solid var(--tile-border);
   display: block;
   transition: background var(--transition), border-color var(--transition),
     transform 0.2s ease-out;
@@ -393,13 +372,8 @@ body {
 
 /* Hover эффект */
 .qr-recent__item:hover {
-  background: radial-gradient(
-      circle at top left,
-      rgba(200, 161, 74, 0.12),
-      transparent 55%
-    ),
-    rgba(255, 255, 255, 0.03);
-  border-color: rgba(201, 161, 74, 0.35);
+  background: var(--recent-item-hover-bg);
+  border-color: var(--border-accent-soft);
   transform: translateY(-1px);
 }
 
@@ -440,13 +414,13 @@ body {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--spinner-border);
   border-top-color: var(--accent);
   animation: qr-spin 0.7s linear infinite;
 }
 
 .qr-recent__loading--error::before {
-  border-top-color: #c84b4b;
+  border-top-color: var(--status-danger);
 }
 
 /* анимация вращения */
@@ -498,18 +472,18 @@ body {
   gap: 10px;
 
   background: var(--gold-grad);
-  color: #ffffff;
+  color: var(--primary-contrast);
 
   font-size: 1rem;
   font-weight: 600;
   border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--wa-btn-border);
 
-  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.15),
-    0 0 12px rgba(201, 161, 74, 0.35), 0 8px 18px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--wa-btn-shadow);
 
   cursor: pointer;
-  transition: 0.25s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease,
+    border-color 0.25s ease, filter 0.25s ease;
 }
 
 .wa-btn svg {
@@ -520,14 +494,13 @@ body {
 
 .wa-btn:hover:enabled {
   transform: translateY(-2px);
-  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.22),
-    0 0 22px rgba(201, 161, 74, 0.5), 0 12px 24px rgba(0, 0, 0, 0.35);
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--wa-btn-border));
+  box-shadow: var(--wa-btn-shadow-hover);
 }
 
 .wa-btn:active:enabled {
   transform: scale(0.98);
-  box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.1),
-    0 6px 14px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--wa-btn-shadow-active);
 }
 
 /* Отключено */
@@ -536,5 +509,5 @@ body {
   box-shadow: none;
   background: var(--wa-disabled-bg);
   border: 1px solid var(--wa-disabled-border);
-  color: #ddd;
+  color: var(--wa-disabled-text);
 }

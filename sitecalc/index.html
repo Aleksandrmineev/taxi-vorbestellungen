@@ -24,21 +24,7 @@
     />
     <link rel="manifest" href="./assets/favicon/site.webmanifest" />
 
-    <!-- Boot: Thema früh setzen (keine „Flashes“) -->
-    <script>
-      (function () {
-        try {
-          const saved = localStorage.getItem("theme");
-          const prefersDark = matchMedia(
-            "(prefers-color-scheme: dark)"
-          ).matches;
-          const theme = saved || (prefersDark ? "dark" : "light");
-          document.documentElement.setAttribute("data-theme", theme);
-        } catch (e) {
-          document.documentElement.setAttribute("data-theme", "dark");
-        }
-      })();
-    </script>
+    <script src="../assets/js/theme-boot.js"></script>
     <link rel="stylesheet" href="./assets/css/theme.css" />
     <link rel="stylesheet" href="./assets/css/main.css" />
   </head>
@@ -150,7 +136,7 @@
               fill="currentColor"
             />
           </svg>
-          Entwicklung
+          <span class="footer-label">Entwicklung</span>
         </a>
 
         <!-- 2️⃣ Hilfe -->
@@ -171,16 +157,19 @@
               fill="currentColor"
             />
           </svg>
-          Hilfe
+          <span class="footer-label">Hilfe</span>
         </a>
 
         <!-- 3️⃣ Переключатель темы -->
         <button
           id="themeToggle"
-          class="footer__theme"
+          class="footer__theme theme-toggle"
           aria-label="Thema umschalten"
         >
-          🌙 Dunkel
+          <span class="theme-toggle-shell" aria-hidden="true">
+            <svg id="themeToggleIcon" viewBox="0 0 24 24"></svg>
+          </span>
+          <span id="themeToggleLabel" class="footer-label">Theme</span>
         </button>
       </div>
     </main>

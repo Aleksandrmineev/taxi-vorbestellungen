@@ -1,73 +1,9 @@
-/* ========= Design Tokens ========= */
+@import url("./theme-tokens.css");
+
 :root {
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  --font-brand: "Marcellus SC", serif;
-
-  /* Light theme (default) */
-  --bg: #f7f8fa;
-  --text: #111111;
-  --text-muted: #6b7280;
-
-  --surface: #faf9f6;
-  --surface-2: #f6f7fb;
-  --border: #e5e7eb;
-  --shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-
-  --primary: #0d5ef7;
-  --primary-contrast: #ffffff;
-
-  --success: #16a34a;
-  --danger: #dc2626;
-  --warning: #2563eb;
-
-  --hover: #fbfdff;
-
-  --radius-lg: 12px;
-  --radius-md: 10px;
-  --control-height: 24px;
   --container-max: 880px;
   --gap: 16px;
-
-  /* Gold accents */
-  --gold-600: #b98b20;
-  --gold-500: #caa135;
-  --gold-400: #e0bb59;
-  --gold-bg: #fff7e6;
-  --gold-border: #f1dfb0;
-  --gold-ink: #5d4613;
-}
-
-/* ========= Dark theme overrides ========= */
-html[data-theme="dark"] {
-  --bg: #0e1116;
-  --text: #e7eaf0;
-  --text-muted: #a3a9b7;
-
-  --surface: #22252b;
-  --surface-2: #1f242c;
-  --border: #2a3140;
-  --shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-
-  --primary: #5a8cff;
-  --primary-contrast: #0b1020;
-
-  --success: #3bdc88;
-  --danger: #ff6b6b;
-  --warning: #7aa7ff;
-
-  --hover: #1b212b;
-
-  --gold-600: #e4c978;
-  --gold-500: #f0d88b;
-  --gold-400: #f7e7a8;
-  --gold-bg: #2a2414;
-  --gold-border: #3a321a;
-  --gold-ink: #f1e8c3;
-}
-
-/* Поддержка системных тем */
-:root {
-  color-scheme: light dark;
+  --control-height: 24px;
 }
 
 /* ========= Base ========= */
@@ -99,6 +35,57 @@ h1 {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   padding: 16px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input,
+select,
+textarea,
+.control {
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-md);
+  background: var(--control-bg);
+  color: var(--text);
+  box-shadow: var(--control-shadow);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease,
+    background 0.18s ease, color 0.18s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.control:focus {
+  outline: 0;
+  border-color: color-mix(in srgb, var(--primary) 60%, var(--control-border));
+  box-shadow: var(--control-focus-ring);
+}
+
+.btn,
+.icon-btn,
+.btn-base {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--text);
+  transition: background 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease, transform 0.12s ease, color 0.2s ease;
+}
+
+.btn:hover,
+.icon-btn:hover,
+.btn-base:hover {
+  background: color-mix(in srgb, var(--surface-2) 88%, var(--hover));
 }
 
 .sr-only {

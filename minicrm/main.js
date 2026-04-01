@@ -719,10 +719,21 @@ load();
   // тема уже применена бутскриптом в <head>; здесь только кнопка
   window.addEventListener("DOMContentLoaded", () => {
     const btn = document.getElementById("themeToggle");
+    const icon = document.getElementById("themeToggleIcon");
+    const label = document.getElementById("themeToggleLabel");
     if (!btn) return;
 
-    const setLabel = (t) =>
-      (btn.textContent = t === "dark" ? "☀️ Hell" : "🌙 Dunkel");
+    const ICONS = {
+      moon:
+        '<path d="M14.85 5.25a5.5 5.5 0 0 0 3.87 9.32 7.1 7.1 0 1 1-3.87-9.32Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+      sun: '<circle cx="12" cy="12" r="3.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 4.4v1.8M12 17.8v1.8M19.6 12h-1.8M6.2 12H4.4M17.37 6.63l-1.27 1.27M7.9 16.1l-1.27 1.27M17.37 17.37 16.1 16.1M7.9 7.9 6.63 6.63" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    };
+
+    const setLabel = (t) => {
+      const nextLabel = t === "dark" ? "Hell" : "Dunkel";
+      if (label) label.textContent = nextLabel;
+      if (icon) icon.innerHTML = t === "dark" ? ICONS.sun : ICONS.moon;
+    };
 
     // синхронизируем надпись с текущей темой
     setLabel(document.documentElement.getAttribute("data-theme") || "dark");
@@ -738,10 +749,10 @@ load();
 })();
 
 function goBack() {
-  if (document.referrer && !document.referrer.includes(location.href)) {
+  if (window.history.length > 1 && document.referrer) {
     history.back();
   } else {
-    // если открыто напрямую — переход на главную
-    window.location.href = "index.html";
+    // если открыто напрямую — переход на главную страницу проекта
+    window.location.href = "/main/index.html";
   }
 }

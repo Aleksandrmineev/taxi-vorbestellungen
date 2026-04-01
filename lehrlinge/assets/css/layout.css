@@ -25,8 +25,8 @@
 
 /* панель (бывший topbar) как карточка */
 .panel {
-  background: var(--surface-1);
-  border: 1px solid var(--line);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 14px;
   box-shadow: var(--shadow);
   padding: var(--pad);
@@ -63,8 +63,8 @@
   grid-template-columns: 1fr auto minmax(200px, 240px);
   align-items: center;
   gap: 14px;
-  background: var(--surface-1);
-  border: 1px solid var(--line);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 14px;
   box-shadow: var(--shadow);
   padding: 12px 16px;
@@ -146,10 +146,10 @@
 }
 
 .btn-link.active {
-  color: var(--clr-accent, #0d5ef7);
+  color: var(--accent);
   font-weight: 600;
 }
 .btn-link.active .btn-link__icon {
-  color: var(--clr-accent, #0d5ef7);
+  color: var(--accent);
   transform: scale(1.1);
 }

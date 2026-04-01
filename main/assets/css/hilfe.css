@@ -21,11 +21,7 @@
 .hilfe__section {
   border: 1px solid var(--ring);
   border-radius: var(--radius);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--card) 94%, #000 6%),
-    color-mix(in oklab, var(--card) 86%, #000 14%)
-  );
+  background: var(--surface-panel);
   box-shadow: var(--shadow);
   padding: clamp(14px, 3.2vw, 22px);
 }
@@ -107,13 +103,13 @@
   background: var(--muted);
 }
 .badge--planned::before {
-  background: #b38b2f;
+  background: var(--status-planned);
 } /* тёплое золото */
 .badge--progress::before {
-  background: #3aa675;
+  background: var(--status-progress);
 } /* зелёный прогресс */
 .badge--new::before {
-  background: #518bd6;
+  background: var(--status-new);
 } /* синий NEW */
 
 /* Контактный блок */

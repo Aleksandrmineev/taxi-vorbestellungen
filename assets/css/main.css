@@ -86,11 +86,6 @@ form {
   width: 100%;
   height: 44px;
   padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  font: inherit;
-  background: var(--surface);
-  color: var(--text);
   transition: border-color 0.15s ease, box-shadow 0.15s ease,
     background 0.15s ease, color 0.15s ease;
 }
@@ -107,9 +102,6 @@ form {
 .form-card select:focus,
 .form-card textarea:focus {
   outline: 0;
-  border-color: color-mix(in srgb, var(--primary) 60%, #fff);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
-  background: var(--surface);
 }
 
 /* Select: встроенная стрелка */
@@ -166,9 +158,6 @@ form {
   width: 44px;
   height: 44px;
   padding: 0;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--surface-2, var(--surface));
   cursor: pointer;
   transition: transform 0.08s ease, box-shadow 0.25s ease, background 0.2s ease;
 }
@@ -188,7 +177,7 @@ form {
   border-color: color-mix(in srgb, var(--primary) 60%, #0000);
 }
 .icon-btn--muted {
-  background: var(--surface-2, #f6f7fb);
+  background: var(--surface-2);
   color: var(--text);
 }
 
@@ -209,7 +198,7 @@ form {
   padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: var(--surface-2, var(--surface));
+  background: var(--surface-2);
   color: var(--text);
   cursor: pointer;
   user-select: none;
@@ -372,7 +361,7 @@ html[data-theme="dark"] .badge.cancelled {
   padding: 6px 10px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: var(--surface-2, var(--surface));
+  background: var(--surface-2);
   font-size: 14px;
   cursor: pointer;
 }

@@ -22,14 +22,7 @@
       href="./favicon/favicon-16x16.png"
     />
     <link rel="manifest" href="./favicon/site.webmanifest" />
-    <script>
-      (function () {
-        const saved = localStorage.getItem("theme");
-        const prefersDark = matchMedia("(prefers-color-scheme: dark)").matches;
-        const theme = saved || (prefersDark ? "dark" : "light");
-        document.documentElement.setAttribute("data-theme", theme);
-      })();
-    </script>
+    <script src="../assets/js/theme-boot.js"></script>
     <link rel="stylesheet" href="./assets/css/theme.css" />
     <link rel="stylesheet" href="./assets/css/main.css" />
     <link rel="stylesheet" href="./style.css" />
@@ -136,7 +129,7 @@
             fill="currentColor"
           />
         </svg>
-        Schicht
+        <span class="footer-label">Schicht</span>
       </a>
 
       <!-- 0️⃣ Protokoll -->
@@ -158,7 +151,7 @@
             fill="currentColor"
           />
         </svg>
-        Protokoll
+        <span class="footer-label">Protokoll</span>
       </a>
 
       <!-- 1️⃣ Entwicklung -->
@@ -180,7 +173,7 @@
             fill="currentColor"
           />
         </svg>
-        Entwicklung
+        <span class="footer-label">Entwicklung</span>
       </a>
 
       <!-- 2️⃣ Hilfe -->
@@ -201,16 +194,19 @@
             fill="currentColor"
           />
         </svg>
-        Hilfe
+        <span class="footer-label">Hilfe</span>
       </a>
 
       <!-- 3️⃣ Переключатель темы -->
       <button
         id="themeToggle"
-        class="footer__theme"
+        class="footer__theme theme-toggle"
         aria-label="Thema umschalten"
       >
-        🌙 Dunkel
+        <span class="theme-toggle-shell" aria-hidden="true">
+          <svg id="themeToggleIcon" viewBox="0 0 24 24"></svg>
+        </span>
+        <span id="themeToggleLabel" class="footer-label">Theme</span>
       </button>
     </div>
 

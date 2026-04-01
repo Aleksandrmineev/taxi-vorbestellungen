@@ -27,6 +27,7 @@
     <link rel="manifest" href="./assets/favicon/site.webmanifest" />
 
     <!-- CSS -->
+    <script src="../assets/js/theme-boot.js"></script>
     <link rel="stylesheet" href="assets/css/theme.css" />
     <link rel="stylesheet" href="assets/css/global.css" />
     <link rel="stylesheet" href="assets/css/main.css" />
@@ -64,11 +65,7 @@
       .hilfe__section {
         border: 1px solid var(--ring);
         border-radius: var(--radius);
-        background: linear-gradient(
-          180deg,
-          color-mix(in oklab, var(--card) 94%, #000 6%),
-          color-mix(in oklab, var(--card) 86%, #000 14%)
-        );
+        background: var(--surface-panel);
         box-shadow: var(--shadow);
         padding: clamp(14px, 3vw, 22px);
         display: grid;
@@ -90,9 +87,9 @@
       .kbd {
         display: inline-block;
         padding: 2px 6px;
-        border: 1px solid var(--ring);
+        border: 1px solid var(--button-border);
         border-radius: 6px;
-        background: var(--card);
+        background: var(--button-bg);
         font-size: 13px;
       }
       .checklist {
@@ -116,11 +113,7 @@
         border: 1px dashed var(--ring);
         border-radius: 12px;
         padding: 10px 12px;
-        background: linear-gradient(
-          145deg,
-          rgba(255, 255, 255, 0.04),
-          rgba(255, 255, 255, 0.01)
-        );
+        background: var(--qrbox-bg);
       }
     </style>
   </head>
@@ -146,15 +139,6 @@
         </svg>
         <strong>+43&nbsp;660&nbsp;1018101</strong>
       </a>
-      <button
-        id="theme-toggle"
-        class="pill"
-        type="button"
-        aria-label="Thema umschalten"
-      >
-        <svg id="theme-icon" viewBox="0 0 24 24" role="img"></svg>
-        <span class="sr-only">Thema wechseln</span>
-      </button>
     </header>
 
     <!-- Content -->
@@ -353,21 +337,23 @@
 
         <button
           id="theme-toggle-footer"
-          class="footer__theme"
+          class="footer__theme theme-toggle"
           aria-label="Thema umschalten"
         >
-          <svg
-            id="theme-icon-footer"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-          ></svg>
+          <span class="theme-toggle-shell" aria-hidden="true">
+            <svg
+              id="theme-icon-footer"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+            ></svg>
+          </span>
         </button>
       </div>
     </footer>
 
     <!-- JS -->
-    <script defer src="assets/js/theme.js"></script>
+    <script type="module" defer src="assets/js/theme.js"></script>
     <script defer src="assets/js/main.js"></script>
   </body>
 </html>

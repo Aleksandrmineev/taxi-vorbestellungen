@@ -72,26 +72,34 @@ body {
   align-items: center;
 
   gap: 12px;
-  background: color-mix(in oklab, var(--surface-2) 60%, transparent);
+  background: var(--seg-bg);
   padding: 8px;
   border-radius: 999px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--seg-border);
 }
 .seg button {
   appearance: none;
   border: 0;
-  background: transparent;
-  color: var(--muted);
+  background: var(--seg-button-bg);
+  color: var(--seg-button-text);
   font-size: var(--fs-base);
   font-weight: 800;
   padding: 10px 22px;
   border-radius: 999px;
-  transition: color var(--tr-fast), background-color var(--tr-fast);
+  transition: color var(--tr-fast), background-color var(--tr-fast),
+    box-shadow var(--tr-fast), transform var(--tr-fast);
 }
 .seg button[aria-pressed="true"] {
-  background: var(--surface-1);
-  color: var(--text);
-  box-shadow: var(--shadow);
+  background: var(--seg-button-active-bg);
+  color: var(--seg-button-active-text);
+  box-shadow: var(--seg-button-active-shadow);
+}
+.seg button:hover {
+  transform: translateY(-1px);
+}
+.seg button:focus-visible {
+  outline: var(--focus);
+  outline-offset: 2px;
 }
 
 #now {
@@ -132,9 +140,9 @@ body {
   right: 0;
   bottom: 0;
   z-index: 1;
-  background: var(--surface-1);
+  background: var(--panel-bg);
   border-top: 1px solid var(--line);
-  box-shadow: 0 -10px 34px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 -8px 24px rgba(2, 8, 14, 0.16);
   padding: clamp(16px, 4vw, 22px) clamp(16px, 4vw, 22px)
     max(14px, env(safe-area-inset-bottom));
   /* display: grid;
@@ -179,8 +187,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--surface-1);
-  border: 1px solid var(--border);
+  background: var(--link-chip-bg);
+  border: 1px solid var(--link-chip-border);
   border-radius: 999px;
   padding: 6px 12px;
   font-size: 15px;
@@ -192,8 +200,8 @@ body {
 }
 
 .back-btn:hover {
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
-  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: var(--link-chip-hover-bg);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--link-chip-border));
 }
 
 .back-btn svg {

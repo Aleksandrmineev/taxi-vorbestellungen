@@ -37,9 +37,6 @@
 
   background: var(--surface);
   color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
   padding: 16px;
 
   opacity: 0;
@@ -53,14 +50,6 @@
 .modal.is-open {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
-}
-
-/* Dark theme tweaks */
-html[data-theme="dark"] .modal {
-  background: var(--surface-2);
-  border-color: var(--border);
-  color: var(--text);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
 }
 
 /* Header */
@@ -111,12 +100,7 @@ html[data-theme="dark"] .modal {
   min-height: 84px; /* удобно на телефоне */
   max-height: 40vh;
   resize: vertical;
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
   padding: 10px 12px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 /* Footer */
@@ -154,8 +138,6 @@ html[data-theme="dark"] .modal {
   justify-content: center;
   text-align: center;
   padding: 10px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
   cursor: pointer;
@@ -170,10 +152,6 @@ html[data-theme="dark"] .modal {
 }
 .reason-btn.is-active {
   outline: 2px solid color-mix(in srgb, var(--primary) 35%, transparent);
-}
-html[data-theme="dark"] .reason-btn {
-  background: var(--surface);
-  border-color: var(--border);
 }
 
 /* Custom reason (Sonstiges…) */

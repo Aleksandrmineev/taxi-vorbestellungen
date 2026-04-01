@@ -541,45 +541,84 @@ dialog textarea {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px;
 }
 
-.footer__dev a {
-  position: relative;
+.footer__dev a,
+.footer__theme {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   color: var(--footer-text);
-  font-size: 16px;
+  font-size: 11px;
+  line-height: 1.15;
   text-decoration: none;
-  transition: color 0.25s ease, opacity 0.25s ease;
+  transition: color 0.25s ease;
 }
 
-.footer__dev a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -2px;
-  width: 100%;
-  height: 1.5px;
-  background-color: currentColor;
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 0.8;
+.footer__dev a:hover,
+.footer__dev a:focus-visible,
+.footer__theme:hover,
+.footer__theme:focus-visible {
+  color: var(--accent);
 }
 
-.footer__dev a:hover {
-  opacity: 1;
-}
-
-.footer__dev a:hover::after {
-  transform: scaleX(1);
-  transform-origin: left;
-}
-
-.footer__dev svg {
+.footer__dev a > svg,
+.footer__theme .theme-toggle-shell {
+  width: 38px;
+  height: 38px;
+  padding: 10px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in oklab, var(--surface-2) 88%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 14%, var(--border));
+  color: currentColor;
   flex-shrink: 0;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.footer__dev a > svg {
+  box-sizing: border-box;
+  fill: none;
+  stroke: currentColor;
+}
+
+.footer__dev a:hover > svg,
+.footer__dev a:focus-visible > svg,
+.footer__theme:hover .theme-toggle-shell,
+.footer__theme:focus-visible .theme-toggle-shell {
+  color: var(--accent);
+  background: color-mix(in oklab, var(--surface-2) 76%, var(--accent));
+}
+
+.footer-label {
+  font-size: 10px;
+  line-height: 1.15;
+  opacity: 0.85;
+  text-align: center;
+}
+
+.footer__theme {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.theme-toggle-shell svg {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 #dlg #newPhone {

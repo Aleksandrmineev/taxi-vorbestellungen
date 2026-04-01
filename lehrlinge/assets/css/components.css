@@ -12,9 +12,10 @@
 select,
 input[type="date"] {
   appearance: none;
-  background: var(--surface-2);
+  background: var(--control-bg);
   color: var(--text);
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-border);
+  box-shadow: var(--control-shadow);
   border-radius: 14px;
   padding: 30px 16px;
   font-size: var(--fs-base);
@@ -26,6 +27,7 @@ select:focus,
 input[type="date"]:focus {
   outline: var(--focus);
   outline-offset: 2px;
+  box-shadow: var(--control-focus-ring);
 }
 
 /* ===== GENERIC BUTTON ===== */
@@ -33,9 +35,10 @@ input[type="date"]:focus {
   flex: 1;
   /* min-width: 200px; */
   appearance: none;
-  border: 1px solid var(--line);
-  background: var(--surface-2);
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
   color: var(--text);
+  box-shadow: var(--button-shadow);
   font-size: var(--fs-small);
   font-weight: 700;
   padding: 14px 18px;
@@ -45,7 +48,7 @@ input[type="date"]:focus {
     color var(--tr-fast), box-shadow var(--tr-fast), transform var(--tr-fast);
 }
 .btn:hover {
-  background: color-mix(in oklab, var(--surface-2) 80%, white 20%);
+  background: var(--button-hover-bg);
 }
 .btn:active {
   transform: translateY(1px);
@@ -63,16 +66,16 @@ input[type="date"]:focus {
   max-width: 100vw;
   gap: 10px;
   padding: clamp(8px, 2.2vw, 12px);
-  background: var(--surface-1);
-  border: 1px solid var(--line);
+  background: var(--row-bg);
+  border: 1px solid var(--row-border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: var(--row-shadow);
   touch-action: auto;
   transition: background-color var(--tr-fast), border-color var(--tr-fast),
     transform var(--tr-fast), opacity var(--tr-fast);
 }
 .row:hover {
-  background: color-mix(in oklab, var(--surface-1) 85%, white 15%);
+  background: var(--row-hover-bg);
 }
 .row.off {
   opacity: 0.45;
@@ -123,7 +126,7 @@ input[type="date"]:focus {
   appearance: none;
   border: 0;
   background: var(--accent);
-  color: #fff;
+  color: var(--primary-contrast);
   font-size: var(--fs-base);
   font-weight: 900;
   padding: clamp(16px, 4vw, 22px) 0;
@@ -143,8 +146,8 @@ input[type="date"]:focus {
 
 /* ===== CARDS, TOASTS ===== */
 .card {
-  background: var(--surface-1);
-  border: 1px solid var(--line);
+  background: var(--row-bg);
+  border: 1px solid var(--row-border);
   border-radius: 14px;
   padding: 14px;
   box-shadow: var(--shadow);
@@ -183,8 +186,8 @@ input[type="date"]:focus {
   left: 12px;
   right: 12px;
   bottom: calc(88px + env(safe-area-inset-bottom));
-  background: var(--surface-2);
-  border: 1px solid var(--line);
+  background: var(--toast-bg);
+  border: 1px solid var(--row-border);
   border-radius: 14px;
   box-shadow: var(--shadow);
   padding: 12px;
@@ -203,19 +206,24 @@ input[type="date"]:focus {
 
 /* ===== Theme toggle button ===== */
 .theme-btn {
+  width: 44px;
+  height: 44px;
   padding: 6px 11px;
-  border-radius: var(--radius);
-  border: 1px solid var(--line);
-  background: var(--surface-2);
+  border-radius: 14px;
+  border: 1px solid var(--button-border);
+  background: color-mix(in oklab, var(--button-bg) 88%, transparent);
   color: var(--text);
   font-size: var(--fs-base);
   display: grid;
   place-items: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   cursor: pointer;
-  transition: background-color var(--tr-fast), transform var(--tr-fast);
+  transition: background-color var(--tr-fast), transform var(--tr-fast),
+    border-color var(--tr-fast), box-shadow var(--tr-fast);
 }
 .theme-btn:hover {
-  background: color-mix(in oklab, var(--surface-2) 85%, white 15%);
+  border-color: color-mix(in oklab, var(--accent) 50%, var(--button-border));
+  box-shadow: 0 8px 18px rgba(2, 8, 14, 0.16);
   transform: translateY(-1px);
 }
 .theme-btn:active {
@@ -297,6 +305,8 @@ input[type="date"]:focus {
   font-size: 16px;
   border-radius: 12px;
   padding: 0 12px;
+  background: var(--control-bg);
+  border-color: var(--control-border);
 }
 
 @media (min-width: 992px) {
@@ -413,11 +423,12 @@ input[type="date"]:focus {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: var(--clr-light-bg, #e5e7eb);
+  background: color-mix(in oklab, var(--button-bg) 92%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--general-text, #222);
+  color: var(--text);
+  border: 1px solid color-mix(in oklab, var(--accent) 14%, var(--button-border));
   transition: background 0.2s, color 0.2s;
 }
 
@@ -427,8 +438,35 @@ input[type="date"]:focus {
 }
 
 .link-item:hover .icon-circle {
-  background: var(--clr-accent, #0d5ef7);
+  background: var(--accent);
   color: white;
+}
+
+.theme-toggle-link .icon-circle,
+#theme-toggle .icon-circle {
+  background: color-mix(in oklab, var(--button-bg) 84%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 24%, var(--button-border));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.theme-toggle-link .icon-circle svg,
+#theme-toggle .icon-circle svg,
+.theme-btn.theme-toggle svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.theme-toggle-link:hover .icon-circle,
+#theme-toggle:hover .icon-circle {
+  color: var(--accent);
+  background: color-mix(in oklab, var(--button-bg) 76%, var(--accent-weak));
+}
+
+.theme-btn.theme-toggle svg {
+  width: 19px;
+  height: 19px;
 }
 
 .label {

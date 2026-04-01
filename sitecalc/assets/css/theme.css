@@ -1,3 +1,5 @@
+@import url("../../../assets/css/theme-tokens.css");
+
 /* ===== Тёмная (по умолчанию) ===== */
 :root {
   --bg: #0b0f14;
@@ -10,7 +12,8 @@
 
   /* текст/цвета */
   --text: #e6eef7;
-  --muted: #a8b3c5;
+  --text-muted: #a8b3c5;
+  --muted: var(--text-muted);
   --placeholder: #8ea0b8;
 
   --accent: #4da3ff;
@@ -43,7 +46,8 @@
   --border: var(--surface-3);
 
   --text: #1a1a1a;
-  --muted: #555;
+  --text-muted: #555;
+  --muted: var(--text-muted);
   --placeholder: #7a808a;
 
   --accent: #007aff;

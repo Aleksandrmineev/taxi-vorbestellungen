@@ -22,14 +22,7 @@
       href="./favicon/favicon-16x16.png"
     />
     <link rel="manifest" href="./favicon/site.webmanifest" />
-    <script>
-      (function () {
-        const saved = localStorage.getItem("theme");
-        const prefersDark = matchMedia("(prefers-color-scheme: dark)").matches;
-        const theme = saved || (prefersDark ? "dark" : "light");
-        document.documentElement.setAttribute("data-theme", theme);
-      })();
-    </script>
+    <script src="../assets/js/theme-boot.js"></script>
     <link rel="stylesheet" href="./assets/css/theme.css" />
     <link rel="stylesheet" href="./assets/css/main.css" />
     <link rel="stylesheet" href="./assets/css/hilfe.css" />
@@ -194,7 +187,7 @@
               fill="currentColor"
             />
           </svg>
-          Entwicklung
+          <span class="footer-label">Entwicklung</span>
         </a>
 
         <!-- 2️⃣ Hilfe -->
@@ -215,7 +208,7 @@
               fill="currentColor"
             />
           </svg>
-          Hilfe
+          <span class="footer-label">Hilfe</span>
         </a>
       </div>
     </main>
