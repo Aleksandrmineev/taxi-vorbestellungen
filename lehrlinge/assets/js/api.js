@@ -1,6 +1,8 @@
 /* ===== api.js — надёжные обёртки для Apps Script JSON API (кэш, SWR, дедуп) ===== */
 
-const GAS_URL = "https://taxi-vorbestellungen.vercel.app/api/gas";
+const GAS_URL =
+  "https://script.google.com/macros/s/AKfycbxpGn11PT70usKYe0xE7S28FlwNIrJhXXEzaeK022VPZx7RObBEMvjq4ghpewnRyPGa/exec";
+const GAS_PROXY_URL = "https://taxi-vorbestellungen.vercel.app/api/gas";
 const API_SECRET = "102030";
 window.GAS_URL = window.GAS_URL || GAS_URL;
 
@@ -105,6 +107,28 @@ async function apiPost(body, { retries = 1, timeoutMs = 10000 } = {}) {
         "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
       },
       body: form,
+    },
+    { retries, timeoutMs }
+  );
+}
+
+async function proxyGet(params, { retries = 1, timeoutMs = 8000 } = {}) {
+  const u = new URL(GAS_PROXY_URL);
+  Object.entries(params || {}).forEach(([k, v]) => u.searchParams.set(k, v));
+  u.searchParams.set("secret", API_SECRET);
+  u.searchParams.set("_ts", Date.now());
+  return fetchJSON(u.toString(), { method: "GET" }, { retries, timeoutMs });
+}
+
+async function proxyPost(body, { retries = 1, timeoutMs = 10000 } = {}) {
+  return fetchJSON(
+    GAS_PROXY_URL,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json;charset=UTF-8",
+      },
+      body: JSON.stringify({ ...(body || {}), secret: API_SECRET }),
     },
     { retries, timeoutMs }
   );
@@ -263,11 +287,11 @@ async function ping() {
 }
 
 async function loadAdminData() {
-  return apiGet({ fn: "admin_data" }, { retries: 1, timeoutMs: 20000 });
+  return proxyGet({ fn: "admin_data" }, { retries: 1, timeoutMs: 20000 });
 }
 
 async function saveAdminData(payload) {
-  const res = await apiPost(
+  const res = await proxyPost(
     {
       action: "admin_save",
       points: JSON.stringify(payload?.points || []),
