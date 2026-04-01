@@ -277,11 +277,6 @@
 
           <!-- Подтверждение и последние отправки (останутся слева) -->
           <section
-            id="confirm"
-            class="sidebar__box"
-            aria-label="Bestätigung"
-          ></section>
-          <section
             id="recent"
             class="sidebar__box"
             style="display: none"
@@ -297,6 +292,14 @@
         </section>
       </div>
     </main>
+
+    <section
+      id="confirm"
+      class="confirm-modal"
+      hidden
+      aria-label="Bestätigung"
+      aria-live="polite"
+    ></section>
 
     <script type="module" src="./assets/js/theme.js" defer></script>
     <script src="./assets/js/api.js" defer></script>

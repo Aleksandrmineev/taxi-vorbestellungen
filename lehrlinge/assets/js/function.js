@@ -414,16 +414,21 @@
   App.renderConfirmation = function (p) {
     const box = App?.dom?.confirmBox;
     if (!box || !p || typeof p !== "object") {
-      if (box) box.style.display = "none";
+      if (box) {
+        box.hidden = true;
+        box.innerHTML = "";
+      }
       return;
     }
     const dtStr = App.fmtDateTime(parseDateSafe(p.timestamp));
     const carText = p.car_plate || p.car_id || "—";
 
-    box.style.display = "block";
+    box.hidden = false;
     box.innerHTML = `
-  <div class="card">
+  <div class="confirm-modal__dialog card" role="dialog" aria-modal="true" aria-label="Gesendet">
+    <button type="button" class="confirm-modal__close" data-confirm-close aria-label="Schließen">✕</button>
     <h3>Gesendet</h3>
+    <div class="seq"><b>Danke!</b></div>
     <div class="kv">
       <div><span>Datum:</span> <b>${dtStr}</b></div>
       <div><span>Route:</span> <b>${p.route ?? "—"}</b></div>

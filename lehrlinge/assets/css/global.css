@@ -154,10 +154,57 @@ body {
 }
 
 /* слойность поверх футера */
-#confirm,
 #recent {
   position: relative;
   z-index: 2;
+}
+
+.confirm-modal[hidden] {
+  display: none !important;
+}
+
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: color-mix(in oklab, var(--bg) 60%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.confirm-modal__dialog {
+  width: min(100%, 420px);
+  position: relative;
+}
+
+.confirm-modal__dialog.card {
+  background: var(--row-bg);
+  border: 1px solid var(--row-border);
+  box-shadow: var(--shadow);
+}
+
+.confirm-modal__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--button-border);
+  background: color-mix(in oklab, var(--button-bg) 88%, transparent);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background-color var(--tr-fast), color var(--tr-fast),
+    border-color var(--tr-fast);
+}
+
+.confirm-modal__close:hover {
+  background: var(--button-hover-bg);
 }
 
 .visually-hidden {

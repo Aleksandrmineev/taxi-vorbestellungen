@@ -11,6 +11,7 @@ function debounce(fn, wait = 150) {
 
 // Токен загрузки для защиты от гонок (быстрые клики по сегментам)
 let _loadToken = 0;
+let _confirmRedirectTimer = 0;
 
 document.addEventListener("DOMContentLoaded", () => {
   const App = (window.App = window.App || {});
@@ -36,6 +37,26 @@ document.addEventListener("DOMContentLoaded", () => {
     btnClearAll: document.getElementById("clearAll"),
     // НЕТ themeBtn — темой управляет только theme.js
   };
+
+  const closeConfirm = () => {
+    if (_confirmRedirectTimer) {
+      clearTimeout(_confirmRedirectTimer);
+      _confirmRedirectTimer = 0;
+    }
+    const box = App.dom.confirmBox;
+    if (!box) return;
+    box.hidden = true;
+    box.innerHTML = "";
+  };
+
+  App.dom.confirmBox?.addEventListener("click", (e) => {
+    if (
+      e.target === App.dom.confirmBox ||
+      e.target?.closest?.("[data-confirm-close]")
+    ) {
+      closeConfirm();
+    }
+  });
 
   // ========== Базовая инициализация UI ==========
   // НЕТ App.initThemeToggle() — темой управляет только theme.js
@@ -163,11 +184,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const msg = err && err.message ? err.message : String(err);
       if (box) {
         box.hidden = false;
-        box.style.display = "";
-        box.classList.remove("ok");
-        box.classList.add("sidebar__box", "err");
-        box.textContent = `Fehler beim Laden der Daten: ${msg}`;
-        setTimeout(() => (box.hidden = true), 3500);
+        box.innerHTML = `
+          <div class="confirm-modal__dialog card err" role="dialog" aria-modal="true" aria-label="Fehler">
+            <button type="button" class="confirm-modal__close" data-confirm-close aria-label="Schließen">✕</button>
+            <h3>Fehler</h3>
+            <div class="seq">Fehler beim Laden der Daten: ${msg}</div>
+          </div>`;
+        setTimeout(closeConfirm, 3500);
       } else {
         alert(`Fehler beim Laden der Daten: ${msg}`);
       }
@@ -242,6 +265,10 @@ document.addEventListener("DOMContentLoaded", () => {
             car_id: carId,
             car_plate: carPlate,
           });
+          if (_confirmRedirectTimer) clearTimeout(_confirmRedirectTimer);
+          _confirmRedirectTimer = setTimeout(() => {
+            window.location.href = "recent.html";
+          }, 5000);
         }
       } catch (e) {
         console.error("SUBMIT FAIL:", e);
@@ -251,11 +278,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const box = App.dom.confirmBox;
         if (box) {
           box.hidden = false;
-          box.style.display = "";
-          box.classList.remove("ok");
-          box.classList.add("sidebar__box", "err");
-          box.textContent = "Fehler beim Speichern";
-          setTimeout(() => (box.hidden = true), 3500);
+          box.innerHTML = `
+            <div class="confirm-modal__dialog card err" role="dialog" aria-modal="true" aria-label="Fehler">
+              <button type="button" class="confirm-modal__close" data-confirm-close aria-label="Schließen">✕</button>
+              <h3>Fehler</h3>
+              <div class="seq">Fehler beim Speichern</div>
+            </div>`;
+          setTimeout(closeConfirm, 3500);
         } else {
           alert("Fehler beim Speichern");
         }
