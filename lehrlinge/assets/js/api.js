@@ -49,7 +49,7 @@ async function fetchJSON(
       const res = await fetch(url, {
         ...options,
         signal: ctrl.signal,
-        cache: "no-store",
+        cache: options.cache || "default",
       });
 
       const text = await res.text();
@@ -87,12 +87,19 @@ async function fetchJSON(
 
 /* ------------------------------- Базовые вызовы ---------------------------- */
 
-async function apiGet(params, { retries = 1, timeoutMs = 8000 } = {}) {
+async function apiGet(
+  params,
+  { retries = 1, timeoutMs = 8000, bustCache = false } = {}
+) {
   const u = new URL(GAS_URL);
   Object.entries(params || {}).forEach(([k, v]) => u.searchParams.set(k, v));
   u.searchParams.set("secret", API_SECRET);
-  u.searchParams.set("_ts", Date.now()); // анти-кэш
-  return fetchJSON(u.toString(), { method: "GET" }, { retries, timeoutMs });
+  if (bustCache) u.searchParams.set("_ts", Date.now());
+  return fetchJSON(
+    u.toString(),
+    { method: "GET", cache: bustCache ? "no-store" : "default" },
+    { retries, timeoutMs }
+  );
 }
 
 async function apiPost(body, { retries = 1, timeoutMs = 10000 } = {}) {
@@ -112,12 +119,19 @@ async function apiPost(body, { retries = 1, timeoutMs = 10000 } = {}) {
   );
 }
 
-async function proxyGet(params, { retries = 1, timeoutMs = 8000 } = {}) {
+async function proxyGet(
+  params,
+  { retries = 1, timeoutMs = 8000, bustCache = false } = {}
+) {
   const u = new URL(GAS_PROXY_URL);
   Object.entries(params || {}).forEach(([k, v]) => u.searchParams.set(k, v));
   u.searchParams.set("secret", API_SECRET);
-  u.searchParams.set("_ts", Date.now());
-  return fetchJSON(u.toString(), { method: "GET" }, { retries, timeoutMs });
+  if (bustCache) u.searchParams.set("_ts", Date.now());
+  return fetchJSON(
+    u.toString(),
+    { method: "GET", cache: bustCache ? "no-store" : "default" },
+    { retries, timeoutMs }
+  );
 }
 
 async function proxyPost(body, { retries = 1, timeoutMs = 10000 } = {}) {
@@ -138,8 +152,52 @@ async function proxyPost(body, { retries = 1, timeoutMs = 10000 } = {}) {
 
 const _memCache = new Map();
 const _inFlight = new Map();
+const _lsAvailable = (() => {
+  try {
+    const k = "__mt_ls_test__";
+    localStorage.setItem(k, "1");
+    localStorage.removeItem(k);
+    return true;
+  } catch {
+    return false;
+  }
+})();
 
 const isFresh = (entry) => entry && nowMs() - entry.ts < entry.ttl;
+
+function lsKeyForGetData(route) {
+  return `lehrlinge:getData:${String(route || "1")}`;
+}
+
+function readLsCache(key, ttlMs) {
+  if (!_lsAvailable) return null;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    if (!parsed.ts || !parsed.data) return null;
+    if (nowMs() - parsed.ts >= ttlMs) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function writeLsCache(key, data) {
+  if (!_lsAvailable) return;
+  try {
+    localStorage.setItem(key, JSON.stringify({ ts: nowMs(), data }));
+  } catch {}
+}
+
+function getCachedDataSync(route) {
+  const r = String(route || "1");
+  const memKey = makeKey({ fn: "getData", route: r });
+  const mem = _memCache.get(memKey);
+  if (isFresh(mem)) return mem.data;
+  return readLsCache(lsKeyForGetData(r), TTL.getData);
+}
 
 /** Возвращает из кэша; если просрочен — ходит в сеть; при swr=true обновляет фоновой перезагрузкой.
  */
@@ -201,7 +259,7 @@ function _cacheDeleteByPrefix(prefix) {
 /* ---------------------------- High-level функции --------------------------- */
 
 const TTL = {
-  getData: 240_000, // 4 мин локально (чуть меньше, чем на сервере)
+  getData: 3_600_000, // 1 час
   recent: 90_000, // 1.5 мин
 };
 
@@ -209,17 +267,27 @@ const TTL = {
  */
 async function loadData(route) {
   const r = String(route || "1");
+  const lsKey = lsKeyForGetData(r);
+  const warm = readLsCache(lsKey, TTL.getData);
+  if (warm) {
+    const memKey = makeKey({ fn: "getData", route: r });
+    _memCache.set(memKey, { ts: nowMs(), ttl: TTL.getData, data: warm });
+  }
+
   const data = await cachedGet({ fn: "getData", route: r }, TTL.getData, {
     retries: 1,
     timeoutMs: 15000,
     swr: true,
   });
+  writeLsCache(lsKey, data);
 
   const other = r === "1" ? "2" : "1";
   cachedGet({ fn: "getData", route: other }, TTL.getData, {
     retries: 0,
     swr: true,
-  }).catch(() => {});
+  })
+    .then((otherData) => writeLsCache(lsKeyForGetData(other), otherData))
+    .catch(() => {});
   return data;
 }
 
@@ -308,16 +376,21 @@ async function saveAdminData(payload) {
 
   cacheInvalidate("fn=getData&");
   cacheInvalidate("fn=recent&");
+  if (_lsAvailable) {
+    localStorage.removeItem(lsKeyForGetData("1"));
+    localStorage.removeItem(lsKeyForGetData("2"));
+  }
   return res.saved;
 }
 
 setInterval(() => {
   ping().catch(() => {});
-}, 240_000);
+}, 3_600_000);
 
 /* ---------------------------- Экспорт в глобал ----------------------------- */
 
 window.loadData = loadData;
+window.getCachedDataSync = getCachedDataSync;
 window.loadRecent = loadRecent;
 window.saveSubmission = saveSubmission;
 window.ping = ping;
@@ -326,6 +399,7 @@ window.saveAdminData = saveAdminData;
 
 window.api = {
   loadData,
+  getCachedDataSync,
   loadRecent,
   saveSubmission,
   ping,

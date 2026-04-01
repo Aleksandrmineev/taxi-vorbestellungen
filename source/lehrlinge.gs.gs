@@ -1,62 +1,23 @@
+const LEHRLINGE_SNAPSHOT_SHEET = "_AppCache";
+const LEHRLINGE_SNAPSHOT_KEY = "lehrlinge_snapshot_v1";
+
 function getData(route) {
-  const ss = SpreadsheetApp.getActive();
-  const shP = ss.getSheetByName("Points"); // id | name | route | active
-  const shM = ss.getSheetByName("Matrix"); // distance matrix
-  const shD = ss.getSheetByName("Drivers"); // id | name | active
-  const shC = ss.getSheetByName("Cars"); // CarId | Kennzeichen
+  const snapshot = getLehrlingeSnapshot_();
+  const routeKey = String(route || "1");
+  const routeData = snapshot.routes[routeKey] || { points: [], dist: {} };
 
-  // ----- Points (для списка и для имен при сохранении)
-  const P = shP.getDataRange().getValues(); // [ [id,name,route,active], ... ]
-  const points = P.slice(1)
-    .filter((r) => String(r[2]) === String(route) && String(r[3]) === "1")
-    .map((r) => ({ id: String(r[0]), name: r[1] }));
-
-  // словарь id->name (для submit, чтобы писать имена)
-  const pointNameById = {};
-  P.slice(1).forEach((r) => (pointNameById[String(r[0])] = r[1]));
-
-  // ----- Drivers
-  let drivers = [];
-  if (shD) {
-    const D = shD.getDataRange().getValues(); // id | name | active
-    drivers = D.slice(1)
-      .filter((r) => String(r[2]) === "1")
-      .map((r) => ({ id: String(r[0]), name: r[1] }));
-  }
-
-  // ----- Cars (Kennzeichen)
-  let cars = [];
-  if (shC) {
-    const C = shC.getDataRange().getValues(); // CarId | Kennzeichen
-    cars = C.slice(1)
-      .filter((r) => String(r[0]).trim() !== "")
-      .map((r) => ({
-        id: String(r[0]),
-        plate: String(r[1] || ""),
-      }));
-  }
-
-  // ----- Matrix -> dist[from][to]
-  const lastCol = shM.getLastColumn(),
-    lastRow = shM.getLastRow();
-  const headTo = shM
-    .getRange(1, 2, 1, lastCol - 1)
-    .getValues()[0]
-    .map(String);
-  const headFrom = shM
-    .getRange(2, 1, lastRow - 1, 1)
-    .getValues()
-    .flat()
-    .map(String);
-  const body = shM.getRange(2, 2, lastRow - 1, lastCol - 1).getValues();
-
-  const dist = {};
-  headFrom.forEach((from, i) => {
-    dist[from] = {};
-    headTo.forEach((to, j) => (dist[from][to] = body[i][j]));
-  });
-
-  return { points, dist, drivers, pointNameById, cars };
+  return {
+    points: routeData.points || [],
+    dist: routeData.dist || {},
+    drivers: (snapshot.drivers || [])
+      .filter((r) => String(r.active || "") === "1")
+      .map((r) => ({ id: String(r.id || ""), name: String(r.name || "") })),
+    pointNameById: snapshot.pointNameById || {},
+    cars: (snapshot.cars || []).map((r) => ({
+      id: String(r.id || ""),
+      plate: String(r.plate || ""),
+    })),
+  };
 }
 
 function submit(
@@ -236,24 +197,88 @@ function getRecentSubmissions(route, limit) {
 }
 
 function getAdminData_() {
+  const snapshot = getLehrlingeSnapshot_();
+  return {
+    points: snapshot.points || [],
+    drivers: snapshot.drivers || [],
+    cars: snapshot.cars || [],
+    matrix: snapshot.matrix || { ids: [], rows: [] },
+  };
+}
+
+function saveAdminData_(body) {
+  const payload = parseAdminPayload_(body);
+
+  validateAdminPayload_(payload);
+
+  const ss = SpreadsheetApp.getActive();
+  writeSheetRows_(
+    ss,
+    "Points",
+    ["id", "name", "route", "active"],
+    payload.points.map((p) => [p.id, p.name, p.route, p.active])
+  );
+  writeSheetRows_(
+    ss,
+    "Drivers",
+    ["id", "name", "active"],
+    payload.drivers.map((d) => [d.id, d.name, d.active])
+  );
+  writeSheetRows_(
+    ss,
+    "Cars",
+    ["CarId", "Kennzeichen"],
+    payload.cars.map((c) => [c.id, c.plate])
+  );
+  writeMatrixSheet_(ss, payload.matrix);
+  const snapshot = rebuildLehrlingeSnapshot_();
+
+  return {
+    points: payload.points.length,
+    drivers: payload.drivers.length,
+    cars: payload.cars.length,
+    matrix: payload.matrix.ids.length,
+    savedAt: new Date(),
+    snapshotBuiltAt: snapshot.builtAt || new Date(),
+  };
+}
+
+function getLehrlingeSnapshot_() {
+  const fromSheet = readLehrlingeSnapshot_();
+  if (fromSheet) return fromSheet;
+  return rebuildLehrlingeSnapshot_();
+}
+
+function rebuildLehrlingeSnapshot_() {
+  const snapshot = buildLehrlingeSnapshotFromSheets_();
+  writeLehrlingeSnapshot_(snapshot);
+  return snapshot;
+}
+
+function buildLehrlingeSnapshotFromSheets_() {
   const ss = SpreadsheetApp.getActive();
   const shP = ss.getSheetByName("Points");
   const shM = ss.getSheetByName("Matrix");
   const shD = ss.getSheetByName("Drivers");
   const shC = ss.getSheetByName("Cars");
 
+  const pointNameById = {};
   const points = shP
     ? shP
         .getDataRange()
         .getValues()
         .slice(1)
         .filter((r) => String(r[0] || "").trim() !== "")
-        .map((r) => ({
-          id: String(r[0] || "").trim(),
-          name: String(r[1] || ""),
-          route: String(r[2] || ""),
-          active: String(r[3] || "") === "1" ? "1" : "0",
-        }))
+        .map((r) => {
+          const item = {
+            id: String(r[0] || "").trim(),
+            name: String(r[1] || ""),
+            route: String(r[2] || ""),
+            active: String(r[3] || "") === "1" ? "1" : "0",
+          };
+          pointNameById[item.id] = item.name;
+          return item;
+        })
     : [];
 
   const drivers = shD
@@ -283,42 +308,100 @@ function getAdminData_() {
 
   const matrix = readMatrixSheet_(shM);
 
-  return { points, drivers, cars, matrix };
+  return {
+    builtAt: new Date().toISOString(),
+    points: points,
+    drivers: drivers,
+    cars: cars,
+    matrix: matrix,
+    pointNameById: pointNameById,
+    routes: {
+      "1": buildRouteSnapshot_(points, matrix, "1"),
+      "2": buildRouteSnapshot_(points, matrix, "2"),
+    },
+  };
 }
 
-function saveAdminData_(body) {
-  const payload = parseAdminPayload_(body);
+function buildRouteSnapshot_(points, matrix, route) {
+  const routePoints = (points || [])
+    .filter((p) => String(p.route || "") === String(route) && String(p.active || "") === "1")
+    .map((p) => ({ id: p.id, name: p.name }));
+  const ids = routePoints.map((p) => p.id);
+  const dist = {};
+  const matrixIds = Array.isArray(matrix?.ids) ? matrix.ids : [];
+  const rows = Array.isArray(matrix?.rows) ? matrix.rows : [];
+  const colIndexById = {};
 
-  validateAdminPayload_(payload);
+  matrixIds.forEach((id, idx) => {
+    colIndexById[String(id || "")] = idx;
+  });
 
+  ids.forEach((from) => {
+    dist[from] = {};
+    const rowIdx = colIndexById[from];
+    ids.forEach((to) => {
+      const colIdx = colIndexById[to];
+      dist[from][to] =
+        typeof rowIdx === "number" && typeof colIdx === "number"
+          ? rows?.[rowIdx]?.[colIdx] ?? ""
+          : "";
+    });
+  });
+
+  return { points: routePoints, dist: dist };
+}
+
+function readLehrlingeSnapshot_() {
   const ss = SpreadsheetApp.getActive();
-  writeSheetRows_(
-    ss,
-    "Points",
-    ["id", "name", "route", "active"],
-    payload.points.map((p) => [p.id, p.name, p.route, p.active])
-  );
-  writeSheetRows_(
-    ss,
-    "Drivers",
-    ["id", "name", "active"],
-    payload.drivers.map((d) => [d.id, d.name, d.active])
-  );
-  writeSheetRows_(
-    ss,
-    "Cars",
-    ["CarId", "Kennzeichen"],
-    payload.cars.map((c) => [c.id, c.plate])
-  );
-  writeMatrixSheet_(ss, payload.matrix);
+  const sh = ss.getSheetByName(LEHRLINGE_SNAPSHOT_SHEET);
+  if (!sh) return null;
 
-  return {
-    points: payload.points.length,
-    drivers: payload.drivers.length,
-    cars: payload.cars.length,
-    matrix: payload.matrix.ids.length,
-    savedAt: new Date(),
-  };
+  const key = String(sh.getRange("A1").getValue() || "").trim();
+  const raw = String(sh.getRange("B1").getValue() || "");
+  if (key !== LEHRLINGE_SNAPSHOT_KEY || !raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeLehrlingeSnapshot_(snapshot) {
+  const ss = SpreadsheetApp.getActive();
+  const sh =
+    ss.getSheetByName(LEHRLINGE_SNAPSHOT_SHEET) ||
+    ss.insertSheet(LEHRLINGE_SNAPSHOT_SHEET);
+
+  sh.clearContents();
+  sh.getRange("A1").setValue(LEHRLINGE_SNAPSHOT_KEY);
+  sh.getRange("B1").setValue(JSON.stringify(snapshot));
+  sh.getRange("C1").setValue(new Date());
+  if (!sh.isSheetHidden()) sh.hideSheet();
+}
+
+function refreshLehrlingeSnapshot_() {
+  return rebuildLehrlingeSnapshot_();
+}
+
+function rebuildSnapshotManual() {
+  return refreshLehrlingeSnapshot_();
+}
+
+function installSnapshotTrigger() {
+  removeSnapshotTrigger();
+  ScriptApp.newTrigger("refreshLehrlingeSnapshot_")
+    .timeBased()
+    .everyMinutes(5)
+    .create();
+}
+
+function removeSnapshotTrigger() {
+  ScriptApp.getProjectTriggers().forEach((trigger) => {
+    if (trigger.getHandlerFunction() === "refreshLehrlingeSnapshot_") {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
 }
 
 function parseAdminPayload_(body) {

@@ -28,6 +28,12 @@ function cachePut_(key, obj, sec) {
   } catch (_) {}
 }
 
+function cacheRemove_(key) {
+  try {
+    CacheService.getScriptCache().remove(key);
+  } catch (_) {}
+}
+
 /** ===== doGet: getdata / recent / qr_recent / admin_data / ping ===== */
 function doGet(e) {
   try {
@@ -70,7 +76,12 @@ function doGet(e) {
 
     // ---- Данные для админки Lehrlinge ----
     if (fn === "admin_data") {
+      const cacheKey = "admin_data";
+      const cached = cacheGet_(cacheKey);
+      if (cached) return json({ ok: true, ...cached });
+
       const out = getAdminData_(); // из lehrlinge.gs
+      cachePut_(cacheKey, out, 300); // 5 минут
       return json({ ok: true, ...out });
     }
 
@@ -113,6 +124,9 @@ function doPost(e) {
     // ===== ВЕТКА АДМИНКИ LEHRLINGE =====
     if (action === "admin_save") {
       const saved = saveAdminData_(body); // реализовано в lehrlinge.gs
+      cacheRemove_("admin_data");
+      cacheRemove_("getdata:1");
+      cacheRemove_("getdata:2");
       return json({ ok: true, saved });
     }
 

@@ -116,38 +116,47 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
   // ========== Загрузка данных (только getData) ==========
+  function applyRouteData(res) {
+    const points = Array.isArray(res?.points) ? res.points : [];
+    const dist = res?.dist && typeof res.dist === "object" ? res.dist : {};
+    const drivers = Array.isArray(res?.drivers) ? res.drivers : [];
+    const cars = Array.isArray(res?.cars) ? res.cars : [];
+
+    App.state.points = points;
+    App.state.dist = dist;
+    App.state.drivers = drivers;
+    App.state.cars = cars;
+
+    if (typeof App.renderDrivers === "function") App.renderDrivers();
+    if (typeof App.renderCars === "function") App.renderCars();
+    if (typeof App.render === "function") App.render();
+    if (typeof App.pointsRestoreStrong === "function")
+      App.pointsRestoreStrong();
+  }
+
   async function load(r) {
     const route = String(r || "1");
     App.state.route = route;
     setRouteActive(route);
 
     const myToken = ++_loadToken; // защита от гонок
-    if (App.dom.seg1) App.dom.seg1.disabled = true;
-    if (App.dom.seg2) App.dom.seg2.disabled = true;
+    const warm = window.getCachedDataSync?.(route);
+    const shouldBlockSwitch = !warm;
+    if (shouldBlockSwitch) {
+      if (App.dom.seg1) App.dom.seg1.disabled = true;
+      if (App.dom.seg2) App.dom.seg2.disabled = true;
+    }
 
     try {
+      if (warm) {
+        applyRouteData(warm);
+      }
+
       const res = await window.loadData(route); // из api.js
 
       if (myToken !== _loadToken) return; // устаревший ответ
 
-      // Приводим state
-      const points = Array.isArray(res?.points) ? res.points : [];
-      const dist = res?.dist && typeof res.dist === "object" ? res.dist : {};
-      const drivers = Array.isArray(res?.drivers) ? res.drivers : [];
-      const cars = Array.isArray(res?.cars) ? res.cars : [];
-
-      App.state.points = points;
-      App.state.dist = dist;
-      App.state.drivers = drivers;
-      App.state.cars = cars;
-
-      // Рендерим
-      if (typeof App.renderDrivers === "function") App.renderDrivers();
-      if (typeof App.renderCars === "function") App.renderCars();
-      if (typeof App.render === "function") App.render();
-      // после любой перерисовки — восстановить чекбоксы
-      if (typeof App.pointsRestoreStrong === "function")
-        App.pointsRestoreStrong();
+      applyRouteData(res);
     } catch (err) {
       console.error("load() error:", err);
       const box = App.dom.confirmBox;
@@ -163,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
         alert(`Fehler beim Laden der Daten: ${msg}`);
       }
     } finally {
-      if (myToken === _loadToken) {
+      if (myToken === _loadToken && shouldBlockSwitch) {
         if (App.dom.seg1) App.dom.seg1.disabled = false;
         if (App.dom.seg2) App.dom.seg2.disabled = false;
       }
