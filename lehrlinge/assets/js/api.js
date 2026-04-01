@@ -1,7 +1,6 @@
 /* ===== api.js — надёжные обёртки для Apps Script JSON API (кэш, SWR, дедуп) ===== */
 
-const GAS_URL =
-  "https://script.google.com/macros/s/AKfycbxpGn11PT70usKYe0xE7S28FlwNIrJhXXEzaeK022VPZx7RObBEMvjq4ghpewnRyPGa/exec";
+const GAS_URL = "https://taxi-vorbestellungen.vercel.app/api/gas";
 const API_SECRET = "102030";
 window.GAS_URL = window.GAS_URL || GAS_URL;
 
@@ -263,6 +262,31 @@ async function ping() {
   }
 }
 
+async function loadAdminData() {
+  return apiGet({ fn: "admin_data" }, { retries: 1, timeoutMs: 20000 });
+}
+
+async function saveAdminData(payload) {
+  const res = await apiPost(
+    {
+      action: "admin_save",
+      points: JSON.stringify(payload?.points || []),
+      drivers: JSON.stringify(payload?.drivers || []),
+      cars: JSON.stringify(payload?.cars || []),
+      matrix: JSON.stringify(payload?.matrix || { ids: [], rows: [] }),
+    },
+    { retries: 0, timeoutMs: 25000 }
+  );
+
+  if (!res || res.ok === false) {
+    throw new Error(res?.error || "admin_save failed");
+  }
+
+  cacheInvalidate("fn=getData&");
+  cacheInvalidate("fn=recent&");
+  return res.saved;
+}
+
 setInterval(() => {
   ping().catch(() => {});
 }, 240_000);
@@ -273,8 +297,18 @@ window.loadData = loadData;
 window.loadRecent = loadRecent;
 window.saveSubmission = saveSubmission;
 window.ping = ping;
+window.loadAdminData = loadAdminData;
+window.saveAdminData = saveAdminData;
 
-window.api = { loadData, loadRecent, saveSubmission, ping, cacheInvalidate };
+window.api = {
+  loadData,
+  loadRecent,
+  saveSubmission,
+  ping,
+  loadAdminData,
+  saveAdminData,
+  cacheInvalidate,
+};
 
 window.API = window.API || {};
 

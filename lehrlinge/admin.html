@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Lehrlinge Admin · MurtalTaxi</title>
+
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./assets/favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./assets/favicon/favicon-16x16.png"
+    />
+    <link rel="manifest" href="./assets/favicon/site.webmanifest" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400..900&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./assets/css/theme.css" />
+    <link rel="stylesheet" href="./assets/css/global.css" />
+    <link rel="stylesheet" href="./assets/css/layout.css" />
+    <link rel="stylesheet" href="./assets/css/components.css" />
+    <link rel="stylesheet" href="./assets/css/admin.css" />
+  </head>
+  <body>
+    <main class="page admin-page">
+      <div class="container admin-shell">
+        <header class="admin-top">
+          <div class="admin-top__main">
+            <button
+              class="back-btn"
+              type="button"
+              onclick="location.href='./index.html'"
+              aria-label="Zurück zur Lehrlinge-Seite"
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <path
+                  d="M15 18l-6-6 6-6"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span>Zurück</span>
+            </button>
+
+            <div>
+              <h1 class="admin-title">Lehrlinge Admin</h1>
+              <p class="admin-subtitle">
+                Punkte, Matrix, Fahrer und Autos direkt aus Google Sheets
+              </p>
+            </div>
+          </div>
+
+          <div class="admin-top__actions">
+            <a href="#" id="theme-toggle" class="btn-link" aria-label="Thema wechseln">🌙</a>
+            <button id="reloadBtn" type="button" class="btn">Neu laden</button>
+            <button id="saveBtn" type="button" class="save admin-save">Alles speichern</button>
+          </div>
+        </header>
+
+        <section class="card admin-status">
+          <div>
+            <div class="meta">Status</div>
+            <div id="statusText" class="admin-status__text">Lade Daten…</div>
+          </div>
+          <div class="admin-status__meta">
+            <div id="countsText" class="meta"></div>
+            <div id="dirtyText" class="meta"></div>
+          </div>
+        </section>
+
+        <section class="card admin-toolbar">
+          <div class="seg admin-tabs" aria-label="Bereich wählen">
+            <button type="button" data-tab="points" aria-pressed="true">Punkte</button>
+            <button type="button" data-tab="matrix" aria-pressed="false">Matrix</button>
+            <button type="button" data-tab="drivers" aria-pressed="false">Fahrer</button>
+            <button type="button" data-tab="cars" aria-pressed="false">Autos</button>
+          </div>
+
+          <div class="admin-route">
+            <label for="routeFilter">Route</label>
+            <select id="routeFilter">
+              <option value="1">Route 1</option>
+              <option value="2">Route 2</option>
+              <option value="all">Alle</option>
+            </select>
+          </div>
+        </section>
+
+        <section id="tab-points" class="admin-panel"></section>
+        <section id="tab-matrix" class="admin-panel" hidden></section>
+        <section id="tab-drivers" class="admin-panel" hidden></section>
+        <section id="tab-cars" class="admin-panel" hidden></section>
+      </div>
+    </main>
+
+    <script src="./assets/js/theme.js" defer></script>
+    <script src="./assets/js/api.js" defer></script>
+    <script src="./assets/js/admin.js" defer></script>
+  </body>
+</html>
