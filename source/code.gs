@@ -1,6 +1,11 @@
 /** ===== Apps Script: JSON API для GitHub Pages фронта ===== */
 const API_SECRET = "102030";
 const SHEET_QR = "QR_Zahlungen";
+const ADMIN_SETTINGS_SHEET = "Settings";
+const ADMIN_PASSWORD_HASH_KEY = "admin_password_hash";
+const ADMIN_PASSWORD_PLAIN_KEY = "admin_password";
+const ADMIN_TOKEN_CACHE_PREFIX = "admin_token:";
+const ADMIN_TOKEN_TTL_SEC = 12 * 60 * 60;
 
 /** Утилита ответа JSON */
 function json(obj, code) {
@@ -76,6 +81,7 @@ function doGet(e) {
 
     // ---- Данные для админки Lehrlinge ----
     if (fn === "admin_data") {
+      requireAdminToken_(e.parameter.adminToken || "");
       const cacheKey = "admin_data";
       const cached = cacheGet_(cacheKey);
       if (cached) return json({ ok: true, ...cached });
@@ -121,8 +127,15 @@ function doPost(e) {
       return json({ ok: true, saved });
     }
 
+    // ===== ВЕТКА ЛОГИНА В LEHRLINGE ADMIN =====
+    if (action === "admin_login") {
+      const session = loginAdmin_(String(body.password || ""));
+      return json({ ok: true, ...session });
+    }
+
     // ===== ВЕТКА АДМИНКИ LEHRLINGE =====
     if (action === "admin_save") {
+      requireAdminToken_(String(body.adminToken || ""));
       const saved = saveAdminData_(body); // реализовано в lehrlinge.gs
       cacheRemove_("admin_data");
       cacheRemove_("getdata:1");
@@ -181,4 +194,125 @@ function warmup_() {
 function installWarmupTrigger() {
   // создаёт триггер, который вызывает warmup_() каждые 5 минут
   ScriptApp.newTrigger("warmup_").timeBased().everyMinutes(5).create();
+}
+
+function loginAdmin_(password) {
+  const normalizedPassword = String(password || "");
+  if (!normalizedPassword) {
+    throw new Error("password_required");
+  }
+
+  if (!checkAdminPassword_(normalizedPassword)) {
+    throw new Error("invalid_password");
+  }
+
+  const token = Utilities.getUuid() + Utilities.getUuid();
+  cachePut_(ADMIN_TOKEN_CACHE_PREFIX + token, { ok: true }, ADMIN_TOKEN_TTL_SEC);
+  return {
+    token: token,
+    expiresInSec: ADMIN_TOKEN_TTL_SEC,
+  };
+}
+
+function requireAdminToken_(token) {
+  const normalizedToken = String(token || "").trim();
+  if (!normalizedToken) {
+    throw new Error("admin_auth_required");
+  }
+
+  const session = cacheGet_(ADMIN_TOKEN_CACHE_PREFIX + normalizedToken);
+  if (!session || session.ok !== true) {
+    throw new Error("admin_auth_required");
+  }
+}
+
+function checkAdminPassword_(password) {
+  const settings = getSettingsMap_();
+  const plain = String(settings[ADMIN_PASSWORD_PLAIN_KEY] || "");
+  if (plain) {
+    return password === plain;
+  }
+
+  const expectedHash = String(settings[ADMIN_PASSWORD_HASH_KEY] || "").trim().toLowerCase();
+  if (!expectedHash) {
+    throw new Error("admin_password_not_configured");
+  }
+
+  return sha256Hex_(password) === expectedHash;
+}
+
+function sha256Hex_(value) {
+  const bytes = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    String(value || ""),
+    Utilities.Charset.UTF_8
+  );
+  return bytes
+    .map((b) => {
+      const v = b < 0 ? b + 256 : b;
+      return ("0" + v.toString(16)).slice(-2);
+    })
+    .join("");
+}
+
+function getSettingsMap_() {
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName(ADMIN_SETTINGS_SHEET);
+  if (!sh || sh.getLastRow() < 1) return {};
+
+  const values = sh.getRange(1, 1, sh.getLastRow(), Math.max(2, sh.getLastColumn())).getValues();
+  const out = {};
+  values.forEach((row, index) => {
+    const key = String(row[0] || "").trim();
+    const value = String(row[1] || "");
+    if (!key) return;
+    if (index === 0 && key.toLowerCase() === "key") return;
+    out[key] = value;
+  });
+  return out;
+}
+
+function upsertSetting_(key, value) {
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName(ADMIN_SETTINGS_SHEET) || ss.insertSheet(ADMIN_SETTINGS_SHEET);
+
+  if (sh.getLastRow() === 0) {
+    sh.getRange(1, 1, 1, 2).setValues([["key", "value"]]);
+  }
+
+  const lastRow = sh.getLastRow();
+  const values = sh.getRange(1, 1, lastRow, 2).getValues();
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0] || "").trim() === key) {
+      sh.getRange(i + 1, 2).setValue(value);
+      return;
+    }
+  }
+
+  sh.getRange(lastRow + 1, 1, 1, 2).setValues([[key, value]]);
+}
+
+function setLehrlingeAdminPassword(password) {
+  const normalized = String(password || "");
+  if (!normalized) {
+    throw new Error("password_required");
+  }
+
+  upsertSetting_(ADMIN_PASSWORD_HASH_KEY, sha256Hex_(normalized));
+  upsertSetting_(ADMIN_PASSWORD_PLAIN_KEY, "");
+  return { ok: true, updated: ADMIN_PASSWORD_HASH_KEY };
+}
+
+function setLehrlingeAdminPasswordPlain(password) {
+  const normalized = String(password || "");
+  if (!normalized) {
+    throw new Error("password_required");
+  }
+
+  upsertSetting_(ADMIN_PASSWORD_PLAIN_KEY, normalized);
+  return { ok: true, updated: ADMIN_PASSWORD_PLAIN_KEY };
+}
+
+function resetAdminPassword() {
+  return setLehrlingeAdminPassword("CHANGE_ME");
 }

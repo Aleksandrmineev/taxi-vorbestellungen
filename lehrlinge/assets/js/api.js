@@ -4,6 +4,7 @@ const GAS_URL =
   "https://script.google.com/macros/s/AKfycbxpGn11PT70usKYe0xE7S28FlwNIrJhXXEzaeK022VPZx7RObBEMvjq4ghpewnRyPGa/exec";
 const GAS_PROXY_URL = "https://taxi-vorbestellungen.vercel.app/api/gas";
 const API_SECRET = "102030";
+const ADMIN_TOKEN_KEY = "lehrlinge_admin_token";
 window.GAS_URL = window.GAS_URL || GAS_URL;
 
 /* ----------------------------- Внутренние утилиты ----------------------------- */
@@ -256,6 +257,24 @@ function _cacheDeleteByPrefix(prefix) {
   }
 }
 
+function getAdminToken() {
+  try {
+    return sessionStorage.getItem(ADMIN_TOKEN_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+function setAdminToken(token) {
+  try {
+    if (token) {
+      sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
+    } else {
+      sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+    }
+  } catch {}
+}
+
 /* ---------------------------- High-level функции --------------------------- */
 
 const TTL = {
@@ -355,13 +374,38 @@ async function ping() {
 }
 
 async function loadAdminData() {
-  return proxyGet({ fn: "admin_data" }, { retries: 1, timeoutMs: 20000 });
+  return proxyGet(
+    { fn: "admin_data", adminToken: getAdminToken() },
+    { retries: 1, timeoutMs: 20000 }
+  );
+}
+
+async function loginAdmin(password) {
+  const res = await proxyPost(
+    {
+      action: "admin_login",
+      password: String(password || ""),
+    },
+    { retries: 0, timeoutMs: 12000 }
+  );
+
+  if (!res || res.ok === false || !res.token) {
+    throw new Error(res?.error || "admin_login failed");
+  }
+
+  setAdminToken(res.token);
+  return res;
+}
+
+function logoutAdmin() {
+  setAdminToken("");
 }
 
 async function saveAdminData(payload) {
   const res = await proxyPost(
     {
       action: "admin_save",
+      adminToken: getAdminToken(),
       points: JSON.stringify(payload?.points || []),
       drivers: JSON.stringify(payload?.drivers || []),
       cars: JSON.stringify(payload?.cars || []),
@@ -396,6 +440,9 @@ window.saveSubmission = saveSubmission;
 window.ping = ping;
 window.loadAdminData = loadAdminData;
 window.saveAdminData = saveAdminData;
+window.loginAdmin = loginAdmin;
+window.logoutAdmin = logoutAdmin;
+window.getAdminToken = getAdminToken;
 
 window.api = {
   loadData,
@@ -405,6 +452,9 @@ window.api = {
   ping,
   loadAdminData,
   saveAdminData,
+  loginAdmin,
+  logoutAdmin,
+  getAdminToken,
   cacheInvalidate,
 };
 

@@ -7,6 +7,12 @@
   gap: 16px;
 }
 
+.admin-auth {
+  display: grid;
+  gap: 16px;
+  max-width: 560px;
+}
+
 .admin-top {
   display: flex;
   justify-content: space-between;
@@ -116,6 +122,7 @@
 }
 
 .admin-form input[type="text"],
+.admin-form input[type="password"],
 .admin-form input[type="number"],
 .admin-form select {
   appearance: none;

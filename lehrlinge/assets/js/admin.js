@@ -13,6 +13,13 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const dom = {
+    authPanel: document.getElementById("authPanel"),
+    adminApp: document.getElementById("adminApp"),
+    loginForm: document.getElementById("loginForm"),
+    loginBtn: document.getElementById("loginBtn"),
+    logoutBtn: document.getElementById("logoutBtn"),
+    authStatus: document.getElementById("authStatus"),
+    passwordInput: document.getElementById("adminPassword"),
     saveBtn: document.getElementById("saveBtn"),
     reloadBtn: document.getElementById("reloadBtn"),
     routeFilter: document.getElementById("routeFilter"),
@@ -126,6 +133,23 @@ document.addEventListener("DOMContentLoaded", () => {
     dom.saveBtn.disabled = state.saving;
     dom.reloadBtn.disabled = state.saving;
     dom.saveBtn.textContent = state.saving ? "Speichere…" : "Alles speichern";
+  }
+
+  function setAuthenticated(flag) {
+    dom.authPanel.hidden = !!flag;
+    dom.adminApp.hidden = !flag;
+    if (!flag) {
+      dom.authStatus.textContent = "Nicht eingeloggt";
+      dom.passwordInput.value = "";
+    }
+  }
+
+  function setAuthStatus(message) {
+    dom.authStatus.textContent = message;
+  }
+
+  function isAuthError(err) {
+    return String(err?.message || err || "").includes("admin_auth_required");
   }
 
   function setTab(tab) {
@@ -534,12 +558,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function load() {
     dom.statusText.textContent = "Lade Daten…";
-    const data = await window.loadAdminData();
-    state.data = normalizeData(data);
-    ensureMatrixIntegrity();
-    setDirty(false);
-    renderStatus("Daten geladen");
-    render();
+    try {
+      const data = await window.loadAdminData();
+      state.data = normalizeData(data);
+      ensureMatrixIntegrity();
+      setDirty(false);
+      renderStatus("Daten geladen");
+      render();
+    } catch (err) {
+      if (isAuthError(err)) {
+        window.logoutAdmin();
+        setAuthenticated(false);
+        setAuthStatus("Sitzung abgelaufen. Bitte erneut einloggen.");
+      }
+      throw err;
+    }
   }
 
   async function save() {
@@ -553,11 +586,53 @@ document.addEventListener("DOMContentLoaded", () => {
       render();
     } catch (err) {
       console.error("admin save failed", err);
+      if (isAuthError(err)) {
+        window.logoutAdmin();
+        setAuthenticated(false);
+        setAuthStatus("Sitzung abgelaufen. Bitte erneut einloggen.");
+      }
       renderStatus(`Fehler beim Speichern: ${err?.message || err}`);
       alert(`Fehler beim Speichern: ${err?.message || err}`);
     } finally {
       state.saving = false;
       renderStatus();
+    }
+  }
+
+  async function handleLogin(password) {
+    dom.loginBtn.disabled = true;
+    setAuthStatus("Pruefe Passwort…");
+    try {
+      await window.loginAdmin(password);
+      setAuthenticated(true);
+      await load();
+      setAuthStatus("Eingeloggt");
+    } catch (err) {
+      console.error("admin login failed", err);
+      window.logoutAdmin();
+      setAuthenticated(false);
+      setAuthStatus(`Login fehlgeschlagen: ${err?.message || err}`);
+      alert(`Login fehlgeschlagen: ${err?.message || err}`);
+    } finally {
+      dom.loginBtn.disabled = false;
+    }
+  }
+
+  async function bootstrap() {
+    if (!window.getAdminToken()) {
+      setAuthenticated(false);
+      return;
+    }
+
+    try {
+      setAuthenticated(true);
+      await load();
+      setAuthStatus("Eingeloggt");
+    } catch (err) {
+      console.error("admin bootstrap failed", err);
+      window.logoutAdmin();
+      setAuthenticated(false);
+      setAuthStatus("Sitzung abgelaufen. Bitte erneut einloggen.");
     }
   }
 
@@ -578,6 +653,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
   dom.saveBtn.addEventListener("click", save);
+  dom.logoutBtn.addEventListener("click", () => {
+    if (state.dirty && !window.confirm("Ungespeicherte Aenderungen verwerfen und ausloggen?")) {
+      return;
+    }
+    window.logoutAdmin();
+    setDirty(false);
+    setAuthenticated(false);
+    setAuthStatus("Abgemeldet");
+  });
+  dom.loginForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const password = dom.passwordInput.value;
+    handleLogin(password);
+  });
 
   window.addEventListener("beforeunload", (e) => {
     if (!state.dirty) return;
@@ -585,8 +674,6 @@ document.addEventListener("DOMContentLoaded", () => {
     e.returnValue = "";
   });
 
-  load().catch((err) => {
-    console.error("admin load failed", err);
-    renderStatus(`Fehler beim Laden: ${err?.message || err}`);
-  });
+  setAuthenticated(false);
+  bootstrap();
 });
