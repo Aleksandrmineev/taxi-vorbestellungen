@@ -52,6 +52,8 @@ Statuswechsel: done/cancelled → Event im Kalender wird automatisch gelöscht.
 
 Kalender-Link im Footer (Intent-Link für Android-Unterstützung).
 
+Schichtabrechnung für Fahrer mit Monatsstatistik, Berichtshistorie und Admin-Korrektur. Die sichtbare Tabelle `Schichtabrechnung` sowie das ausgeblendete Fahrer-Metadatenblatt `_Shift_Drivers` werden vom Apps Script automatisch angelegt.
+
 Projektstruktur
 [Пользователь] 
      │

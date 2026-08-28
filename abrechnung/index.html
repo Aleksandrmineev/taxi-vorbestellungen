@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#121920" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#e9eef4" />
+    <title>MurtalTaxi – Schichtabrechnung</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../main/assets/favicon/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../main/assets/favicon/apple-touch-icon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Marcellus+SC&display=swap" rel="stylesheet" />
+    <script src="../assets/js/theme-boot.js"></script>
+    <link rel="stylesheet" href="../main/assets/css/theme.css" />
+    <link rel="stylesheet" href="../main/assets/css/global.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="module-header">
+      <a class="module-brand" href="../main/index.html" aria-label="Zur zentralen Startseite">
+        <span class="module-logo"><img src="../main/assets/img/logo1.png" alt="MurtalTaxi Logo" /></span>
+        <span class="module-brand-title">Murtal&nbsp;TAXI</span>
+      </a>
+      <a class="home-button" href="../main/index.html" aria-label="Zurück zur Startseite">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        <span>Startseite</span>
+      </a>
+    </header>
+    <main class="app-shell">
+      <section id="authView" class="auth-view">
+        <p class="eyebrow">FAHRERBEREICH</p>
+        <h1>Schichtabrechnung</h1>
+
+        <form id="loginForm" class="auth-card">
+          <label>
+            Fahrer-Nr.
+            <input id="loginDriver" inputmode="numeric" autocomplete="off" placeholder="z. B. 1542" required />
+          </label>
+          <label>
+            Name
+            <input id="loginName" autocomplete="name" placeholder="z. B. Alexander" required />
+          </label>
+          <button class="primary" type="submit">Weiter</button>
+          <p id="authError" class="form-error" role="alert"></p>
+        </form>
+      </section>
+
+      <section id="reportView" class="report-view" hidden>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">SCHICHTABRECHNUNG</p>
+            <h1 id="greeting">Guten Tag</h1>
+          </div>
+          <button id="menuButton" class="icon-button" type="button" aria-label="Menü öffnen" aria-expanded="false">•••</button>
+          <div id="menu" class="menu" hidden>
+            <a class="menu-link" href="../main/index.html">Zentrale Startseite</a>
+            <button id="adminButton" type="button">Administration</button>
+            <button id="exportButton" type="button">JSON exportieren</button>
+            <label class="menu-upload">JSON importieren<input id="importInput" type="file" accept="application/json" /></label>
+            <button id="logoutButton" type="button">Fahrer wechseln</button>
+          </div>
+        </header>
+
+        <form id="reportForm">
+          <section class="card shift-card">
+            <div class="date-row">
+              <label>
+                Datum und Uhrzeit
+                <input id="reportDate" type="datetime-local" required />
+              </label>
+              <label class="report-number-field">
+                Bericht-Nr.
+                <input id="reportNumber" inputmode="numeric" placeholder="1048" required />
+              </label>
+            </div>
+
+            <div class="segmented" role="group" aria-label="Schichtart">
+              <input type="radio" name="shiftType" id="dayShift" value="day" checked />
+              <label for="dayShift">☀ Tag</label>
+              <input type="radio" name="shiftType" id="nightShift" value="night" />
+              <label for="nightShift">☾ Nacht</label>
+            </div>
+
+            <div class="two-columns">
+              <label>
+                Dauer
+                <div class="suffix-input"><input id="hours" type="number" inputmode="decimal" min="0.25" max="24" step="0.25" value="11" required /><span>Std.</span></div>
+              </label>
+              <label>
+                Fahrzeug
+                <div class="select-wrap">
+                  <select id="car" required></select>
+                  <button id="addCarButton" type="button" aria-label="Fahrzeug hinzufügen">＋</button>
+                </div>
+              </label>
+            </div>
+
+          </section>
+
+          <section class="card money-card">
+            <div class="section-heading">
+              <h2>Abrechnung</h2>
+              <span>EUR</span>
+            </div>
+            <label class="money-row"><span>Umsatz laut Beleg</span><input id="sales" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0,00" required /></label>
+            <label class="money-row"><span>Ausgaben</span><input id="expenses" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0,00" /></label>
+            <label class="money-row"><span>Gutschein</span><input id="voucher" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0,00" /></label>
+            <label class="money-row"><span>QR</span><input id="qr" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0,00" /></label>
+            <label class="money-row"><span>Bankomat</span><input id="terminal" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0,00" /></label>
+            <div class="divider"></div>
+            <div class="calculated-row"><span>Bar laut Abrechnung</span><strong id="expectedCash">€ 0,00</strong></div>
+            <label class="money-row actual"><span>Tatsächlich abgegeben</span><input id="actualCash" type="number" inputmode="decimal" min="0" step="1" placeholder="0" required /></label>
+            <div id="differenceRow" class="difference-row neutral">
+              <span>Differenz</span>
+              <strong id="difference">€ 0,00</strong>
+            </div>
+          </section>
+
+          <div id="previousDifference" class="previous-difference" hidden>
+            <span>Saldo aus früheren Schichten</span>
+            <strong id="previousDifferenceValue">€ 0,00</strong>
+          </div>
+          <button class="primary submit-button" type="submit">Bericht speichern</button>
+          <p id="saveMessage" class="save-message" role="status"></p>
+        </form>
+
+        <section id="insights" class="insights" aria-labelledby="insightsTitle">
+          <div class="insights-head">
+            <div><p class="eyebrow">MEIN FORTSCHRITT</p><h2 id="insightsTitle">Dieser Monat</h2></div>
+            <span id="trendBadge" class="trend-badge">—</span>
+          </div>
+          <div class="stats-grid">
+            <article><span>Ø pro Schicht</span><strong id="currentAverage">€ 0</strong><small id="previousAverage">Vormonat: € 0</small></article>
+            <article><span>Arbeitsstunden</span><strong id="currentHours">0 Std.</strong><small id="previousHours">Vormonat: 0 Std.</small></article>
+          </div>
+          <p id="motivation" class="motivation">Nach dem ersten Bericht erscheint hier Ihr Fortschritt.</p>
+          <button id="historyButton" class="history-button" type="button">
+            <span>Berichtsverlauf</span>
+            <span id="historyCount" class="history-count">0</span>
+          </button>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="carDialog">
+      <form id="carForm" method="dialog">
+        <h2>Fahrzeug hinzufügen</h2>
+        <p class="muted">Das Kennzeichen wird in Ihrem Profil gespeichert.</p>
+        <input id="newCar" autocomplete="off" placeholder="z. B. MT 123 TX" required />
+        <div class="dialog-actions">
+          <button value="cancel" type="button" id="cancelCar">Abbrechen</button>
+          <button class="primary" value="default" type="submit">Hinzufügen</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="adminLoginDialog">
+      <form id="adminLoginForm">
+        <div class="history-dialog-head">
+          <h2>Administrator-Anmeldung</h2>
+          <button id="closeAdminLogin" class="dialog-close" type="button" aria-label="Schließen">×</button>
+        </div>
+        <label>Benutzername<input id="adminLogin" autocomplete="username" required /></label>
+        <label>Passwort<input id="adminPassword" type="password" autocomplete="current-password" required /></label>
+        <p id="adminLoginError" class="form-error" role="alert"></p>
+        <button class="primary admin-login-submit" type="submit">Anmelden</button>
+      </form>
+    </dialog>
+
+    <dialog id="adminDialog" class="admin-dialog">
+      <div class="history-dialog-head">
+        <div><p class="eyebrow">VERWALTUNG</p><h2>Administration</h2></div>
+        <button id="closeAdmin" class="dialog-close" type="button" aria-label="Schließen">×</button>
+      </div>
+      <div class="admin-stats">
+        <article><span>Fahrer</span><strong id="adminDriversCount">0</strong></article>
+        <article><span>Berichte</span><strong id="adminReportsCount">0</strong></article>
+        <article><span>Umsatz</span><strong id="adminSalesTotal">€ 0</strong></article>
+        <article><span>Stunden</span><strong id="adminHoursTotal">0 Std.</strong></article>
+      </div>
+      <label class="admin-driver-select">Fahrer<select id="adminDriverSelect"></select></label>
+      <div class="admin-driver-meta">
+        <span id="adminDriverBalance">Saldo: € 0,00</span>
+        <span id="adminDriverReports">0 Berichte</span>
+      </div>
+      <div class="table-scroll admin-table-scroll">
+        <table>
+          <thead><tr><th>Datum</th><th>Nr.</th><th>Fahrzeug</th><th>Umsatz</th><th>Abgegeben</th><th>Differenz</th><th></th></tr></thead>
+          <tbody id="adminReportsBody"></tbody>
+        </table>
+      </div>
+      <div class="admin-danger-zone">
+        <button id="clearKeepBalance" type="button">Berichte löschen, Saldo behalten</button>
+        <button id="clearEverything" class="danger-button" type="button">Berichte und Saldo löschen</button>
+      </div>
+    </dialog>
+
+    <dialog id="adminEditDialog" class="admin-edit-dialog">
+      <form id="adminEditForm">
+        <div class="history-dialog-head">
+          <h2>Bericht bearbeiten</h2>
+          <button id="closeAdminEdit" class="dialog-close" type="button" aria-label="Schließen">×</button>
+        </div>
+        <div class="admin-edit-grid">
+          <label>Datum<input id="editDate" type="datetime-local" required /></label>
+          <label>Schicht<select id="editShift"><option value="day">Tag</option><option value="night">Nacht</option></select></label>
+          <label>Stunden<input id="editHours" type="number" min="0.25" max="24" step="0.25" required /></label>
+          <label>Fahrzeug<input id="editCar" required /></label>
+          <label>Bericht-Nr.<input id="editReportNumber" required /></label>
+          <label>Umsatz<input id="editSales" type="number" min="0" step="0.01" required /></label>
+          <label>Ausgaben<input id="editExpenses" type="number" min="0" step="0.01" /></label>
+          <label>Gutschein<input id="editVoucher" type="number" min="0" step="0.01" /></label>
+          <label>QR<input id="editQr" type="number" min="0" step="0.01" /></label>
+          <label>Bankomat<input id="editTerminal" type="number" min="0" step="0.01" /></label>
+          <label>Abgegeben<input id="editActualCash" type="number" min="0" step="1" required /></label>
+        </div>
+        <div class="admin-edit-actions">
+          <button id="deleteSingleReport" class="danger-button" type="button">Bericht löschen</button>
+          <button class="primary" type="submit">Änderungen speichern</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="confirmDialog" class="confirm-dialog">
+      <div class="history-dialog-head">
+        <div>
+          <p class="eyebrow">PRÜFUNG</p>
+          <h2>Stimmt alles?</h2>
+        </div>
+        <button id="closeConfirm" class="dialog-close" type="button" aria-label="Schließen">×</button>
+      </div>
+      <div id="confirmSummary" class="confirm-summary"></div>
+      <div class="dialog-actions confirm-actions">
+        <button id="editReportButton" type="button">Korrigieren</button>
+        <button id="confirmReportButton" class="primary" type="button">Bestätigen und speichern</button>
+      </div>
+    </dialog>
+
+    <dialog id="historyDialog" class="history-dialog">
+      <div class="history-dialog-head">
+        <div>
+          <p class="eyebrow">MEINE BERICHTE</p>
+          <h2>Berichtsverlauf</h2>
+        </div>
+        <button id="closeHistory" class="dialog-close" type="button" aria-label="Schließen">×</button>
+      </div>
+      <p class="swipe-hint">Nach links wischen, um alle Spalten zu sehen →</p>
+      <div class="table-scroll" tabindex="0" aria-label="Frühere Berichte mit horizontaler Navigation">
+        <table>
+          <thead>
+            <tr>
+              <th>Datum</th>
+              <th>Schicht</th>
+              <th>Std.</th>
+              <th>Fahrzeug</th>
+              <th>Bericht-Nr.</th>
+              <th>Umsatz</th>
+              <th>Ausgaben</th>
+              <th>Gutschein</th>
+              <th>QR</th>
+              <th>Bankomat</th>
+              <th>Bar laut Abrechnung</th>
+              <th>Abgegeben</th>
+              <th>Differenz</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+      <div class="history-summary">
+        <span>Saldo aus allen Schichten</span>
+        <strong id="historyTotal">€ 0,00</strong>
+      </div>
+    </dialog>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

@@ -17,6 +17,10 @@
       "headers": [{ "key": "Cache-Control", "value": "no-store" }]
     },
     {
+      "source": "/abrechnung/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    },
+    {
       "source": "/assets/(.*)\\.(png|jpg|jpeg|webp|svg|woff2?)",
       "headers": [
         {
