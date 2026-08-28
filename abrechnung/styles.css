@@ -10,6 +10,7 @@
 }
 
 * { box-sizing: border-box; }
+html, body { max-width: 100%; overflow-x: hidden; }
 body { margin: 0; color: var(--ink); font-family: var(--font); display: block; }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
@@ -30,7 +31,7 @@ h2 { margin-bottom: 0; font-size: 1.05rem; }
 .auth-view { text-align: center; padding-top: min(12vh, 90px); }
 .auth-card { margin-top: 22px; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 18px; box-shadow: var(--shadow); }
 label { display: block; color: var(--muted); font-size: 0.76rem; font-weight: 700; }
-input, select { width: 100%; margin-top: 6px; border: 1px solid var(--input-border); border-radius: 10px; background: var(--input-bg); color: var(--ink); min-height: 42px; padding: 9px 11px; outline: none; font-size: 16px; }
+input, select { width: 100%; min-width: 0; max-width: 100%; margin-top: 6px; border: 1px solid var(--input-border); border-radius: 10px; background: var(--input-bg); color: var(--ink); min-height: 42px; padding: 9px 11px; outline: none; font-size: 16px; }
 input:focus, select:focus { border-color: var(--green); box-shadow: var(--input-focus-ring); }
 .auth-card label + label { margin-top: 13px; }
 .primary { border: 0; border-radius: 12px; background: var(--gold-grad); color: #161c24; min-height: 48px; padding: 11px 18px; font-weight: 850; box-shadow: var(--wa-btn-shadow); }
@@ -53,7 +54,8 @@ input:focus, select:focus { border-color: var(--green); box-shadow: var(--input-
 .segmented input { position: absolute; opacity: 0; pointer-events: none; }
 .segmented label { min-height: 34px; display: grid; place-items: center; color: var(--muted); border-radius: 8px; cursor: pointer; }
 .segmented input:checked + label { color: var(--accent); background: var(--card); box-shadow: var(--shadow-soft); }
-.two-columns { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 10px; margin-bottom: 11px; }
+.two-columns { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 10px; margin-bottom: 11px; }
+.two-columns > label { min-width: 0; }
 .suffix-input { position: relative; }
 .suffix-input span { position: absolute; right: 11px; top: 18px; color: var(--muted); }
 .suffix-input input { padding-right: 28px; }
@@ -63,7 +65,7 @@ input:focus, select:focus { border-color: var(--green); box-shadow: var(--input-
 .section-heading, .calculated-row, .difference-row { display: flex; justify-content: space-between; align-items: center; }
 .section-heading { margin-bottom: 2px; }
 .section-heading span { color: var(--muted); font-size: 0.68rem; font-weight: 800; letter-spacing: .1em; }
-.money-row { display: grid; grid-template-columns: 1fr 116px; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); min-height: 44px; color: var(--ink); font-size: .82rem; }
+.money-row { display: grid; grid-template-columns: minmax(0, 1fr) 116px; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); min-height: 44px; color: var(--ink); font-size: .82rem; }
 .money-row input { min-height: 34px; height: 34px; border: 0; margin: 0; padding: 3px 7px; background: transparent; text-align: right; font-weight: 750; font-size: 16px; }
 .money-row input:focus { box-shadow: none; background: var(--surface-2); }
 .divider { height: 4px; }
@@ -131,7 +133,8 @@ dialog p { font-size: .8rem; margin: 7px 0 13px; }
 .admin-danger-zone button, .admin-edit-actions button { min-height: 40px; border: 1px solid var(--line); border-radius: 9px; padding: 8px 11px; font-size: .72rem; font-weight: 800; }
 .danger-button { border-color: color-mix(in oklab, var(--red) 45%, var(--line)) !important; background: color-mix(in oklab, var(--red) 9%, var(--card)); color: var(--red); }
 .admin-edit-dialog { width: min(calc(100% - 20px), 620px); max-width: 620px; }
-.admin-edit-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; margin-top: 14px; }
+.admin-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 14px; }
+.admin-edit-grid > label { min-width: 0; }
 .admin-edit-actions { display: flex; justify-content: space-between; gap: 9px; margin-top: 15px; }
 .admin-edit-actions .primary { margin-left: auto; }
 
