@@ -56,7 +56,7 @@ input:focus, select:focus { border-color: var(--green); box-shadow: var(--input-
 .date-row { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(82px, .65fr); gap: 8px; }
 .date-row label, .date-row input { min-width: 0; }
 .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin: 12px 0; padding: 3px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 11px; }
-.segmented input { position: absolute; opacity: 0; pointer-events: none; }
+.segmented input { position: absolute; width: 1px; height: 1px; min-width: 1px; min-height: 1px; margin: 0; padding: 0; overflow: hidden; border: 0; clip-path: inset(50%); opacity: 0; pointer-events: none; }
 .segmented label { min-height: 34px; display: grid; place-items: center; color: var(--muted); border-radius: 8px; cursor: pointer; }
 .segmented input:checked + label { color: var(--accent); background: var(--card); box-shadow: var(--shadow-soft); }
 .two-columns { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 10px; margin-bottom: 11px; }
