@@ -182,6 +182,7 @@ async function showApp() {
       $("#authError").textContent = "Server nicht erreichbar. Bitte erneut versuchen.";
     }
   }
+  $("#loadingView").hidden = true;
   if (!currentDriver || !db.profiles[currentDriver]) {
     currentDriver = null;
     $("#authView").hidden = false;

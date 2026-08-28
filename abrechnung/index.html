@@ -13,7 +13,7 @@
     <script src="../assets/js/theme-boot.js"></script>
     <link rel="stylesheet" href="../main/assets/css/theme.css" />
     <link rel="stylesheet" href="../main/assets/css/global.css" />
-    <link rel="stylesheet" href="styles.css?v=20260828b" />
+    <link rel="stylesheet" href="styles.css?v=20260828c" />
   </head>
   <body>
     <header class="module-header">
@@ -27,7 +27,15 @@
       </a>
     </header>
     <main class="app-shell">
-      <section id="authView" class="auth-view">
+      <section id="loadingView" class="loading-view" role="status" aria-live="polite">
+        <div>
+          <p class="eyebrow">FAHRERBEREICH</p>
+          <h1>Schichtabrechnung</h1>
+          <p class="loading-message"><span class="loading-spinner" aria-hidden="true"></span>Fahrerdaten werden geladen …</p>
+        </div>
+      </section>
+
+      <section id="authView" class="auth-view" hidden>
         <p class="eyebrow">FAHRERBEREICH</p>
         <h1>Schichtabrechnung</h1>
 
@@ -273,6 +281,6 @@
       </div>
     </dialog>
 
-    <script type="module" src="app.js?v=20260828"></script>
+    <script type="module" src="app.js?v=20260828b"></script>
   </body>
 </html>
