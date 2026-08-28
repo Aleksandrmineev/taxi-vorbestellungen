@@ -1,4 +1,5 @@
 const STORAGE_KEY = "taxi-journal-v1";
+const CURRENT_DRIVER_KEY = "taxi-current-driver";
 
 const $ = (selector) => document.querySelector(selector);
 const money = new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR" });
@@ -16,7 +17,8 @@ const legacyStorage = {
 
 const legacyDb = legacyStorage.load();
 let db = { profiles: {} };
-let currentDriver = sessionStorage.getItem("taxi-current-driver");
+let currentDriver = localStorage.getItem(CURRENT_DRIVER_KEY) || sessionStorage.getItem(CURRENT_DRIVER_KEY);
+if (currentDriver) localStorage.setItem(CURRENT_DRIVER_KEY, currentDriver);
 let pendingReport = null;
 
 const GAS_PROXY = "/api/gas";
@@ -294,7 +296,7 @@ $("#loginForm").addEventListener("submit", async (event) => {
     currentDriver = driver;
     await migrateLegacyProfile(driver);
     db.profiles[driver] = await fetchProfile(driver);
-    sessionStorage.setItem("taxi-current-driver", driver);
+    localStorage.setItem(CURRENT_DRIVER_KEY, driver);
     $("#authError").textContent = "";
     showApp();
   } catch {
@@ -410,7 +412,8 @@ $("#menuButton").addEventListener("click", () => {
 });
 
 $("#logoutButton").addEventListener("click", () => {
-  sessionStorage.removeItem("taxi-current-driver");
+  localStorage.removeItem(CURRENT_DRIVER_KEY);
+  sessionStorage.removeItem(CURRENT_DRIVER_KEY);
   currentDriver = null;
   $("#menu").hidden = true;
   $("#loginDriver").value = "";
