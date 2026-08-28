@@ -291,6 +291,9 @@ $("#loginForm").addEventListener("submit", async (event) => {
     $("#authError").textContent = "Bitte Namen eingeben.";
     return;
   }
+  $("#authError").textContent = "";
+  $("#authView").hidden = true;
+  $("#loadingView").hidden = false;
   try {
     const result = await api("/api/profiles", { method: "POST", body: JSON.stringify({ driverNumber: driver, name }) });
     db.profiles[driver] = result.profile;
@@ -298,9 +301,10 @@ $("#loginForm").addEventListener("submit", async (event) => {
     await migrateLegacyProfile(driver);
     db.profiles[driver] = await fetchProfile(driver);
     localStorage.setItem(CURRENT_DRIVER_KEY, driver);
-    $("#authError").textContent = "";
-    showApp();
+    await showApp();
   } catch {
+    $("#loadingView").hidden = true;
+    $("#authView").hidden = false;
     $("#authError").textContent = "Verbindung konnte nicht hergestellt werden.";
   }
 });
