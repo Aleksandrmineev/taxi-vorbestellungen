@@ -121,6 +121,26 @@ input[type="date"]:focus {
   hyphens: auto;
 }
 
+.name a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.show-all-points {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.show-all-points input {
+  width: 18px;
+  height: 18px;
+}
+
 /* ===== SAVE BUTTON ===== */
 .save {
   appearance: none;

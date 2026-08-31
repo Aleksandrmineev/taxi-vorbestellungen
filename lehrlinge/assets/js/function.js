@@ -100,6 +100,8 @@
     const { points, route } = App.state || {};
     if (!list) return;
 
+    const showAll = !!App.dom.showAllPoints?.checked;
+
     const PFX = "mt:points";
     const lastDriverLS = localStorage.getItem("mt:lastDriver") || "";
     const driver = (drvSel && drvSel.value) || lastDriverLS || "d_any";
@@ -120,17 +122,27 @@
     };
 
     const savedSet = readSaved();
-    const isChecked = (id) => (savedSet ? savedSet.has(String(id)) : true);
+    const isRequired = (p, index, allPoints) =>
+      p?.required === true || index === 0 || index >= allPoints.length - 2;
+    const isChecked = (p, index, allPoints) =>
+      isRequired(p, index, allPoints) ||
+      (savedSet ? savedSet.has(String(p.id)) : true);
 
     list.innerHTML = (points || [])
       .map(
-        (p) => `
-  <div class="row" data-id="${p.id}">
+        (p, index, allPoints) => `
+  <div class="row${isRequired(p, index, allPoints) ? " row--required" : ""}" data-id="${p.id}"${
+          !showAll && isRequired(p, index, allPoints) ? ' hidden aria-hidden="true"' : ""
+        }>
     <input class="chk" type="checkbox" data-point-id="${p.id}"${
-          isChecked(p.id) ? " checked" : ""
-        } aria-label="Einbeziehen">
+          isChecked(p, index, allPoints) ? " checked" : ""
+        }${isRequired(p, index, allPoints) ? " disabled" : ""} aria-label="Einbeziehen">
     <div class="badge" title="Zum Verschieben gedrückt halten">${p.id}</div>
-    <div class="name">${p.name}</div>
+    <div class="name">${
+      p.url
+        ? `<a href="${safeHttpUrl(p.url)}" target="_blank" rel="noopener noreferrer">${p.name}</a>`
+        : p.name
+    }</div>
     <div class="leg"></div>
   </div>`
       )
@@ -159,6 +171,9 @@
         .filter((b) => b.checked)
         .map(idOf)
         .filter(Boolean);
+      (points || []).filter((p, index, allPoints) => isRequired(p, index, allPoints)).forEach((p) => {
+        if (!ids.includes(String(p.id))) ids.push(String(p.id));
+      });
       const json = JSON.stringify(ids);
       const k1 = key(driver);
       const k2 = key("d_any");
@@ -256,6 +271,17 @@
 
     App.updateTotal?.();
   };
+
+  function safeHttpUrl(value) {
+    try {
+      const url = new URL(String(value || "").trim());
+      return /^https?:$/.test(url.protocol)
+        ? url.href.replace(/"/g, "&quot;")
+        : "#";
+    } catch {
+      return "#";
+    }
+  }
 
   // Селекты водителей: не зависят от Route, помним глобально последний выбор
   App.renderDrivers = function () {

@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
           name: String(p?.name || ""),
           route: String(p?.route || "1"),
           active: String(p?.active || "") === "1" ? "1" : "0",
+          url: String(p?.url || ""),
         }))
       : [];
 
@@ -184,6 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const draft = {
       id: "",
       name: "",
+      url: "",
       route,
       active: "1",
     };
@@ -262,6 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <tr>
                   <th>ID</th>
                   <th>Name</th>
+                  <th>Adress-Link</th>
                   <th>Route</th>
                   <th>Aktiv</th>
                   <th>Aktionen</th>
@@ -277,6 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <tr data-point-index="${idx}">
                               <td><input class="is-id" type="text" data-field="id" value="${esc(p.id)}" /></td>
                               <td><input class="is-name" type="text" data-field="name" value="${esc(p.name)}" /></td>
+                              <td><input type="url" data-field="url" value="${esc(p.url)}" placeholder="https://…" /></td>
                               <td>
                                 <select data-field="route">
                                   <option value="1"${p.route === "1" ? " selected" : ""}>1</option>
@@ -300,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
                           `;
                         })
                         .join("")
-                    : `<tr><td colspan="5" class="admin-empty">Keine Punkte in dieser Ansicht.</td></tr>`
+                    : `<tr><td colspan="6" class="admin-empty">Keine Punkte in dieser Ansicht.</td></tr>`
                 }
               </tbody>
             </table>

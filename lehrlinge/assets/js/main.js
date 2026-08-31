@@ -35,8 +35,17 @@ document.addEventListener("DOMContentLoaded", () => {
     dateEl: document.getElementById("reportDate"),
     btnSelectAll: document.getElementById("selectAll"),
     btnClearAll: document.getElementById("clearAll"),
+    showAllPoints: document.getElementById("showAllPoints"),
     // НЕТ themeBtn — темой управляет только theme.js
   };
+
+  if (App.dom.showAllPoints) {
+    App.dom.showAllPoints.checked = localStorage.getItem("mt:showAllPoints") === "1";
+    App.dom.showAllPoints.addEventListener("change", () => {
+      localStorage.setItem("mt:showAllPoints", App.dom.showAllPoints.checked ? "1" : "0");
+      App.render?.();
+    });
+  }
 
   const closeConfirm = () => {
     if (_confirmRedirectTimer) {
@@ -128,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!boxes || !boxes.length) return;
       requestAnimationFrame(() => {
         boxes.forEach((c) => {
-          if (c.checked) {
+          if (c.checked && !c.disabled) {
             c.checked = false;
             c.dispatchEvent(new Event("change"));
           }

@@ -215,8 +215,8 @@ function saveAdminData_(body) {
   writeSheetRows_(
     ss,
     "Points",
-    ["id", "name", "route", "active"],
-    payload.points.map((p) => [p.id, p.name, p.route, p.active])
+    ["id", "name", "route", "active", "url"],
+    payload.points.map((p) => [p.id, p.name, p.route, p.active, p.url])
   );
   writeSheetRows_(
     ss,
@@ -275,6 +275,7 @@ function buildLehrlingeSnapshotFromSheets_() {
             name: String(r[1] || ""),
             route: String(r[2] || ""),
             active: String(r[3] || "") === "1" ? "1" : "0",
+            url: String(r[4] || "").trim(),
           };
           pointNameById[item.id] = item.name;
           return item;
@@ -325,7 +326,12 @@ function buildLehrlingeSnapshotFromSheets_() {
 function buildRouteSnapshot_(points, matrix, route) {
   const routePoints = (points || [])
     .filter((p) => String(p.route || "") === String(route) && String(p.active || "") === "1")
-    .map((p) => ({ id: p.id, name: p.name }));
+    .map((p, index, list) => ({
+      id: p.id,
+      name: p.name,
+      url: p.url || "",
+      required: index === 0 || index >= list.length - 2,
+    }));
   const ids = routePoints.map((p) => p.id);
   const dist = {};
   const matrixIds = Array.isArray(matrix?.ids) ? matrix.ids : [];
@@ -428,6 +434,7 @@ function normalizePoints_(list) {
     name: String(item?.name || "").trim(),
     route: String(item?.route || "").trim(),
     active: String(item?.active || "") === "1" ? "1" : "0",
+    url: String(item?.url || "").trim(),
   }));
 }
 
