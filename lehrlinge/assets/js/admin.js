@@ -55,6 +55,8 @@ document.addEventListener("DOMContentLoaded", () => {
           route: String(p?.route || "1"),
           active: String(p?.active || "") === "1" ? "1" : "0",
           url: String(p?.url || ""),
+          contact_name: String(p?.contact_name || ""),
+          phone: String(p?.phone || ""),
         }))
       : [];
 
@@ -186,6 +188,8 @@ document.addEventListener("DOMContentLoaded", () => {
       id: "",
       name: "",
       url: "",
+      contact_name: "",
+      phone: "",
       route,
       active: "1",
     };
@@ -259,14 +263,12 @@ document.addEventListener("DOMContentLoaded", () => {
             Reihenfolge der Zeilen entspricht der Reihenfolge im Bericht und der Matrix.
           </div>
           <div class="admin-table-wrap">
-            <table class="admin-table">
+            <table class="admin-table admin-table--points">
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Name</th>
-                  <th>Adress-Link</th>
-                  <th>Route</th>
-                  <th>Aktiv</th>
+                  <th>Punkt / Kontakt</th>
+                  <th>Route / Aktiv</th>
                   <th>Aktionen</th>
                 </tr>
               </thead>
@@ -277,23 +279,27 @@ document.addEventListener("DOMContentLoaded", () => {
                         .map((idx) => {
                           const p = state.data.points[idx];
                           return `
-                            <tr data-point-index="${idx}">
-                              <td><input class="is-id" type="text" data-field="id" value="${esc(p.id)}" /></td>
-                              <td><input class="is-name" type="text" data-field="name" value="${esc(p.name)}" /></td>
-                              <td><input type="url" data-field="url" value="${esc(p.url)}" placeholder="https://…" /></td>
+                            <tr class="admin-point-row" data-point-index="${idx}">
+                              <td rowspan="2"><input class="is-id" type="text" data-field="id" value="${esc(p.id)}" /></td>
                               <td>
-                                <select data-field="route">
-                                  <option value="1"${p.route === "1" ? " selected" : ""}>1</option>
-                                  <option value="2"${p.route === "2" ? " selected" : ""}>2</option>
-                                </select>
+                                <div class="admin-point-stack">
+                                  <input class="is-name" type="text" data-field="name" value="${esc(p.name)}" placeholder="Adresse / Punkt" />
+                                  <input type="url" data-field="url" value="${esc(p.url)}" placeholder="Adress-Link: https://…" />
+                                </div>
                               </td>
-                              <td>
-                                <select data-field="active">
-                                  <option value="1"${p.active === "1" ? " selected" : ""}>Ja</option>
-                                  <option value="0"${p.active === "0" ? " selected" : ""}>Nein</option>
-                                </select>
+                              <td rowspan="2">
+                                <div class="admin-point-stack">
+                                  <select data-field="route">
+                                    <option value="1"${p.route === "1" ? " selected" : ""}>Route 1</option>
+                                    <option value="2"${p.route === "2" ? " selected" : ""}>Route 2</option>
+                                  </select>
+                                  <select data-field="active">
+                                    <option value="1"${p.active === "1" ? " selected" : ""}>Aktiv: Ja</option>
+                                    <option value="0"${p.active === "0" ? " selected" : ""}>Aktiv: Nein</option>
+                                  </select>
+                                </div>
                               </td>
-                              <td>
+                              <td rowspan="2">
                                 <div class="admin-row-actions">
                                   <button type="button" class="btn" data-action="up">↑</button>
                                   <button type="button" class="btn" data-action="down">↓</button>
@@ -301,10 +307,18 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                               </td>
                             </tr>
+                            <tr class="admin-point-row admin-point-row--contact" data-point-index="${idx}">
+                              <td>
+                                <div class="admin-point-contact-fields">
+                                  <input type="text" data-field="contact_name" value="${esc(p.contact_name)}" placeholder="Kontaktname" />
+                                  <input type="tel" data-field="phone" value="${esc(p.phone)}" placeholder="Telefon: +43 …" />
+                                </div>
+                              </td>
+                            </tr>
                           `;
                         })
                         .join("")
-                    : `<tr><td colspan="6" class="admin-empty">Keine Punkte in dieser Ansicht.</td></tr>`
+                    : `<tr><td colspan="4" class="admin-empty">Keine Punkte in dieser Ansicht.</td></tr>`
                 }
               </tbody>
             </table>

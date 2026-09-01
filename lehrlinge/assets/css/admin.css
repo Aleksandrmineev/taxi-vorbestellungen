@@ -162,6 +162,10 @@
   min-width: 720px;
 }
 
+.admin-table--points {
+  min-width: 560px;
+}
+
 .admin-table--matrix {
   min-width: 960px;
 }
@@ -188,6 +192,8 @@
 }
 
 .admin-table input[type="text"],
+.admin-table input[type="tel"],
+.admin-table input[type="url"],
 .admin-table input[type="number"],
 .admin-table select {
   width: 100%;
@@ -207,6 +213,42 @@
 
 .admin-table .is-name {
   min-width: 220px;
+}
+
+.admin-table--points .is-name {
+  min-width: 0;
+}
+
+.admin-point-stack,
+.admin-point-contact-fields {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-point-contact-fields {
+  grid-template-columns: minmax(140px, 1fr) minmax(130px, 0.8fr);
+}
+
+.admin-point-contact-fields input[data-field="phone"] {
+  grid-column: 1;
+}
+
+.admin-point-contact-fields input[data-field="contact_name"] {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.admin-table--points input[type="text"],
+.admin-table--points input[type="tel"],
+.admin-table--points input[type="url"],
+.admin-table--points select {
+  min-width: 0;
+  padding: 7px 9px;
+  font-size: 13px;
+}
+
+.admin-point-row--contact td {
+  padding-top: 4px;
 }
 
 .admin-table .is-km {

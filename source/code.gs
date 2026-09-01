@@ -47,7 +47,7 @@ function cacheRemove_(key) {
 /** ===== doGet: getdata / recent / qr_recent / admin_data / ping ===== */
 function doGet(e) {
   try {
-    const fn = (e.parameter.fn || "").toLowerCase();
+    const fn = (e.parameter.fn || e.parameter.action || "").toLowerCase();
     if (API_SECRET && e.parameter.secret !== API_SECRET) {
       return json({ ok: false, error: "forbidden" }, 403);
     }
@@ -75,6 +75,26 @@ function doGet(e) {
       const out = getRecentSubmissions(route, limit); // из lehrlinge.gs
       cachePut_(cacheKey, out, 15); // 15 секунд
       return json({ ok: true, items: out });
+    }
+
+    // ---- Vorbestellungen ----
+    if (fn === "ordersbydate") {
+      return json({
+        ok: true,
+        items: getOrdersByDate_(e.parameter.date || "", e.parameter.includeAll === "1"),
+      });
+    }
+
+    if (fn === "todos") {
+      return json({ ok: true, items: getTodoOrders_(Number(e.parameter.hours || 24)) });
+    }
+
+    if (fn === "search") {
+      return json({ ok: true, items: searchOrders_(e.parameter.q || "", Number(e.parameter.limit || 50)) });
+    }
+
+    if (fn === "messageslist") {
+      return json({ ok: true, items: getMessages_(Number(e.parameter.since || 0), Number(e.parameter.limit || 300)) });
     }
 
     // ---- Последние QR-платежи для блока "Letzte Zahlungen" ----
@@ -160,6 +180,22 @@ function doPost(e) {
       return json({ ok: true, saved });
     }
 
+    // ===== ВЕТКА VORBESTELLUNGEN =====
+    if (action === "create") {
+      const saved = createOrder_(body.data || body);
+      return json({ ok: true, data: saved });
+    }
+
+    if (action === "messagesadd") {
+      const saved = addMessage_(body);
+      return json({ ok: true, saved });
+    }
+
+    if (action === "updatestatus") {
+      const saved = updateOrderStatus_(body.id, body.status, body.comment || "");
+      return json({ ok: true, ...saved });
+    }
+
     if (action === "shift_admin_login") {
       return json({ ok: true, ...loginShiftAdmin_(body.login, body.password) });
     }
@@ -229,6 +265,238 @@ function doPost(e) {
   } catch (err) {
     return json({ ok: false, error: String(err) }, 500);
   }
+}
+
+// ===== Минимальный backend Vorbestellungen =====
+const ORDER_HEADERS_ = [
+  "id",
+  "created_at",
+  "date",
+  "time",
+  "type",
+  "duration_min",
+  "phone_raw",
+  "phone_norm",
+  "message",
+  "rrule",
+  "until",
+  "gcal_event_id",
+  "status",
+  "status_comment",
+  "created_by_name",
+  "created_by_device",
+];
+const MESSAGE_HEADERS_ = ["id", "ts", "author", "device", "text", "is_order"];
+
+function ensureHeaders_(sh, headers) {
+  if (sh.getLastRow() === 0) {
+    sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+    return headers.slice();
+  }
+  const current = sh
+    .getRange(1, 1, 1, Math.max(sh.getLastColumn(), 1))
+    .getValues()[0]
+    .map(String);
+  headers.forEach((header) => {
+    if (current.indexOf(header) === -1) {
+      sh.getRange(1, current.length + 1).setValue(header);
+      current.push(header);
+    }
+  });
+  return current;
+}
+
+function orderSheet_() {
+  const sh = SpreadsheetApp.getActive().getSheetByName("Orders") || SpreadsheetApp.getActive().insertSheet("Orders");
+  ensureHeaders_(sh, ORDER_HEADERS_);
+  return sh;
+}
+
+function messageSheet_() {
+  const sh = SpreadsheetApp.getActive().getSheetByName("Messages") || SpreadsheetApp.getActive().insertSheet("Messages");
+  ensureHeaders_(sh, MESSAGE_HEADERS_);
+  return sh;
+}
+
+function orderId_() {
+  const sh = SpreadsheetApp.getActive().getSheetByName("Orders");
+  const used = new Set();
+  if (sh && sh.getLastRow() > 1) {
+    sh
+      .getRange(2, 1, sh.getLastRow() - 1, 1)
+      .getValues()
+      .forEach((row) => used.add(String(row[0] || "").trim()));
+  }
+
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const candidate = String(Math.floor(100 + Math.random() * 900));
+    if (!used.has(candidate)) return candidate;
+  }
+
+  throw new Error("short_order_id_unavailable");
+}
+
+function normalizePhone_(value) {
+  return String(value || "").replace(/[^0-9+]/g, "");
+}
+
+function orderDateValue_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  }
+  const text = String(value || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  const parsed = new Date(text);
+  return !isNaN(parsed.getTime())
+    ? Utilities.formatDate(parsed, Session.getScriptTimeZone(), "yyyy-MM-dd")
+    : text;
+}
+
+function orderTimeValue_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), "HH:mm");
+  }
+  const text = String(value || "").trim();
+  const match = text.match(/^(\d{1,2}):(\d{2})/);
+  if (match) return String(match[1]).padStart(2, "0") + ":" + match[2];
+  const parsed = new Date(text);
+  return !isNaN(parsed.getTime())
+    ? Utilities.formatDate(parsed, Session.getScriptTimeZone(), "HH:mm")
+    : text;
+}
+
+function createOrder_(raw) {
+  const data = raw && typeof raw === "object" ? raw : {};
+  const date = String(data.date || "").trim();
+  const time = String(data.time || "").trim();
+  if (!date || !time) throw new Error("date_and_time_required");
+
+  const now = new Date();
+  const item = {
+    id: orderId_(),
+    created_at: now,
+    date: date,
+    time: time,
+    type: String(data.type || "Orts"),
+    duration_min: Number(data.duration_min || 15),
+    phone_raw: String(data.phone || data.phone_raw || "").trim(),
+    phone_norm: normalizePhone_(data.phone || data.phone_raw),
+    message: String(data.message || "").trim(),
+    rrule: String(data.rrule || "").trim(),
+    until: String(data.until || "").trim(),
+    gcal_event_id: "",
+    status: "open",
+    status_comment: "",
+    created_by_name: String(data.created_by_name || ""),
+    created_by_device: String(data.created_by_device || ""),
+  };
+
+  const sh = orderSheet_();
+  const head = ensureHeaders_(sh, ORDER_HEADERS_);
+  sh.appendRow(head.map((key) => item[key] === undefined ? "" : item[key]));
+  return item;
+}
+
+function readOrders_() {
+  const sh = orderSheet_();
+  const values = sh.getDataRange().getValues();
+  if (values.length < 2) return [];
+  const head = values[0].map(String);
+  return values.slice(1).map((row, i) => {
+    const get = (key) => row[head.indexOf(key)];
+    return {
+      row_num: i + 2,
+      id: String(get("id") || ""),
+      created_at: get("created_at"),
+      date: orderDateValue_(get("date")),
+      time: orderTimeValue_(get("time")),
+      type: String(get("type") || "Orts"),
+      duration_min: Number(get("duration_min") || 0),
+      phone: String(get("phone_raw") || ""),
+      phone_norm: String(get("phone_norm") || ""),
+      message: String(get("message") || ""),
+      rrule: String(get("rrule") || ""),
+      until: String(get("until") || ""),
+      gcal_event_id: String(get("gcal_event_id") || ""),
+      status: String(get("status") || "open"),
+      status_comment: String(get("status_comment") || ""),
+      created_by_name: String(get("created_by_name") || ""),
+      created_by_device: String(get("created_by_device") || ""),
+    };
+  });
+}
+
+function getOrdersByDate_(date, includeAll) {
+  return readOrders_()
+    .filter((item) => !date || item.date === String(date))
+    .filter((item) => includeAll || (item.status !== "done" && item.status !== "cancelled"))
+    .sort((a, b) => String(a.time).localeCompare(String(b.time)));
+}
+
+function getTodoOrders_(hours) {
+  const now = new Date();
+  const until = new Date(now.getTime() + Math.max(1, hours || 24) * 60 * 60 * 1000);
+  return readOrders_().filter((item) => {
+    if (item.status === "done" || item.status === "cancelled") return false;
+    const start = new Date(item.date + "T" + item.time + ":00");
+    item.start_iso = isNaN(start.getTime()) ? "" : start.toISOString();
+    item.order_id = item.id;
+    return !isNaN(start.getTime()) && start >= now && start <= until;
+  });
+}
+
+function searchOrders_(query, limit) {
+  const q = String(query || "").toLowerCase().trim();
+  if (!q) return [];
+  return readOrders_()
+    .filter((item) => [item.phone, item.message, item.type, item.date, item.time].join(" ").toLowerCase().indexOf(q) !== -1)
+    .slice(-Math.max(1, limit || 50))
+    .reverse();
+}
+
+function updateOrderStatus_(id, status, comment) {
+  const normalizedStatus = String(status || "").toLowerCase();
+  if (["done", "cancelled", "open"].indexOf(normalizedStatus) === -1) throw new Error("invalid_status");
+  const sh = orderSheet_();
+  const head = ensureHeaders_(sh, ORDER_HEADERS_);
+  const idCol = head.indexOf("id") + 1;
+  const statusCol = head.indexOf("status") + 1;
+  const commentCol = head.indexOf("status_comment") + 1;
+  const values = sh.getRange(2, idCol, Math.max(sh.getLastRow() - 1, 1), 1).getValues();
+  const index = values.findIndex((row) => String(row[0] || "") === String(id || ""));
+  if (index < 0) throw new Error("order_not_found");
+  const row = index + 2;
+  sh.getRange(row, statusCol).setValue(normalizedStatus);
+  sh.getRange(row, commentCol).setValue(String(comment || ""));
+  return { id: String(id), status: normalizedStatus, comment: String(comment || "") };
+}
+
+function addMessage_(body) {
+  const text = String(body.text || "").trim();
+  if (!text) throw new Error("empty_message");
+  const item = {
+    id: "m_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+    ts: Date.now(),
+    author: String(body.author || ""),
+    device: String(body.device || ""),
+    text: text,
+    is_order: false,
+  };
+  const sh = messageSheet_();
+  const head = ensureHeaders_(sh, MESSAGE_HEADERS_);
+  sh.appendRow(head.map((key) => item[key] === undefined ? "" : item[key]));
+  return item;
+}
+
+function getMessages_(since, limit) {
+  const sh = messageSheet_();
+  const values = sh.getDataRange().getValues();
+  if (values.length < 2) return [];
+  const head = values[0].map(String);
+  return values.slice(1).map((row) => {
+    const get = (key) => row[head.indexOf(key)];
+    return { id: String(get("id") || ""), ts: Number(get("ts") || 0), author: String(get("author") || ""), device: String(get("device") || ""), text: String(get("text") || ""), is_order: String(get("is_order") || "") === "true" };
+  }).filter((item) => item.ts > Number(since || 0)).slice(-Math.max(1, limit || 300));
 }
 
 /** === Прогрев (warmup) для ускорения старта === */

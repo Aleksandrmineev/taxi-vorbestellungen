@@ -10,7 +10,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const { fillForm } = initForm({
     onCreated: () => {
       orders?.load?.();
-      todos?.load?.(24);
+      todos?.load?.(168);
     },
   });
 
@@ -29,7 +29,7 @@ window.addEventListener("DOMContentLoaded", () => {
       if (v.trim().length >= 2) search?.search?.(v);
     },
     onNextShown: () => {
-      todos?.load?.(24);
+      todos?.load?.(168);
     },
     onDateShown: () => {
       orders?.load?.();

@@ -1,5 +1,8 @@
 import { API } from "./config.js"; // базовый URL
 
+// Должен совпадать с API_SECRET в Google Apps Script.
+const API_SECRET = "102030";
+
 // ---- helpers ----
 function identity() {
   let deviceId = localStorage.getItem("deviceId");
@@ -15,6 +18,7 @@ function identity() {
 
 async function getJSON(paramsObj) {
   const params = new URLSearchParams(paramsObj);
+  params.set("secret", API_SECRET);
   params.set("ts", Date.now().toString()); // cache-busting
 
   const url = `${API}?${params.toString()}`;
@@ -32,7 +36,7 @@ async function postJSON(bodyObj) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     cache: "no-store",
-    body: JSON.stringify({ ...bodyObj, ts: Date.now() }),
+    body: JSON.stringify({ ...bodyObj, secret: API_SECRET, ts: Date.now() }),
   });
 
   // 1) HTTP-уровень

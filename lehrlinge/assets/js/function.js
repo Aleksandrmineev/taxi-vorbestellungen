@@ -2,6 +2,15 @@
 (function () {
   const App = (window.App = window.App || {});
 
+  // Экранирует данные из Google Sheets перед вставкой в HTML.
+  function esc(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
   // === Форматтеры и утилиты (кэш) ===========================================
   App.fmt = App.fmt || {};
   App.fmt.num =
@@ -130,21 +139,41 @@
 
     list.innerHTML = (points || [])
       .map(
-        (p, index, allPoints) => `
-  <div class="row${isRequired(p, index, allPoints) ? " row--required" : ""}" data-id="${p.id}"${
+        (p, index, allPoints) => {
+          const phoneHref = safeTelUrl(p.phone);
+          const contactName = String(p.contact_name || "").trim();
+          const contact = phoneHref
+            ? `<a href="${phoneHref}" class="point-contact__link">${
+                esc(contactName || p.phone)
+              }</a>`
+            : contactName
+              ? `<span class="point-contact__text">${esc(contactName)}</span>`
+              : "";
+
+          return `
+  <div class="row${isRequired(p, index, allPoints) ? " row--required" : ""}" data-id="${String(p.id || "")}"${
           !showAll && isRequired(p, index, allPoints) ? ' hidden aria-hidden="true"' : ""
         }>
-    <input class="chk" type="checkbox" data-point-id="${p.id}"${
+    <input class="chk" type="checkbox" data-point-id="${esc(p.id)}"${
           isChecked(p, index, allPoints) ? " checked" : ""
         }${isRequired(p, index, allPoints) ? " disabled" : ""} aria-label="Einbeziehen">
-    <div class="badge" title="Zum Verschieben gedrückt halten">${p.id}</div>
-    <div class="name">${
+    <div class="badge" title="Zum Verschieben gedrückt halten">${esc(p.id)}</div>
+    <div class="name">
+      <div class="point-address">${
       p.url
-        ? `<a href="${safeHttpUrl(p.url)}" target="_blank" rel="noopener noreferrer">${p.name}</a>`
-        : p.name
-    }</div>
+        ? `<a href="${safeHttpUrl(p.url)}" target="_blank" rel="noopener noreferrer">${esc(p.name)}</a>`
+        : esc(p.name)
+      }</div>
+      ${contact ? `<div class="point-contact" aria-label="Telefonkontakt">
+        <svg class="point-contact__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        ${contact}
+      </div>` : ""}
+    </div>
     <div class="leg"></div>
-  </div>`
+  </div>`;
+        }
       )
       .join("");
 
@@ -281,6 +310,12 @@
     } catch {
       return "#";
     }
+  }
+
+  function safeTelUrl(value) {
+    const phone = String(value || "").trim();
+    const normalized = phone.replace(/[^\d+;,#*]/g, "");
+    return normalized ? `tel:${encodeURIComponent(normalized)}` : "";
   }
 
   // Селекты водителей: не зависят от Route, помним глобально последний выбор

@@ -127,6 +127,33 @@ input[type="date"]:focus {
   text-underline-offset: 2px;
 }
 
+.point-address {
+  line-height: 1.25;
+}
+
+.point-contact {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.78em;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.point-contact__icon {
+  width: 0.95em;
+  height: 0.95em;
+  flex: 0 0 auto;
+}
+
+.point-contact__link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .show-all-points {
   display: inline-flex;
   align-items: center;

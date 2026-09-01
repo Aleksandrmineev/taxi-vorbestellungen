@@ -215,8 +215,16 @@ function saveAdminData_(body) {
   writeSheetRows_(
     ss,
     "Points",
-    ["id", "name", "route", "active", "url"],
-    payload.points.map((p) => [p.id, p.name, p.route, p.active, p.url])
+    ["id", "name", "route", "active", "url", "contact_name", "phone"],
+    payload.points.map((p) => [
+      p.id,
+      p.name,
+      p.route,
+      p.active,
+      p.url,
+      p.contact_name,
+      p.phone,
+    ])
   );
   writeSheetRows_(
     ss,
@@ -276,6 +284,8 @@ function buildLehrlingeSnapshotFromSheets_() {
             route: String(r[2] || ""),
             active: String(r[3] || "") === "1" ? "1" : "0",
             url: String(r[4] || "").trim(),
+            contact_name: String(r[5] || ""),
+            phone: String(r[6] || "").trim(),
           };
           pointNameById[item.id] = item.name;
           return item;
@@ -330,6 +340,8 @@ function buildRouteSnapshot_(points, matrix, route) {
       id: p.id,
       name: p.name,
       url: p.url || "",
+      contact_name: p.contact_name || "",
+      phone: p.phone || "",
       required: index === 0 || index >= list.length - 2,
     }));
   const ids = routePoints.map((p) => p.id);
@@ -435,6 +447,8 @@ function normalizePoints_(list) {
     route: String(item?.route || "").trim(),
     active: String(item?.active || "") === "1" ? "1" : "0",
     url: String(item?.url || "").trim(),
+    contact_name: String(item?.contact_name || "").trim(),
+    phone: String(item?.phone || "").trim(),
   }));
 }
 
