@@ -14,6 +14,7 @@ const SHIFT_ADMIN_TOKEN_PREFIX = "shift_admin_token:";
 const ORDER_NOTIFICATION_PROPERTIES_ = {
   ZADARMA_KEY: "ZADARMA_API_KEY",
   ZADARMA_SECRET: "ZADARMA_API_SECRET",
+  ZADARMA_BALANCE_LEVEL: "ZADARMA_BALANCE_WARNING_LEVEL",
   SMS_NOTIFICATION_PHONE: "SMS_NOTIFICATION_PHONE",
   PUBLIC_BASE_URL: "PUBLIC_BASE_URL",
 };
@@ -408,6 +409,56 @@ function safeDeniedNumbers_(value) {
     : [];
 }
 
+function getZadarmaBalance_() {
+  const cfg = orderNotificationConfig_();
+  if (!cfg.key || !cfg.secret) return null;
+  const method = "/v1/info/balance/";
+  const signed = zadarmaSignature_(method, {}, cfg.secret);
+  const response = UrlFetchApp.fetch("https://api.zadarma.com" + method, {
+    method: "get",
+    headers: { Authorization: cfg.key + ":" + signed.signature },
+    muteHttpExceptions: true,
+  });
+  const httpCode = response.getResponseCode();
+  let data = {};
+  try {
+    data = JSON.parse(response.getContentText() || "{}");
+  } catch (err) {
+    safeNotificationLog_("zadarma_balance_error", { http_code: httpCode, message: "invalid_json" });
+    return null;
+  }
+  safeNotificationLog_("zadarma_balance", {
+    http_code: httpCode,
+    status: String(data.status || ""),
+    balance: data.balance == null ? null : Number(data.balance),
+    currency: String(data.currency || ""),
+  });
+  if (httpCode < 200 || httpCode >= 300 || data.status !== "success" || data.balance == null) return null;
+  return { balance: Number(data.balance), currency: String(data.currency || "EUR") };
+}
+
+function checkZadarmaBalance_() {
+  const info = getZadarmaBalance_();
+  if (!info || isNaN(info.balance)) return;
+  const props = orderNotificationProperties_();
+  const previous = String(props.getProperty(ORDER_NOTIFICATION_PROPERTIES_.ZADARMA_BALANCE_LEVEL) || "");
+  const level = info.balance < 1 ? "1" : info.balance < 3 ? "3" : "";
+  if (!level) {
+    if (previous) props.deleteProperty(ORDER_NOTIFICATION_PROPERTIES_.ZADARMA_BALANCE_LEVEL);
+    return;
+  }
+  if (previous === level) return;
+  const message = level === "1"
+    ? "Warnung: Zadarma-Guthaben unter 1 " + info.currency + " (" + info.balance.toFixed(2) + ")."
+    : "Warnung: Zadarma-Guthaben unter 3 " + info.currency + " (" + info.balance.toFixed(2) + ").";
+  try {
+    const result = sendZadarmaSms_(orderNotificationConfig_().notifyPhone, message, true);
+    if (!result || !result.skipped) props.setProperty(ORDER_NOTIFICATION_PROPERTIES_.ZADARMA_BALANCE_LEVEL, level);
+  } catch (err) {
+    safeNotificationLog_("zadarma_balance_warning_error", { message: redactLogText_(err && err.message, 180) });
+  }
+}
+
 function zadarmaSignature_(method, params, secret) {
   const query = Object.keys(params).sort().map((key) => formEncode_(key) + "=" + formEncode_(params[key])).join("&");
   const md5 = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, query)
@@ -417,7 +468,7 @@ function zadarmaSignature_(method, params, secret) {
   return { query: query, signature: Utilities.base64Encode(hmac) };
 }
 
-function sendZadarmaSms_(number, message) {
+function sendZadarmaSms_(number, message, skipBalanceCheck) {
   const cfg = orderNotificationConfig_();
   safeNotificationLog_("zadarma_sms_attempt", {
     phone: maskPhone_(number),
@@ -460,6 +511,7 @@ function sendZadarmaSms_(number, message) {
   });
   if (status < 200 || status >= 300) throw new Error("zadarma_http_" + status + ":" + redactLogText_(data.message, 160));
   if (data.status !== "success") throw new Error("zadarma_error:" + redactLogText_(data.message || "unknown", 160));
+  if (!skipBalanceCheck) checkZadarmaBalance_();
   return data;
 }
 

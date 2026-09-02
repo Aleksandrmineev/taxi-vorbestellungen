@@ -230,3 +230,5 @@ Zadarma credentials must not be stored in the repository or in `source/` files. 
 - `PUBLIC_BASE_URL` — optional, defaults to `https://taxi-vorbestellungen.vercel.app`
 
 The SMS functions read these values only at runtime from Script Properties. If the properties are missing or Zadarma is unavailable, order saving continues normally and only the SMS is skipped.
+
+After a successful SMS the balance is checked. A warning is sent once when the balance falls below 3 EUR and again when it falls below 1 EUR. The warning state is stored in Script Properties so the trigger does not send duplicates.
