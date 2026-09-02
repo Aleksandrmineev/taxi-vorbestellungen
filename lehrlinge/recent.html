@@ -115,6 +115,32 @@
       .back-link {
         text-decoration: none;
       }
+
+      @media (max-width: 900px) {
+        .filters {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+          width: 100%;
+        }
+        .filters .ctrl {
+          min-width: 0;
+          width: 100%;
+        }
+        .filters .ctrl input,
+        .filters .ctrl select,
+        .filters .ctrl .btn {
+          width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
+        }
+      }
+
+      @media (max-width: 420px) {
+        .filters {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>

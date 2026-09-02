@@ -19,6 +19,107 @@
 
 /* Мобайл/планшет: одна колонка, bottom снова фиксируем (как раньше) */
 @media (max-width: 900px) {
+  .page__grid {
+    padding-top: 0;
+  }
+
+  .aside {
+    margin-top: 0;
+  }
+
+  .aside .panel {
+    padding: 10px;
+  }
+
+  .panel .rowHead {
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .panel .rowHead .back-btn {
+    display: inline-flex;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+  }
+
+  .panel .rowHead .back-btn span {
+    display: none;
+  }
+
+  .back-btn--desktop {
+    display: none;
+  }
+
+  .rowHead .back-btn--mobile {
+    display: inline-flex;
+  }
+
+  .panel .seg {
+    flex: 0 0 auto;
+    gap: 2px;
+    padding: 4px;
+  }
+
+  .panel .seg button {
+    padding: 7px 12px;
+    font-size: 14px;
+  }
+
+  .panel .rowHead #now {
+    font-size: 11px;
+  }
+
+  .panel .filters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+      "driver car date"
+      "shift showall showall";
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .panel .filters .ctrl:nth-child(1) {
+    grid-area: driver;
+  }
+
+  .panel .filters .ctrl:nth-child(2) {
+    grid-area: car;
+  }
+
+  .panel .filters .ctrl:nth-child(3) {
+    grid-area: date;
+  }
+
+  .panel .filters .ctrl:nth-child(4) {
+    grid-area: shift;
+  }
+
+  .panel .ctrl {
+    min-width: 0;
+    gap: 3px;
+  }
+
+  .panel .ctrl label {
+    font-size: 11px;
+  }
+
+  .panel .ctrl select,
+  .panel .ctrl input[type="date"] {
+    min-width: 0;
+    height: 42px;
+    box-sizing: border-box;
+    padding: 10px 7px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.2;
+  }
+
+  .panel .show-all-points {
+    grid-area: showall;
+    font-size: 12px;
+  }
+
   /* вернуть fixed-бар на узких экранах */
   .bottom.as-block {
     position: fixed;
@@ -80,12 +181,6 @@
 }
 
 @media (max-width: 900px) {
-  .panel .filters {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-  }
   .panel .actions {
     grid-template-columns: 1fr 1fr;
   } /* остаётся 2 в ряд */

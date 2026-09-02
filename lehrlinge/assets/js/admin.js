@@ -47,6 +47,21 @@ document.addEventListener("DOMContentLoaded", () => {
     renderStatus();
   }
 
+  function shortCodeFromName(name, used) {
+    const letters = String(name || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase()
+      .replace(/[^A-Z]/g, "");
+    const base = (letters + "PUN").slice(0, 3);
+    if (!used.has(base)) return base;
+    for (let number = 1; number <= 9; number += 1) {
+      const candidate = base.slice(0, 2) + number;
+      if (!used.has(candidate)) return candidate;
+    }
+    return base.slice(0, 2) + (used.size + 1);
+  }
+
   function normalizeData(raw) {
     const points = Array.isArray(raw?.points)
       ? raw.points.map((p) => ({
@@ -57,8 +72,16 @@ document.addEventListener("DOMContentLoaded", () => {
           url: String(p?.url || ""),
           contact_name: String(p?.contact_name || ""),
           phone: String(p?.phone || ""),
+          arrival_time: String(p?.arrival_time || ""),
+          auto_id: false,
         }))
       : [];
+
+    const shortCodes = new Set();
+    points.forEach((point) => {
+      point.short_code = shortCodeFromName(point.name, shortCodes);
+      shortCodes.add(point.short_code);
+    });
 
     const drivers = Array.isArray(raw?.drivers)
       ? raw.drivers.map((d) => ({
@@ -178,6 +201,33 @@ document.addEventListener("DOMContentLoaded", () => {
     return list;
   }
 
+  function nextPointId() {
+    const used = new Set(state.data.points.map((p) => String(p.id || "").trim()));
+    let number = 1;
+    while (used.has(`P${String(number).padStart(3, "0")}`)) number += 1;
+    return `P${String(number).padStart(3, "0")}`;
+  }
+
+  function autoPointId(name, currentIndex) {
+    const letters = String(name || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase()
+      .replace(/[^A-ZÄÖÜ]/g, "");
+    const base = (letters + "PUN").slice(0, 3);
+    const used = new Set(
+      state.data.points
+        .map((p, index) => (index === currentIndex ? "" : String(p.id || "").trim()))
+        .filter(Boolean)
+    );
+    if (!used.has(base)) return base;
+    for (let number = 1; number <= 9; number += 1) {
+      const candidate = base.slice(0, 2) + number;
+      if (!used.has(candidate)) return candidate;
+    }
+    return base.slice(0, 2) + (used.size + 1);
+  }
+
   function addPoint() {
     const route = state.routeFilter === "all" ? "1" : state.routeFilter;
     const insertAt = (() => {
@@ -185,18 +235,20 @@ document.addEventListener("DOMContentLoaded", () => {
       return indexes.length ? indexes[indexes.length - 1] + 1 : state.data.points.length;
     })();
     const draft = {
-      id: "",
+      id: nextPointId(),
       name: "",
       url: "",
       contact_name: "",
       phone: "",
+      arrival_time: "",
+      auto_id: true,
       route,
       active: "1",
     };
 
     state.data.points.splice(insertAt, 0, draft);
 
-    state.data.matrix.ids.splice(insertAt, 0, "");
+    state.data.matrix.ids.splice(insertAt, 0, draft.id);
     state.data.matrix.rows.forEach((row) => row.splice(insertAt, 0, ""));
     state.data.matrix.rows.splice(
       insertAt,
@@ -266,9 +318,9 @@ document.addEventListener("DOMContentLoaded", () => {
             <table class="admin-table admin-table--points">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th>Zeit</th>
                   <th>Punkt / Kontakt</th>
-                  <th>Route / Aktiv</th>
+                  <th>Ankunft / Route / Aktiv</th>
                   <th>Aktionen</th>
                 </tr>
               </thead>
@@ -280,9 +332,10 @@ document.addEventListener("DOMContentLoaded", () => {
                           const p = state.data.points[idx];
                           return `
                             <tr class="admin-point-row" data-point-index="${idx}">
-                              <td rowspan="2"><input class="is-id" type="text" data-field="id" value="${esc(p.id)}" /></td>
+                              <td rowspan="2"><input type="time" data-field="arrival_time" value="${esc(p.arrival_time)}" title="Ankunftszeit" aria-label="Ankunftszeit" /></td>
                               <td>
                                 <div class="admin-point-stack">
+                                  <div class="admin-point-code">${esc(p.short_code || p.id)}</div>
                                   <input class="is-name" type="text" data-field="name" value="${esc(p.name)}" placeholder="Adresse / Punkt" />
                                   <input type="url" data-field="url" value="${esc(p.url)}" placeholder="Adress-Link: https://…" />
                                 </div>
@@ -342,6 +395,14 @@ document.addEventListener("DOMContentLoaded", () => {
             state.data.points[index].id = value.trim();
             state.data.matrix.ids[index] = value.trim();
             ensureMatrixIntegrity();
+          } else if (field === "name") {
+            state.data.points[index][field] = value;
+            if (state.data.points[index].auto_id && value.trim()) {
+              const id = autoPointId(value, index);
+              state.data.points[index].id = id;
+              state.data.matrix.ids[index] = id;
+              row.querySelector('[data-field="id"]').value = id;
+            }
           } else {
             state.data.points[index][field] = value;
           }

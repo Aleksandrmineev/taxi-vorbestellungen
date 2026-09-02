@@ -225,6 +225,13 @@
   gap: 6px;
 }
 
+.admin-point-code {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
 .admin-point-contact-fields {
   grid-template-columns: minmax(140px, 1fr) minmax(130px, 0.8fr);
 }
@@ -241,6 +248,7 @@
 .admin-table--points input[type="text"],
 .admin-table--points input[type="tel"],
 .admin-table--points input[type="url"],
+.admin-table--points input[type="time"],
 .admin-table--points select {
   min-width: 0;
   padding: 7px 9px;

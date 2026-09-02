@@ -38,6 +38,12 @@
   gap: 12px;
   flex-wrap: wrap;
 }
+.rowHead .back-btn {
+  margin-bottom: 0;
+}
+.back-btn--mobile {
+  display: none;
+}
 #now {
   color: var(--muted);
   font-weight: 800;

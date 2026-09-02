@@ -11,6 +11,21 @@
       .replace(/"/g, "&quot;");
   }
 
+  function makeShortCode(name, used) {
+    const letters = String(name || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase()
+      .replace(/[^A-Z]/g, "");
+    const base = (letters + "PUN").slice(0, 3);
+    if (!used.has(base)) return base;
+    for (let number = 1; number <= 9; number += 1) {
+      const candidate = base.slice(0, 2) + number;
+      if (!used.has(candidate)) return candidate;
+    }
+    return base.slice(0, 2) + (used.size + 1);
+  }
+
   // === Форматтеры и утилиты (кэш) ===========================================
   App.fmt = App.fmt || {};
   App.fmt.num =
@@ -131,6 +146,7 @@
     };
 
     const savedSet = readSaved();
+    const shortCodes = new Set();
     const isRequired = (p, index, allPoints) =>
       p?.required === true || index === 0 || index >= allPoints.length - 2;
     const isChecked = (p, index, allPoints) =>
@@ -140,6 +156,8 @@
     list.innerHTML = (points || [])
       .map(
         (p, index, allPoints) => {
+          const shortCode = String(p.short_code || "").trim() || makeShortCode(p.name, shortCodes);
+          shortCodes.add(shortCode);
           const phoneHref = safeTelUrl(p.phone);
           const contactName = String(p.contact_name || "").trim();
           const contact = phoneHref
@@ -157,18 +175,20 @@
     <input class="chk" type="checkbox" data-point-id="${esc(p.id)}"${
           isChecked(p, index, allPoints) ? " checked" : ""
         }${isRequired(p, index, allPoints) ? " disabled" : ""} aria-label="Einbeziehen">
-    <div class="badge" title="Zum Verschieben gedrückt halten">${esc(p.id)}</div>
+    <div class="badge" title="Zum Verschieben gedrückt halten">${esc(shortCode)}</div>
     <div class="name">
-      <div class="point-address">${
-      p.url
-        ? `<a href="${safeHttpUrl(p.url)}" target="_blank" rel="noopener noreferrer">${esc(p.name)}</a>`
-        : esc(p.name)
-      }</div>
-      ${contact ? `<div class="point-contact" aria-label="Telefonkontakt">
-        <svg class="point-contact__icon" viewBox="0 0 24 24" aria-hidden="true">
+      <div class="point-address">
+        <span>${
+          p.url
+            ? `<a href="${safeHttpUrl(p.url)}" target="_blank" rel="noopener noreferrer">${esc(p.name)}</a>`
+            : esc(p.name)
+        }</span>
+      </div>
+      ${contact || p.arrival_time ? `<div class="point-contact" aria-label="Telefonkontakt">
+        ${contact ? `<svg class="point-contact__icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        ${contact}
+        </svg>${contact}` : ""}
+        ${p.arrival_time ? `<span class="point-time">${esc(p.arrival_time)}</span>` : ""}
       </div>` : ""}
     </div>
     <div class="leg"></div>

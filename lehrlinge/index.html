@@ -49,14 +49,14 @@
     <link rel="stylesheet" href="./assets/css/theme.css" />
     <link rel="stylesheet" href="./assets/css/global.css" />
     <link rel="stylesheet" href="./assets/css/layout.css" />
-    <link rel="stylesheet" href="./assets/css/components.css" />
-    <link rel="stylesheet" href="./assets/css/responsive.css" />
+    <link rel="stylesheet" href="./assets/css/components.css?v=20260902-3" />
+    <link rel="stylesheet" href="./assets/css/responsive.css?v=20260902-2" />
   </head>
   <body>
     <main class="page">
       <div class="container">
         <button
-          class="back-btn"
+          class="back-btn back-btn--desktop"
           type="button"
           onclick="goHome()"
           aria-label="Zurück zur Startseite"
@@ -81,6 +81,24 @@
           <!-- Панель фильтров/переключателей -->
           <section class="panel">
             <div class="rowHead">
+              <button
+                class="back-btn back-btn--mobile"
+                type="button"
+                onclick="goHome()"
+                aria-label="Zurück zur Startseite"
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                  <path
+                    d="M15 18l-6-6 6-6"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span>Zurück</span>
+              </button>
               <div class="seg" aria-label="Route wählen">
                 <button id="seg1" type="button" aria-pressed="true">
                   Route 1
@@ -120,53 +138,9 @@
                 </select>
               </div>
 
-              <div class="actions">
-                <button
-                  class="btn icon-btn"
-                  id="selectAll"
-                  aria-label="Alle auswählen"
-                  title="Alle auswählen"
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <polyline points="9 11 12 14 22 4" />
-                    <path d="M21 21H3V3" />
-                  </svg>
-                </button>
-
-                <button
-                  class="btn icon-btn"
-                  id="clearAll"
-                  aria-label="Alle abwählen"
-                  title="Alle abwählen"
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
-
               <label class="show-all-points" for="showAllPoints">
                 <input id="showAllPoints" type="checkbox" />
-                <span>Alle Punkte anzeigen</span>
+                <span>Alle Punkte</span>
               </label>
             </div>
           </section>
@@ -308,7 +282,7 @@
 
     <script type="module" src="./assets/js/theme.js" defer></script>
     <script src="./assets/js/api.js" defer></script>
-    <script src="./assets/js/function.js" defer></script>
+    <script src="./assets/js/function.js?v=20260902-4" defer></script>
     <script src="./assets/js/main.js" defer></script>
   </body>
 </html>

@@ -167,7 +167,7 @@ const _lsAvailable = (() => {
 const isFresh = (entry) => entry && nowMs() - entry.ts < entry.ttl;
 
 function lsKeyForGetData(route) {
-  return `lehrlinge:getData:${String(route || "1")}`;
+  return `lehrlinge:getData:v3:${String(route || "1")}`;
 }
 
 function readLsCache(key, ttlMs) {

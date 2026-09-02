@@ -128,7 +128,20 @@ input[type="date"]:focus {
 }
 
 .point-address {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
   line-height: 1.25;
+}
+
+.point-time {
+  margin-left: auto;
+  flex: 0 0 auto;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  white-space: nowrap;
 }
 
 .point-contact {

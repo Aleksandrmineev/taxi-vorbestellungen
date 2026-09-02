@@ -33,8 +33,6 @@ document.addEventListener("DOMContentLoaded", () => {
     nowEl: document.getElementById("now"),
     confirmBox: document.getElementById("confirm"),
     dateEl: document.getElementById("reportDate"),
-    btnSelectAll: document.getElementById("selectAll"),
-    btnClearAll: document.getElementById("clearAll"),
     showAllPoints: document.getElementById("showAllPoints"),
     // НЕТ themeBtn — темой управляет только theme.js
   };
@@ -115,35 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
       load("2");
     }
   });
-
-  // ========== Выбрать/снять всё ==========
-  App.dom.btnSelectAll &&
-    (App.dom.btnSelectAll.onclick = () => {
-      const boxes = App.dom.list?.querySelectorAll(".chk");
-      if (!boxes || !boxes.length) return;
-      requestAnimationFrame(() => {
-        boxes.forEach((c) => {
-          if (!c.checked) {
-            c.checked = true;
-            c.dispatchEvent(new Event("change"));
-          }
-        });
-      });
-    });
-
-  App.dom.btnClearAll &&
-    (App.dom.btnClearAll.onclick = () => {
-      const boxes = App.dom.list?.querySelectorAll(".chk");
-      if (!boxes || !boxes.length) return;
-      requestAnimationFrame(() => {
-        boxes.forEach((c) => {
-          if (c.checked && !c.disabled) {
-            c.checked = false;
-            c.dispatchEvent(new Event("change"));
-          }
-        });
-      });
-    });
 
   // ========== Загрузка данных (только getData) ==========
   function applyRouteData(res) {

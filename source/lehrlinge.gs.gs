@@ -5,6 +5,10 @@ function getData(route) {
   const snapshot = getLehrlingeSnapshot_();
   const routeKey = String(route || "1");
   const routeData = snapshot.routes[routeKey] || { points: [], dist: {} };
+  const pointNameById = Object.assign({}, snapshot.pointNameById || {});
+  (routeData.points || []).forEach((point) => {
+    pointNameById[String(point.id || "")] = String(point.name || "");
+  });
 
   return {
     points: routeData.points || [],
@@ -12,7 +16,7 @@ function getData(route) {
     drivers: (snapshot.drivers || [])
       .filter((r) => String(r.active || "") === "1")
       .map((r) => ({ id: String(r.id || ""), name: String(r.name || "") })),
-    pointNameById: snapshot.pointNameById || {},
+    pointNameById: pointNameById,
     cars: (snapshot.cars || []).map((r) => ({
       id: String(r.id || ""),
       plate: String(r.plate || ""),
@@ -138,6 +142,15 @@ function getPointNameMap_() {
   return map;
 }
 
+function pointTimeValue_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), "HH:mm");
+  }
+  const text = String(value || "").trim();
+  const match = text.match(/(\d{1,2}):(\d{2})/);
+  return match ? String(match[1]).padStart(2, "0") + ":" + match[2] : text;
+}
+
 // Хелпер: карта CarId -> Kennzeichen
 function getCarPlateMap_() {
   const ss = SpreadsheetApp.getActive();
@@ -215,7 +228,7 @@ function saveAdminData_(body) {
   writeSheetRows_(
     ss,
     "Points",
-    ["id", "name", "route", "active", "url", "contact_name", "phone"],
+    ["id", "name", "route", "active", "url", "contact_name", "phone", "arrival_time"],
     payload.points.map((p) => [
       p.id,
       p.name,
@@ -224,8 +237,15 @@ function saveAdminData_(body) {
       p.url,
       p.contact_name,
       p.phone,
+      p.arrival_time,
     ])
   );
+  const pointsSheet = ss.getSheetByName("Points");
+  if (pointsSheet && pointsSheet.getLastRow() > 1) {
+    pointsSheet
+      .getRange(2, 8, pointsSheet.getLastRow() - 1, 1)
+      .setNumberFormat("HH:mm");
+  }
   writeSheetRows_(
     ss,
     "Drivers",
@@ -270,14 +290,18 @@ function buildLehrlingeSnapshotFromSheets_() {
   const shD = ss.getSheetByName("Drivers");
   const shC = ss.getSheetByName("Cars");
 
+  if (shP && shP.getLastRow() > 1 && shP.getLastColumn() >= 8) {
+    shP.getRange(2, 8, shP.getLastRow() - 1, 1).setNumberFormat("HH:mm");
+  }
+
   const pointNameById = {};
   const points = shP
     ? shP
         .getDataRange()
         .getValues()
         .slice(1)
-        .filter((r) => String(r[0] || "").trim() !== "")
-        .map((r) => {
+        .map((r, rowIndex) => {
+          const displayRow = shP.getDataRange().getDisplayValues()[rowIndex + 1] || [];
           const item = {
             id: String(r[0] || "").trim(),
             name: String(r[1] || ""),
@@ -286,10 +310,12 @@ function buildLehrlingeSnapshotFromSheets_() {
             url: String(r[4] || "").trim(),
             contact_name: String(r[5] || ""),
             phone: String(r[6] || "").trim(),
+            arrival_time: pointTimeValue_(displayRow[7] || r[7]),
           };
           pointNameById[item.id] = item.name;
           return item;
         })
+        .filter((item) => item.id !== "")
     : [];
 
   const drivers = shD
@@ -334,16 +360,37 @@ function buildLehrlingeSnapshotFromSheets_() {
 }
 
 function buildRouteSnapshot_(points, matrix, route) {
+  const usedIds = new Set(
+    (points || [])
+      .filter((p) => String(p.route || "") === String(route) && !isLegacyPointId_(p.id))
+      .map((p) => String(p.id || "").trim())
+      .filter(Boolean)
+  );
+  const usedShortCodes = new Set();
   const routePoints = (points || [])
-    .filter((p) => String(p.route || "") === String(route) && String(p.active || "") === "1")
-    .map((p, index, list) => ({
-      id: p.id,
-      name: p.name,
-      url: p.url || "",
-      contact_name: p.contact_name || "",
-      phone: p.phone || "",
-      required: index === 0 || index >= list.length - 2,
-    }));
+    .map((p, pointIndex) => ({ p, pointIndex }))
+    .filter(({ p }) => String(p.route || "") === String(route) && String(p.active || "") === "1")
+    .map(({ p, pointIndex }, index, list) => {
+      let id = String(p.id || "").trim();
+      if (isLegacyPointId_(id)) {
+        id = makePointIdFromName_(p.name, usedIds);
+      }
+      usedIds.add(id);
+      const shortCode = makePointIdFromName_(p.name, usedShortCodes);
+      usedShortCodes.add(shortCode);
+      return {
+        id: id,
+        storage_id: String(p.id || "").trim(),
+        storage_index: pointIndex,
+        short_code: shortCode,
+        name: p.name,
+        url: p.url || "",
+        contact_name: p.contact_name || "",
+        phone: p.phone || "",
+        arrival_time: p.arrival_time || "",
+        required: index === 0 || index >= list.length - 2,
+      };
+    });
   const ids = routePoints.map((p) => p.id);
   const dist = {};
   const matrixIds = Array.isArray(matrix?.ids) ? matrix.ids : [];
@@ -354,11 +401,19 @@ function buildRouteSnapshot_(points, matrix, route) {
     colIndexById[String(id || "")] = idx;
   });
 
-  ids.forEach((from) => {
+  routePoints.forEach((fromPoint) => {
+    const from = fromPoint.id;
     dist[from] = {};
-    const rowIdx = colIndexById[from];
-    ids.forEach((to) => {
-      const colIdx = colIndexById[to];
+    const rowIdx =
+      colIndexById[fromPoint.storage_id] ??
+      colIndexById[from] ??
+      fromPoint.storage_index;
+    routePoints.forEach((toPoint) => {
+      const to = toPoint.id;
+      const colIdx =
+        colIndexById[toPoint.storage_id] ??
+        colIndexById[to] ??
+        toPoint.storage_index;
       dist[from][to] =
         typeof rowIdx === "number" && typeof colIdx === "number"
           ? rows?.[rowIdx]?.[colIdx] ?? ""
@@ -367,6 +422,25 @@ function buildRouteSnapshot_(points, matrix, route) {
   });
 
   return { points: routePoints, dist: dist };
+}
+
+function isLegacyPointId_(value) {
+  return /1899/.test(String(value || ""));
+}
+
+function makePointIdFromName_(name, usedIds) {
+  const letters = String(name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "");
+  const base = (letters + "PUN").slice(0, 3);
+  if (!usedIds.has(base)) return base;
+  for (let number = 1; number <= 9; number += 1) {
+    const candidate = base.slice(0, 2) + number;
+    if (!usedIds.has(candidate)) return candidate;
+  }
+  return base.slice(0, 2) + (usedIds.size + 1);
 }
 
 function readLehrlingeSnapshot_() {
@@ -449,6 +523,7 @@ function normalizePoints_(list) {
     url: String(item?.url || "").trim(),
     contact_name: String(item?.contact_name || "").trim(),
     phone: String(item?.phone || "").trim(),
+    arrival_time: String(item?.arrival_time || "").trim(),
   }));
 }
 
@@ -529,11 +604,19 @@ function readMatrixSheet_(shM) {
 
   const lastCol = shM.getLastColumn();
   const lastRow = shM.getLastRow();
-  const ids = shM
+  const rawIds = shM
     .getRange(1, 2, 1, lastCol - 1)
     .getValues()[0]
     .map((v) => String(v || "").trim())
     .filter(Boolean);
+  const ids = [];
+  const seenIds = new Set();
+  rawIds.forEach((id) => {
+    if (!seenIds.has(id)) {
+      seenIds.add(id);
+      ids.push(id);
+    }
+  });
   const body = shM.getRange(2, 2, lastRow - 1, lastCol - 1).getValues();
 
   return {
