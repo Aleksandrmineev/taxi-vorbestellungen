@@ -113,6 +113,7 @@ async function sendToSheet(entry) {
     });
   }
 
+  elDriver.addEventListener("focus", selectAll);
   elFare.addEventListener("focus", selectAll);
   elTip.addEventListener("focus", selectAll);
 

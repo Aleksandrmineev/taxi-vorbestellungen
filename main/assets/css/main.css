@@ -1,9 +1,15 @@
+/* ===== Desktop foundation ===== */
+.container {
+  width: min(100%, 1240px);
+  margin-inline: auto;
+}
+
 /* header */
 .header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 14px var(--pad-inline-main);
+  gap: 20px;
+  padding: 16px clamp(20px, 3vw, 36px);
   border-bottom: 1px solid var(--header-border);
   background: var(--header-bg);
   backdrop-filter: var(--backdrop-strong);
@@ -12,14 +18,14 @@
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   color: inherit;
   text-decoration: none;
 }
 
 .brand__logo {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: inline-grid;
   place-items: center;
@@ -68,29 +74,31 @@
 /* hero */
 .hero {
   display: grid;
-  gap: 14px;
-  padding: var(--pad-hero);
-  max-width: 1100px;
+  gap: 18px;
+  padding: clamp(34px, 5vw, 64px) 28px 48px;
+  max-width: 1240px;
   width: 100%;
   margin-inline: auto;
 }
 
 .hero h1 {
   margin: 0;
-  font-size: clamp(34px, 4.6vw, 52px);
+  font-size: clamp(38px, 4.6vw, 58px);
+  font-weight: 700;
   letter-spacing: 0.01em;
 }
 
 .hero__sub {
   color: var(--muted);
   font-size: var(--fs-hero-sub);
+  margin: 0;
 }
 
 /* grid (одна версия, без дублей) */
 .grid {
   display: grid;
   gap: var(--tile-gap);
-  grid-template-columns: repeat(2, minmax(0, 1fr)); /* не ломаемся по X */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 /* tiles */
@@ -100,8 +108,8 @@
   display: grid; /* icon / spacer / text */
   grid-template-rows: auto 1fr auto;
   align-content: stretch;
-  min-height: 180px;
-  padding: 20px;
+  min-height: 214px;
+  padding: 24px;
   border-radius: var(--radius);
   background: var(--tile-bg);
   border: 1px solid var(--tile-border);
@@ -189,7 +197,7 @@
   place-items: center;
   background: var(--tile-icon-bg);
   border: 1px solid var(--tile-icon-border);
-  margin: 6px auto 0;
+  margin: 0 auto;
   color: var(--accent);
 }
 
@@ -205,6 +213,8 @@
 /* текстовый блок закрепляем к низу */
 .tile > div {
   align-self: end;
+  width: 100%;
+  text-align: center;
 }
 
 .tile__title {
@@ -221,9 +231,13 @@
 }
 
 .tile__desc {
+  display: -webkit-box;
   font-size: clamp(14px, 1.7vw, 17px);
   color: var(--muted);
   margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 
   hyphens: auto;
   overflow-wrap: break-word;
@@ -234,9 +248,9 @@
 
 /* footer */
 footer {
-  padding: 16px var(--pad-inline-main);
+  padding: 0 clamp(20px, 3vw, 36px);
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
@@ -255,11 +269,13 @@ footer .muted {
 /* блок ссылок внизу */
 .footer__dev {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   gap: 24px;
   flex-wrap: wrap;
-  padding: 20px var(--pad-inline-main);
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px clamp(20px, 3vw, 36px) 10px;
   border-top: 1px solid var(--header-border);
 }
 
@@ -267,10 +283,12 @@ footer .muted {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 6px;
   font-size: 11px;
   line-height: 1.15;
+  min-width: 88px;
+  text-align: center;
   color: var(--text);
   text-decoration: none;
   transition: color var(--transition);
@@ -286,12 +304,12 @@ footer .muted {
   width: 38px;
   height: 38px;
   padding: 10px;
+  box-sizing: border-box;
   border-radius: 50%;
   display: block;
   background: color-mix(in oklab, var(--button-bg) 88%, transparent);
   border: 1px solid color-mix(in oklab, var(--accent) 14%, var(--button-border));
   color: var(--text);
-  fill: none;
   stroke: currentColor;
   transition: background var(--transition), color var(--transition),
     border-color var(--transition);
@@ -306,10 +324,28 @@ footer .muted {
 /* кнопка темы внизу */
 .footer__theme {
   display: flex;
+  flex: 0 0 88px;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  gap: 6px;
+  width: 88px;
+  height: auto;
+  min-height: 38px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.footer__theme .theme-toggle-shell {
+  width: 38px;
+  height: 38px;
+}
+
+.footer__label {
+  font-size: 11px;
+  line-height: 1.15;
 }
 
 /* доступность: уважение reduce-motion */

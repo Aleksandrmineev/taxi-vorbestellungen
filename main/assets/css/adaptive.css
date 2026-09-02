@@ -5,18 +5,11 @@
   }
 }
 
-/* телефоны — 2 колонки стабильно до 900px */
+/* адаптив — 2 колонки */
 @media (max-width: 899.98px) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: clamp(10px, 3vw, 16px); /* чуть компактнее, чтобы влезало */
-  }
-}
-
-/* очень узкие телефоны — 1 колонка */
-@media (max-width: 520px) {
-  .grid {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -29,28 +22,62 @@
 
 /* мобильники <768px — делаем плитки компактнее */
 @media (max-width: 767.98px) {
+  footer {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+
   .header {
     gap: 10px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    padding-inline: clamp(16px, 5vw, 28px);
+  }
+  .brand {
+    min-width: 0;
+    gap: 6px;
+  }
+  .brand__title {
+    min-width: 0;
+    font-size: clamp(16px, 5vw, 22px);
+    white-space: nowrap;
+  }
+  .spacer {
+    min-width: 0;
   }
   .pill {
-    padding: 9px 12px;
+    flex: 0 0 auto;
+    gap: 5px;
+    padding: 7px 9px;
+    font-size: clamp(12px, 3.5vw, 14px);
+    white-space: nowrap;
+  }
+  .pill svg {
+    width: 16px;
+    height: 16px;
   }
 
   .hero {
     padding: clamp(16px, 6vw, 28px);
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
   }
   .hero h1 {
     font-size: clamp(24px, 7vw, 32px);
+    white-space: nowrap;
   }
   .hero__sub {
     font-size: clamp(14px, 4.2vw, 16px);
+    margin-block-start: 0;
+    margin-block-end: 0;
+    text-align: right;
+  }
+  .hero > .grid {
+    grid-column: 1 / -1;
   }
 
   /* компактные плитки */
   .tile {
     min-height: 120px; /* было 160px */
-    padding: 12px; /* было 16px */
+    padding: 6px;
   }
   .tile__icon {
     width: 44px; /* было 68px */
@@ -95,9 +122,9 @@
     height: 24px;
   }
   .brand__title {
-    font-size: 18px;
+    font-size: 16px;
   }
   .pill {
-    font-size: clamp(14px, 3.5vw, 16px);
+    font-size: 12px;
   }
 }
