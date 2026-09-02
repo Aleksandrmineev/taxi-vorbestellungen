@@ -1,4 +1,4 @@
-const CACHE = "mt-main-v5";
+const CACHE = "mt-main-v6";
 
 const ASSETS = [
   // Страницы
