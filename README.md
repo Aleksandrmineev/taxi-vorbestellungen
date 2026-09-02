@@ -219,3 +219,14 @@ schriftliche Genehmigung des Autors nicht gestattet.
 # taxi-vorbestellungen
 # taxi-vorbestellungen
 # taxi-vorbestellungen
+
+## Zadarma SMS (MVP)
+
+Zadarma credentials must not be stored in the repository or in `source/` files. In the Google Apps Script project open **Project Settings → Script Properties** and add:
+
+- `ZADARMA_API_KEY` — Zadarma API Key
+- `ZADARMA_API_SECRET` — Zadarma API Secret
+- `SMS_NOTIFICATION_PHONE` — number that always receives the order SMS notifications, e.g. `4368181289405`
+- `PUBLIC_BASE_URL` — optional, defaults to `https://taxi-vorbestellungen.vercel.app`
+
+The SMS functions read these values only at runtime from Script Properties. If the properties are missing or Zadarma is unavailable, order saving continues normally and only the SMS is skipped.

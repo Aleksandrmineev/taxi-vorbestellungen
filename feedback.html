@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rückmeldung – MurtalTaxi</title>
+    <style>
+      :root { color-scheme: dark; --bg:#111821; --panel:#1b2632; --text:#f4f7fa; --muted:#aeb9c5; --accent:#d8a84e; --line:#334150; }
+      * { box-sizing:border-box; }
+      body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; background:var(--bg); color:var(--text); font:16px/1.45 system-ui,sans-serif; }
+      main { width:min(100%,520px); padding:28px; border:1px solid var(--line); border-radius:20px; background:var(--panel); box-shadow:0 18px 50px #0004; }
+      h1 { margin:0 0 8px; font-size:clamp(24px,6vw,34px); }
+      p { color:var(--muted); }
+      .order { color:var(--accent); font-weight:700; }
+      fieldset { border:0; padding:0; margin:24px 0; }
+      legend { margin-bottom:12px; font-weight:700; }
+      .ratings { display:flex; gap:8px; }
+      .ratings label { flex:1; }
+      .ratings input { position:absolute; opacity:0; pointer-events:none; }
+      .ratings span { display:grid; place-items:center; min-height:48px; border:1px solid var(--line); border-radius:12px; cursor:pointer; font-size:22px; }
+      .ratings input:checked + span { border-color:var(--accent); background:#d8a84e22; box-shadow:0 0 0 2px #d8a84e33; }
+      textarea { width:100%; min-height:110px; padding:12px; resize:vertical; border:1px solid var(--line); border-radius:12px; background:#111821; color:var(--text); font:inherit; }
+      button { width:100%; padding:13px 16px; border:0; border-radius:12px; background:var(--accent); color:#19140b; font:700 16px inherit; cursor:pointer; }
+      button:disabled { opacity:.6; cursor:wait; }
+      .message { min-height:24px; margin-top:16px; color:var(--muted); }
+      .message.error { color:#ff9b9b; }
+      .message.ok { color:#9ee0b0; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Rückmeldung</h1>
+      <p>Ihre Rückmeldung hilft uns, den Service zu verbessern.</p>
+      <p>Vorbestellung: <span class="order" id="orderLabel">—</span></p>
+      <form id="feedbackForm">
+        <fieldset>
+          <legend>Wie zufrieden waren Sie?</legend>
+          <div class="ratings">
+            <label><input type="radio" name="rating" value="1" /><span>1</span></label>
+            <label><input type="radio" name="rating" value="2" /><span>2</span></label>
+            <label><input type="radio" name="rating" value="3" /><span>3</span></label>
+            <label><input type="radio" name="rating" value="4" /><span>4</span></label>
+            <label><input type="radio" name="rating" value="5" /><span>5</span></label>
+          </div>
+        </fieldset>
+        <label for="comment">Kommentar (optional)</label>
+        <textarea id="comment" maxlength="1000" placeholder="Was können wir verbessern?"></textarea>
+        <button type="submit">Rückmeldung senden</button>
+        <div class="message" id="message" role="status"></div>
+      </form>
+    </main>
+    <script type="module">
+      import { API } from "/assets/js/config.js";
+      const API_SECRET = "102030";
+      const params = new URLSearchParams(location.search);
+      const orderId = String(params.get("order") || "").trim();
+      const form = document.getElementById("feedbackForm");
+      const message = document.getElementById("message");
+      document.getElementById("orderLabel").textContent = orderId || "unbekannt";
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const rating = form.elements.rating.value;
+        if (!orderId || !rating) {
+          message.textContent = "Bitte eine Bewertung auswählen.";
+          message.className = "message error";
+          return;
+        }
+        const button = form.querySelector("button");
+        button.disabled = true;
+        message.textContent = "Wird gesendet…";
+        message.className = "message";
+        try {
+          const response = await fetch(API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "feedback",
+              secret: API_SECRET,
+              order_id: orderId,
+              rating,
+              comment: document.getElementById("comment").value,
+            }),
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok || !data.ok) throw new Error(data.error || "Senden fehlgeschlagen");
+          form.reset();
+          message.textContent = "Danke für Ihre Rückmeldung!";
+          message.className = "message ok";
+        } catch (error) {
+          message.textContent = `Fehler: ${error.message}`;
+          message.className = "message error";
+          button.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

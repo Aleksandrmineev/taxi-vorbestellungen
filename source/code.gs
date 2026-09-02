@@ -11,6 +11,12 @@ const SHIFT_REPORTS_SHEET = "Schichtabrechnung";
 const SHIFT_ADMIN_LOGIN = "admin";
 const SHIFT_ADMIN_PASSWORD = "Qqqq1111";
 const SHIFT_ADMIN_TOKEN_PREFIX = "shift_admin_token:";
+const ORDER_NOTIFICATION_PROPERTIES_ = {
+  ZADARMA_KEY: "ZADARMA_API_KEY",
+  ZADARMA_SECRET: "ZADARMA_API_SECRET",
+  SMS_NOTIFICATION_PHONE: "SMS_NOTIFICATION_PHONE",
+  PUBLIC_BASE_URL: "PUBLIC_BASE_URL",
+};
 
 /** Утилита ответа JSON */
 function json(obj, code) {
@@ -95,6 +101,11 @@ function doGet(e) {
 
     if (fn === "messageslist") {
       return json({ ok: true, items: getMessages_(Number(e.parameter.since || 0), Number(e.parameter.limit || 300)) });
+    }
+
+    if (fn === "feedbacklist") {
+      requireAdminToken_(e.parameter.adminToken || "");
+      return json({ ok: true, items: getFeedback_() });
     }
 
     // ---- Последние QR-платежи для блока "Letzte Zahlungen" ----
@@ -183,6 +194,11 @@ function doPost(e) {
     // ===== ВЕТКА VORBESTELLUNGEN =====
     if (action === "create") {
       const saved = createOrder_(body.data || body);
+      return json({ ok: true, data: saved });
+    }
+
+    if (action === "feedback") {
+      const saved = saveFeedback_(body);
       return json({ ok: true, data: saved });
     }
 
@@ -285,8 +301,11 @@ const ORDER_HEADERS_ = [
   "status_comment",
   "created_by_name",
   "created_by_device",
+  "confirmation_sent_at",
+  "reminder_sent_at",
 ];
 const MESSAGE_HEADERS_ = ["id", "ts", "author", "device", "text", "is_order"];
+const FEEDBACK_HEADERS_ = ["id", "created_at", "order_id", "rating", "comment"];
 
 function ensureHeaders_(sh, headers) {
   if (sh.getLastRow() === 0) {
@@ -318,6 +337,12 @@ function messageSheet_() {
   return sh;
 }
 
+function feedbackSheet_() {
+  const sh = SpreadsheetApp.getActive().getSheetByName("Feedback") || SpreadsheetApp.getActive().insertSheet("Feedback");
+  ensureHeaders_(sh, FEEDBACK_HEADERS_);
+  return sh;
+}
+
 function orderId_() {
   const sh = SpreadsheetApp.getActive().getSheetByName("Orders");
   const used = new Set();
@@ -340,28 +365,205 @@ function normalizePhone_(value) {
   return String(value || "").replace(/[^0-9+]/g, "");
 }
 
+function orderNotificationProperties_() {
+  return PropertiesService.getScriptProperties();
+}
+
+function orderNotificationConfig_() {
+  const props = orderNotificationProperties_();
+  return {
+    key: String(props.getProperty(ORDER_NOTIFICATION_PROPERTIES_.ZADARMA_KEY) || "").trim(),
+    secret: String(props.getProperty(ORDER_NOTIFICATION_PROPERTIES_.ZADARMA_SECRET) || "").trim(),
+    notifyPhone: String(props.getProperty(ORDER_NOTIFICATION_PROPERTIES_.SMS_NOTIFICATION_PHONE) || "").trim(),
+    baseUrl: String(props.getProperty(ORDER_NOTIFICATION_PROPERTIES_.PUBLIC_BASE_URL) || "https://taxi-vorbestellungen.vercel.app").replace(/\/$/, ""),
+  };
+}
+
+function formEncode_(value) {
+  return encodeURIComponent(String(value == null ? "" : value)).replace(/%20/g, "+");
+}
+
+function maskPhone_(value) {
+  const digits = normalizePhone_(value).replace(/\D/g, "");
+  return digits.length > 4 ? "***" + digits.slice(-4) : "***";
+}
+
+function redactLogText_(value, maxLength) {
+  return String(value || "")
+    .replace(/\+?\d[\d\s().-]{5,}\d/g, (match) => maskPhone_(match))
+    .slice(0, maxLength || 180);
+}
+
+function safeNotificationLog_(event, data) {
+  const payload = Object.assign({ event: event, at: new Date().toISOString() }, data || {});
+  Logger.log(JSON.stringify(payload));
+}
+
+function safeDeniedNumbers_(value) {
+  return Array.isArray(value)
+    ? value.map((item) => ({
+        number: maskPhone_(item && item.number),
+        message: redactLogText_(item && item.message, 180),
+      }))
+    : [];
+}
+
+function zadarmaSignature_(method, params, secret) {
+  const query = Object.keys(params).sort().map((key) => formEncode_(key) + "=" + formEncode_(params[key])).join("&");
+  const md5 = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, query)
+    .map((b) => (b < 0 ? b + 256 : b).toString(16).padStart(2, "0")).join("");
+  const hmac = Utilities.computeHmacSha1Signature(method + query + md5, secret)
+    .map((b) => (b < 0 ? b + 256 : b).toString(16).padStart(2, "0")).join("");
+  return { query: query, signature: Utilities.base64Encode(hmac) };
+}
+
+function sendZadarmaSms_(number, message) {
+  const cfg = orderNotificationConfig_();
+  safeNotificationLog_("zadarma_sms_attempt", {
+    phone: maskPhone_(number),
+    message_length: String(message || "").length,
+  });
+  if (!cfg.key || !cfg.secret || !number) {
+    safeNotificationLog_("zadarma_sms_skipped", {
+      reason: !number ? "recipient_missing" : "credentials_missing",
+      phone: maskPhone_(number),
+    });
+    return { ok: false, skipped: true };
+  }
+  const params = { caller_id: "Teamsale", message: String(message || ""), number: normalizePhone_(number).replace(/^\+/, "") };
+  const signed = zadarmaSignature_('/v1/sms/send/', params, cfg.secret);
+  const response = UrlFetchApp.fetch("https://api.zadarma.com/v1/sms/send/", {
+    method: "post",
+    contentType: "application/x-www-form-urlencoded",
+    payload: signed.query,
+    headers: { Authorization: cfg.key + ":" + signed.signature },
+    muteHttpExceptions: true,
+  });
+  const status = response.getResponseCode();
+  const text = response.getContentText();
+  safeNotificationLog_("zadarma_http_response", { http_code: status });
+  let data = {};
+  try {
+    data = JSON.parse(text || "{}");
+  } catch (err) {
+    safeNotificationLog_("zadarma_response_error", { http_code: status, message: "invalid_json" });
+    throw new Error("zadarma_invalid_json");
+  }
+  safeNotificationLog_("zadarma_response", {
+    http_code: status,
+    status: String(data.status || ""),
+    message: redactLogText_(data.message, 180),
+    messages: Number(data.messages || 0),
+    cost: data.cost == null ? null : Number(data.cost),
+    currency: String(data.currency || ""),
+    denied_numbers: safeDeniedNumbers_(data.denied_numbers),
+  });
+  if (status < 200 || status >= 300) throw new Error("zadarma_http_" + status + ":" + redactLogText_(data.message, 160));
+  if (data.status !== "success") throw new Error("zadarma_error:" + redactLogText_(data.message || "unknown", 160));
+  return data;
+}
+
+function setOrderNotification_(orderId, field, value) {
+  const sh = orderSheet_();
+  const head = ensureHeaders_(sh, ORDER_HEADERS_);
+  const idCol = head.indexOf("id") + 1;
+  const fieldCol = head.indexOf(field) + 1;
+  const values = sh.getRange(2, idCol, Math.max(sh.getLastRow() - 1, 1), 1).getValues();
+  const index = values.findIndex((row) => String(row[0] || "") === String(orderId || ""));
+  if (index < 0 || fieldCol < 1) return false;
+  sh.getRange(index + 2, fieldCol).setValue(value || new Date());
+  return true;
+}
+
+function sendOrderConfirmation_(item) {
+  if (!item || item.confirmation_sent_at) return;
+  try {
+    const result = sendZadarmaSms_(orderNotificationConfig_().notifyPhone, "Vorbestellung gespeichert.");
+    if (result && result.skipped) return;
+    setOrderNotification_(item.id, "confirmation_sent_at", new Date());
+  } catch (err) {
+    safeNotificationLog_("order_confirmation_error", { message: redactLogText_(err && err.message, 180) });
+  }
+}
+
+function sendOrderReminder_(item) {
+  if (!item || item.reminder_sent_at) return;
+  try {
+    const result = sendZadarmaSms_(orderNotificationConfig_().notifyPhone, "Erinnerung: Ihre Fahrt beginnt in 15 Minuten.");
+    if (result && result.skipped) return;
+    setOrderNotification_(item.id, "reminder_sent_at", new Date());
+  } catch (err) {
+    safeNotificationLog_("order_reminder_error", { message: redactLogText_(err && err.message, 180) });
+  }
+}
+
+function processOrderNotifications() {
+  const now = new Date();
+  const reminderFrom = new Date(now.getTime() + 10 * 60 * 1000);
+  const reminderTo = new Date(now.getTime() + 20 * 60 * 1000);
+  const orders = readOrders_();
+  let pending = 0;
+  orders.forEach((item) => {
+    if (item.status === "cancelled" || item.status === "done") return;
+    const start = new Date(item.date + "T" + item.time + ":00");
+    if (isNaN(start.getTime())) return;
+    // Retry a temporary SMS outage only for recently created orders.
+    // This prevents enabling the trigger from sending confirmations for old orders.
+    const createdAt = item.created_at instanceof Date ? item.created_at : new Date(item.created_at);
+    if (!item.confirmation_sent_at && !isNaN(createdAt.getTime()) && now.getTime() - createdAt.getTime() <= 30 * 60 * 1000) pending++;
+    if (!item.reminder_sent_at && start >= reminderFrom && start <= reminderTo) pending++;
+  });
+  safeNotificationLog_("order_notifications_scan", { total_orders: orders.length, pending_notifications: pending });
+  orders.forEach((item) => {
+    if (item.status === "cancelled" || item.status === "done") return;
+    const start = new Date(item.date + "T" + item.time + ":00");
+    if (isNaN(start.getTime())) return;
+    const createdAt = item.created_at instanceof Date ? item.created_at : new Date(item.created_at);
+    if (!item.confirmation_sent_at && !isNaN(createdAt.getTime()) && now.getTime() - createdAt.getTime() <= 30 * 60 * 1000) {
+      sendOrderConfirmation_(item);
+    }
+    if (start >= reminderFrom && start <= reminderTo) sendOrderReminder_(item);
+  });
+  safeNotificationLog_("order_notifications_complete", { total_orders: orders.length, pending_notifications: pending });
+}
+
+function setupOrderNotificationTrigger() {
+  ScriptApp.getProjectTriggers().forEach((trigger) => {
+    if (trigger.getHandlerFunction() === "processOrderNotifications") ScriptApp.deleteTrigger(trigger);
+  });
+  ScriptApp.newTrigger("processOrderNotifications").timeBased().everyMinutes(5).create();
+}
+
 function orderDateValue_(value) {
   if (value instanceof Date && !isNaN(value.getTime())) {
-    return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
+    return Utilities.formatDate(value, orderSheetTimeZone_(), "yyyy-MM-dd");
   }
   const text = String(value || "").trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
   const parsed = new Date(text);
   return !isNaN(parsed.getTime())
-    ? Utilities.formatDate(parsed, Session.getScriptTimeZone(), "yyyy-MM-dd")
+    ? Utilities.formatDate(parsed, orderSheetTimeZone_(), "yyyy-MM-dd")
     : text;
+}
+
+function orderSheetTimeZone_() {
+  try {
+    return SpreadsheetApp.getActive().getSpreadsheetTimeZone() || Session.getScriptTimeZone() || "Europe/Vienna";
+  } catch (err) {
+    return Session.getScriptTimeZone() || "Europe/Vienna";
+  }
 }
 
 function orderTimeValue_(value) {
   if (value instanceof Date && !isNaN(value.getTime())) {
-    return Utilities.formatDate(value, Session.getScriptTimeZone(), "HH:mm");
+    return Utilities.formatDate(value, orderSheetTimeZone_(), "HH:mm");
   }
   const text = String(value || "").trim();
   const match = text.match(/^(\d{1,2}):(\d{2})/);
   if (match) return String(match[1]).padStart(2, "0") + ":" + match[2];
   const parsed = new Date(text);
   return !isNaN(parsed.getTime())
-    ? Utilities.formatDate(parsed, Session.getScriptTimeZone(), "HH:mm")
+    ? Utilities.formatDate(parsed, orderSheetTimeZone_(), "HH:mm")
     : text;
 }
 
@@ -389,11 +591,18 @@ function createOrder_(raw) {
     status_comment: "",
     created_by_name: String(data.created_by_name || ""),
     created_by_device: String(data.created_by_device || ""),
+    confirmation_sent_at: "",
+    reminder_sent_at: "",
   };
 
   const sh = orderSheet_();
   const head = ensureHeaders_(sh, ORDER_HEADERS_);
   sh.appendRow(head.map((key) => item[key] === undefined ? "" : item[key]));
+  // Google Sheets otherwise may auto-convert HH:mm into a date in 1899.
+  const row = sh.getLastRow();
+  const timeCol = head.indexOf("time") + 1;
+  if (timeCol > 0) sh.getRange(row, timeCol).setNumberFormat("@").setValue(time);
+  sendOrderConfirmation_(item);
   return item;
 }
 
@@ -422,7 +631,33 @@ function readOrders_() {
       status_comment: String(get("status_comment") || ""),
       created_by_name: String(get("created_by_name") || ""),
       created_by_device: String(get("created_by_device") || ""),
+      confirmation_sent_at: get("confirmation_sent_at") || "",
+      reminder_sent_at: get("reminder_sent_at") || "",
     };
+  });
+}
+
+function saveFeedback_(body) {
+  const orderId = String(body.order_id || body.orderId || "").trim();
+  const rating = Number(body.rating || 0);
+  const comment = String(body.comment || "").trim().slice(0, 1000);
+  if (!orderId || rating < 1 || rating > 5) throw new Error("feedback_invalid");
+  if (!readOrders_().some((item) => item.id === orderId)) throw new Error("order_not_found");
+  const item = { id: "f_" + Date.now(), created_at: new Date(), order_id: orderId, rating: rating, comment: comment };
+  const sh = feedbackSheet_();
+  const head = ensureHeaders_(sh, FEEDBACK_HEADERS_);
+  sh.appendRow(head.map((key) => item[key] === undefined ? "" : item[key]));
+  return item;
+}
+
+function getFeedback_() {
+  const sh = feedbackSheet_();
+  const values = sh.getDataRange().getValues();
+  if (values.length < 2) return [];
+  const head = values[0].map(String);
+  return values.slice(1).reverse().map((row) => {
+    const get = (key) => row[head.indexOf(key)];
+    return { id: String(get("id") || ""), created_at: get("created_at"), order_id: String(get("order_id") || ""), rating: Number(get("rating") || 0), comment: String(get("comment") || "") };
   });
 }
 

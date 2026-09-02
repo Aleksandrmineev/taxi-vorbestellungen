@@ -1,0 +1,7 @@
+# Local credentials and service configuration
+source/zadarma.txt
+*.secrets
+*.secret
+.env
+.env.*
+!.env.example

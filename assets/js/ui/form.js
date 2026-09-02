@@ -221,12 +221,18 @@ export function initForm({ onCreated }) {
 
       const payload = res.data || res;
       const { id, conflicts, gcal_event_id } = payload || {};
+      const feedbackUrl = id
+        ? `${window.location.origin}/feedback.html?order=${encodeURIComponent(id)}`
+        : "";
 
       let linkHTML = "";
       if (gcal_event_id) {
-        linkHTML = `<div class="toast__msg">
+        linkHTML += `<div class="toast__msg">
           <a target="_blank" href="https://calendar.google.com/calendar/u/0/r/eventedit/${gcal_event_id}">Im Kalender öffnen</a>
         </div>`;
+      }
+      if (feedbackUrl) {
+        linkHTML += `<div class="toast__msg"><a href="${feedbackUrl}">Rückmeldung geben</a></div>`;
       }
       const hasConf = conflicts && conflicts.length;
       const msg = hasConf
@@ -239,9 +245,7 @@ export function initForm({ onCreated }) {
           ? `Überschneidungen: ${conflicts.length}. Bitte Kalender prüfen.`
           : "Gespeichert.",
         type: hasConf ? "warn" : "ok",
-        linkHTML: gcal_event_id
-          ? `<div class="toast__msg"><a target="_blank" href="https://calendar.google.com/calendar/u/0/r/eventedit/${gcal_event_id}">Im Kalender öffnen</a></div>`
-          : "",
+        linkHTML,
       });
 
       localStorage.setItem("lastOrder", JSON.stringify(data));

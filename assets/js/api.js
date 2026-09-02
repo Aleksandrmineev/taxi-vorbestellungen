@@ -173,7 +173,7 @@ export const Api = {
       status = b;
       comment = c || "";
     }
-    return getJSON({
+    return postJSON({
       action: "updatestatus",
       id: String(id),
       status: String(status),
