@@ -42,6 +42,7 @@ input:focus, select:focus { border-color: var(--green); box-shadow: var(--input-
 .primary { border: 0; border-radius: 12px; background: var(--gold-grad); color: #161c24; min-height: 48px; padding: 11px 18px; font-weight: 850; box-shadow: var(--wa-btn-shadow); }
 .primary:hover { background: var(--gold-grad); transform: translateY(-1px); box-shadow: var(--wa-btn-shadow-hover); }
 .auth-card .primary { width: 100%; margin-top: 18px; }
+.auth-help { max-width: 440px; margin: 14px auto 0; color: var(--muted); font-size: 0.85rem; line-height: 1.45; }
 .form-error { color: var(--red); font-size: 0.8rem; min-height: 1em; margin: 10px 0 0; text-align: center; }
 .topbar { display: flex; align-items: center; justify-content: space-between; position: relative; margin: 4px 2px 17px; }
 .icon-button { width: 42px; height: 42px; border: 1px solid var(--line); border-radius: 50%; background: var(--card); font-weight: 800; letter-spacing: 2px; }

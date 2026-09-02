@@ -21,7 +21,11 @@ let currentDriver = localStorage.getItem(CURRENT_DRIVER_KEY) || sessionStorage.g
 if (currentDriver) localStorage.setItem(CURRENT_DRIVER_KEY, currentDriver);
 let pendingReport = null;
 
-const GAS_PROXY = "/api/gas";
+const GAS_PROXY =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+    ? "https://taxi-vorbestellungen.vercel.app/api/gas"
+    : "/api/gas";
 const API_SECRET = "102030";
 
 async function api(path, options = {}) {

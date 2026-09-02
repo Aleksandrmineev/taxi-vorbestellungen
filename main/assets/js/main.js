@@ -123,13 +123,6 @@ async function sendToSheet(entry) {
     elFare.select?.();
   });
 
-  window.addEventListener("DOMContentLoaded", () => {
-    if (document.activeElement !== elFare) {
-      elFare.focus();
-      elFare.select?.();
-    }
-  });
-
   // Enter в сумме → в «Чаевые»
   elFare.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
