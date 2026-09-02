@@ -412,7 +412,7 @@ function zadarmaSignature_(method, params, secret) {
   const query = Object.keys(params).sort().map((key) => formEncode_(key) + "=" + formEncode_(params[key])).join("&");
   const md5 = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, query)
     .map((b) => (b < 0 ? b + 256 : b).toString(16).padStart(2, "0")).join("");
-  const hmac = Utilities.computeHmacSha1Signature(method + query + md5, secret)
+  const hmac = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_1, method + query + md5, secret)
     .map((b) => (b < 0 ? b + 256 : b).toString(16).padStart(2, "0")).join("");
   return { query: query, signature: Utilities.base64Encode(hmac) };
 }
@@ -463,6 +463,22 @@ function sendZadarmaSms_(number, message) {
   return data;
 }
 
+function orderSmsText_(item, reminder) {
+  const dateParts = String(item.date || "").split("-");
+  const date = dateParts.length === 3 ? dateParts[2] + "." + dateParts[1] + "." + dateParts[0] : String(item.date || "");
+  const phone = String(item.phone || item.phone_norm || "").trim();
+  const note = String(item.message || "").trim().replace(/\s+/g, " ").slice(0, 220);
+  const lines = [
+    reminder ? "Erinnerung" : "Vorbestellung gespeichert",
+    "#" + String(item.id || "—"),
+    date + " " + String(item.time || ""),
+    String(item.type || "Orts"),
+    phone ? "Tel: " + phone : "",
+    note ? "Adresse: " + note : "",
+  ].filter(Boolean);
+  return lines.join("\n");
+}
+
 function setOrderNotification_(orderId, field, value) {
   const sh = orderSheet_();
   const head = ensureHeaders_(sh, ORDER_HEADERS_);
@@ -478,7 +494,7 @@ function setOrderNotification_(orderId, field, value) {
 function sendOrderConfirmation_(item) {
   if (!item || item.confirmation_sent_at) return;
   try {
-    const result = sendZadarmaSms_(orderNotificationConfig_().notifyPhone, "Vorbestellung gespeichert.");
+    const result = sendZadarmaSms_(orderNotificationConfig_().notifyPhone, orderSmsText_(item, false));
     if (result && result.skipped) return;
     setOrderNotification_(item.id, "confirmation_sent_at", new Date());
   } catch (err) {
@@ -489,7 +505,7 @@ function sendOrderConfirmation_(item) {
 function sendOrderReminder_(item) {
   if (!item || item.reminder_sent_at) return;
   try {
-    const result = sendZadarmaSms_(orderNotificationConfig_().notifyPhone, "Erinnerung: Ihre Fahrt beginnt in 15 Minuten.");
+    const result = sendZadarmaSms_(orderNotificationConfig_().notifyPhone, orderSmsText_(item, true));
     if (result && result.skipped) return;
     setOrderNotification_(item.id, "reminder_sent_at", new Date());
   } catch (err) {
