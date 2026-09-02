@@ -65,6 +65,16 @@
   font-size: 16px;
   justify-content: center;
 }
+.actions.full .action-label {
+  white-space: nowrap;
+  font-size: 13px;
+}
+.actions.full .icon-btn--muted {
+  width: auto;
+  min-width: 44px;
+  padding-inline: 12px;
+  gap: 8px;
+}
 .actions.full .icon-btn--primary.enlarged {
   max-width: 540px;
 }
@@ -336,4 +346,3 @@ html[data-theme="dark"] .icon-btn--muted:hover {
   height: 24px;
   margin-right: 4px;
 }
-

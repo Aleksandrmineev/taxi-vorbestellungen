@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de" dir="ltr">
+<html lang="de-AT" dir="ltr">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Alle Vorbestellungen – MurtalTaxi</title>
+    <title>Vorbestellungen – MurtalTaxi</title>
 
     <!-- Meta -->
     <meta
@@ -147,7 +147,7 @@
       </a>
     </header>
 
-    <h1>Alle Vorbestellungen</h1>
+    <h1>Vorbestellungen</h1>
 
     <!-- ===== MOBILE TABS ===== -->
     <nav class="mobile-tabs" role="tablist" aria-label="Ansichten wählen">
@@ -183,7 +183,7 @@
           <circle cx="17.5" cy="16.5" r="3" fill="none" />
           <path d="M20 19l2.5 2.5" fill="none" />
         </svg>
-        <span class="mobile-tab__label">List/Suche</span>
+        <span class="mobile-tab__label">Bestellungen</span>
       </button>
     </nav>
 
@@ -196,7 +196,7 @@
 
           <div class="full">
             <label class="label">Datum</label>
-            <input type="date" name="date" required />
+            <input type="date" name="date" lang="de-AT" aria-label="Datum (TT.MM.JJJJ)" required />
           </div>
 
           <div class="full">
@@ -207,7 +207,7 @@
               id="time"
               list="time5"
               inputmode="numeric"
-              placeholder="hh:mm"
+              placeholder="HH:MM"
               required
             />
             <datalist id="time5"></datalist>
@@ -282,7 +282,7 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              <span class="sr-only">Speichern</span>
+              <span class="action-label">Speichern</span>
             </button>
 
             <button
@@ -310,7 +310,7 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              <span class="sr-only">Wie beim letzten Mal</span>
+              <span class="action-label">Letzte übernehmen</span>
             </button>
           </div>
         </form>
@@ -414,7 +414,7 @@
                 stroke-width="1.6"
               />
             </svg>
-            <span class="subtab__label">Suche nach Datum</span>
+            <span class="subtab__label">Datum</span>
           </button>
         </nav>
 
@@ -454,10 +454,10 @@
           aria-labelledby="tab-date"
           hidden
         >
-          <h2 class="section-title">Suche nach Datum</h2>
+          <h2 class="section-title">Nach Datum</h2>
           <div class="toolbar">
             <label class="label">Bestelldatum</label>
-            <input type="date" id="listDate" />
+            <input type="date" id="listDate" lang="de-AT" aria-label="Datum (TT.MM.JJJJ)" />
             <label class="checkbox">
               <input type="checkbox" id="showAll" class="cb" /> alle
               Bestellungen
