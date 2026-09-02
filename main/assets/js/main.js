@@ -116,6 +116,13 @@ async function sendToSheet(entry) {
   elFare.addEventListener("focus", selectAll);
   elTip.addEventListener("focus", selectAll);
 
+  // На мобильных устройствах повторный focus внутри пользовательского
+  // касания помогает открыть клавиатуру, если autofocus только поставил курсор.
+  elFare.addEventListener("pointerdown", () => {
+    elFare.focus({ preventScroll: true });
+    elFare.select?.();
+  });
+
   window.addEventListener("DOMContentLoaded", () => {
     if (document.activeElement !== elFare) {
       elFare.focus();
