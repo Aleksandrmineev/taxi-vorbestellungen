@@ -118,7 +118,7 @@
     App.dom.nowEl.textContent = App.fmt.dateTime.format(new Date());
   };
 
-  // Рендер списка точек (старт — все включены; дальше — восстановление последнего выбора)
+  // Рендер списка точек. Начальное состояние берётся из последнего отчёта.
   App.render = function () {
     const { list, drvSel } = App.dom || {};
     const { points, route } = App.state || {};
@@ -126,32 +126,15 @@
 
     const showAll = !!App.dom.showAllPoints?.checked;
 
-    const PFX = "mt:points";
-    const lastDriverLS = localStorage.getItem("mt:lastDriver") || "";
-    const driver = (drvSel && drvSel.value) || lastDriverLS || "d_any";
-    const key = (d) => `${PFX}:r${route || "1"}:d${d}`;
-
-    const readSaved = () => {
-      const tryKeys = [key(driver)];
-      if (lastDriverLS && lastDriverLS !== driver)
-        tryKeys.push(key(lastDriverLS));
-      tryKeys.push(key("d_any"));
-      for (const k of tryKeys) {
-        try {
-          const arr = JSON.parse(localStorage.getItem(k) || "null");
-          if (Array.isArray(arr)) return new Set(arr.map(String));
-        } catch {}
-      }
-      return null;
-    };
-
-    const savedSet = readSaved();
+    const savedSet = App.state.pointSelection instanceof Set
+      ? App.state.pointSelection
+      : App.state.lastReportSelection instanceof Set
+        ? App.state.lastReportSelection
+        : null;
     const shortCodes = new Set();
     const isRequired = (p, index, allPoints) =>
       p?.required === true || index === 0 || index >= allPoints.length - 2;
-    const isChecked = (p, index, allPoints) =>
-      isRequired(p, index, allPoints) ||
-      (savedSet ? savedSet.has(String(p.id)) : true);
+    const isChecked = (p) => savedSet ? savedSet.has(String(p.id)) : true;
 
     list.innerHTML = (points || [])
       .map(
@@ -220,14 +203,7 @@
         .filter((b) => b.checked)
         .map(idOf)
         .filter(Boolean);
-      (points || []).filter((p, index, allPoints) => isRequired(p, index, allPoints)).forEach((p) => {
-        if (!ids.includes(String(p.id))) ids.push(String(p.id));
-      });
-      const json = JSON.stringify(ids);
-      const k1 = key(driver);
-      const k2 = key("d_any");
-      localStorage.setItem(k1, json);
-      if (k2 !== k1) localStorage.setItem(k2, json);
+      App.state.pointSelection = new Set(ids.map(String));
     };
 
     // 👉 Экспортируем, чтобы вызывать перед сменой маршрута
@@ -314,9 +290,6 @@
         window.addEventListener("pointerup", endDrag, { once: true });
       });
     });
-
-    // если сохранения ещё не было — зафиксируем стартовое «все включены»
-    if (!savedSet) App.savePointsSelection();
 
     App.updateTotal?.();
   };

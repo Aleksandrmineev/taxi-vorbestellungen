@@ -19,7 +19,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // Глобальные форматтеры/состояние/DOM
   App.nf =
     App.nf || new Intl.NumberFormat("de-AT", { maximumFractionDigits: 1 });
-  App.state = { dist: {}, points: [], drivers: [], cars: [], route: "1" };
+  App.state = {
+    dist: {},
+    points: [],
+    drivers: [],
+    cars: [],
+    route: "1",
+    lastReportSelection: null,
+    pointSelection: null,
+  };
 
   App.dom = {
     list: document.getElementById("list"),
@@ -148,6 +156,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       if (warm) {
+        App.state.lastReportSelection = null;
+        App.state.pointSelection = null;
         applyRouteData(warm);
       }
 
@@ -155,7 +165,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (myToken !== _loadToken) return; // устаревший ответ
 
+      App.state.lastReportSelection = null;
+      App.state.pointSelection = null;
       applyRouteData(res);
+      try {
+        const recent = await window.loadRecent(route, 1);
+        const latest = Array.isArray(recent) ? recent[0] : null;
+        const sequence = Array.isArray(latest?.sequence)
+          ? latest.sequence
+          : String(latest?.sequence || "").split(">").filter(Boolean);
+        App.state.lastReportSelection = sequence.length ? new Set(sequence.map(String)) : null;
+        if (myToken === _loadToken) App.render?.();
+      } catch (recentError) {
+        console.warn("last report selection unavailable", recentError);
+      }
     } catch (err) {
       console.error("load() error:", err);
       const box = App.dom.confirmBox;
