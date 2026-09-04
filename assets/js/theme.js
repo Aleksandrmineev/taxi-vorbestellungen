@@ -19,7 +19,10 @@ initThemeController();
     tabList.setAttribute("aria-selected", String(!isForm));
   }
 
-  tabForm.addEventListener("click", () => activate("form"));
+  tabForm.addEventListener("click", () => {
+    activate("form");
+    window.dispatchEvent(new CustomEvent("open-order-form"));
+  });
   tabList.addEventListener("click", () => activate("list"));
 
   // если пришли с якорем типа #list — открыть нужную вкладку
@@ -27,7 +30,7 @@ initThemeController();
   if (h.includes("list") || h.includes("suche") || h.includes("fahrten")) {
     activate("list");
   } else {
-    activate("form"); // по умолчанию — форма
+    activate("list"); // по умолчанию — ближайшие поездки
   }
 
   // при ресайзе > 900px ничего не ломаем: обе колонки снова видны через твою desktop-сетку

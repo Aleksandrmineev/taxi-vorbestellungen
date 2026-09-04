@@ -53,7 +53,7 @@
     <!-- CSS -->
     <link rel="stylesheet" href="assets/css/global.css?v=20260114" />
     <link rel="stylesheet" href="assets/css/header.css?v=20260114" />
-    <link rel="stylesheet" href="assets/css/main.css?v=20260114" />
+    <link rel="stylesheet" href="assets/css/main.css?v=20260903-3" />
     <link rel="stylesheet" href="assets/css/footer.css?v=20260902-1" />
     <link rel="stylesheet" href="assets/css/responsive.css?v=20260114" />
     <link rel="stylesheet" href="assets/css/components.css?v=20260114" />
@@ -61,7 +61,7 @@
     <link rel="stylesheet" href="assets/css/toast.css?v=20260114" />
   </head>
 
-  <body>
+  <body class="vorbestellungen-page">
     <!-- ===== HEADER ===== -->
     <header class="site-header card" role="banner">
       <a
@@ -211,6 +211,21 @@
               required
             />
             <datalist id="time5"></datalist>
+          </div>
+
+          <div class="full">
+            <label class="label" for="repeat">Wiederholung</label>
+            <select name="rrule" id="repeat">
+              <option value="">Keine Wiederholung</option>
+              <option value="DAILY">Jeden Tag</option>
+              <option value="WEEKLY">Jede Woche</option>
+              <option value="BIWEEKLY">Alle 2 Wochen</option>
+            </select>
+          </div>
+
+          <div class="full" id="repeatUntilWrap" hidden>
+            <label class="label" for="repeatUntil">Wiederholen bis</label>
+            <input type="date" name="until" id="repeatUntil" lang="de-AT" />
           </div>
 
           <!-- Телефон -->
@@ -420,12 +435,17 @@
 
         <!-- TAB 1: Suche -->
         <section id="panel-search" role="tabpanel" aria-labelledby="tab-search">
-          <h2 class="section-title">Suche</h2>
+          <div class="next-heading">
+            <h2 class="section-title">Suche</h2>
+            <button id="orderSearchBack" class="icon-btn icon-btn--muted" type="button" aria-label="Zurück zu den nächsten Fahrten" title="Zurück">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
           <div class="toolbar">
             <input
               type="search"
               id="q"
-              placeholder="Suche: Telefon, Notiz, Fahrtart…"
+              placeholder="Suche: Datum, Name, Adresse oder Telefon…"
             />
           </div>
           <div id="searchList" class="list"></div>
@@ -438,11 +458,14 @@
           aria-labelledby="tab-next"
           hidden
         >
-          <h2 class="section-title">Nächste Fahrten</h2>
-          <div class="kpi">
-            <button class="muted pill todo" data-h="12">12h</button>
-            <button class="muted pill todo" data-h="24">24h</button>
-            <button class="muted pill todo" data-h="168">1W</button>
+          <div class="next-heading">
+            <h2 class="section-title">Nächste Fahrten</h2>
+            <button id="orderSearchToggle" class="icon-btn icon-btn--muted" type="button" aria-label="Bestellungen suchen" title="Suchen">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div class="next-toolbar">
+            <span class="meta">Die nächsten Fahrten zuerst</span>
           </div>
           <div id="todoList" class="list"></div>
         </section>
@@ -500,6 +523,16 @@
       aria-live="polite"
       aria-atomic="true"
     ></div>
+
+    <button
+      id="newOrderFab"
+      class="new-order-fab"
+      type="button"
+      aria-label="Neue Vorbestellung anlegen"
+      title="Neue Vorbestellung"
+    >
+      <span aria-hidden="true">+</span>
+    </button>
 
     <footer class="site-footer">
       <div class="footer-row">
@@ -588,6 +621,6 @@
 
     <!-- JS -->
     <script type="module" src="./assets/js/theme.js"></script>
-    <script type="module" src="./assets/js/main.js?v=20260114"></script>
+    <script type="module" src="./assets/js/main.js?v=20260903-3"></script>
   </body>
 </html>

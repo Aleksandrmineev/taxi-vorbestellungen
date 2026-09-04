@@ -198,6 +198,11 @@ function doPost(e) {
       return json({ ok: true, data: saved });
     }
 
+    if (action === "updateorder") {
+      const saved = updateOrder_(body.id, body.data || body);
+      return json({ ok: true, data: saved });
+    }
+
     if (action === "feedback") {
       const saved = saveFeedback_(body);
       return json({ ok: true, data: saved });
@@ -209,7 +214,7 @@ function doPost(e) {
     }
 
     if (action === "updatestatus") {
-      const saved = updateOrderStatus_(body.id, body.status, body.comment || "");
+      const saved = updateOrderStatus_(body.id, body.status, body.comment || "", body.allSeries === true || body.allSeries === "1");
       return json({ ok: true, ...saved });
     }
 
@@ -297,6 +302,7 @@ const ORDER_HEADERS_ = [
   "message",
   "rrule",
   "until",
+  "series_id",
   "gcal_event_id",
   "status",
   "status_comment",
@@ -516,19 +522,13 @@ function sendZadarmaSms_(number, message, skipBalanceCheck) {
 }
 
 function orderSmsText_(item, reminder) {
-  const dateParts = String(item.date || "").split("-");
-  const date = dateParts.length === 3 ? dateParts[2] + "." + dateParts[1] + "." + dateParts[0] : String(item.date || "");
   const phone = String(item.phone || item.phone_norm || "").trim();
-  const note = String(item.message || "").trim().replace(/\s+/g, " ").slice(0, 220);
-  const lines = [
-    reminder ? "Erinnerung" : "Vorbestellung gespeichert",
-    "#" + String(item.id || "—"),
-    date + " " + String(item.time || ""),
-    String(item.type || "Orts"),
-    phone ? "Tel: " + phone : "",
-    note ? "Adresse: " + note : "",
-  ].filter(Boolean);
-  return lines.join("\n");
+  const name = String(item.message || "").trim().replace(/\s+/g, " ").slice(0, 220);
+  return [
+    String(item.time || "—"),
+    phone || "Keine Telefonnummer",
+    (name || "Keine Angabe") + " · #" + String(item.id || "—"),
+  ].join("\n");
 }
 
 function setOrderNotification_(orderId, field, value) {
@@ -568,17 +568,13 @@ function sendOrderReminder_(item) {
 function processOrderNotifications() {
   const now = new Date();
   const reminderFrom = new Date(now.getTime() + 10 * 60 * 1000);
-  const reminderTo = new Date(now.getTime() + 20 * 60 * 1000);
+  const reminderTo = new Date(now.getTime() + 15 * 60 * 1000);
   const orders = readOrders_();
   let pending = 0;
   orders.forEach((item) => {
     if (item.status === "cancelled" || item.status === "done") return;
     const start = new Date(item.date + "T" + item.time + ":00");
     if (isNaN(start.getTime())) return;
-    // Retry a temporary SMS outage only for recently created orders.
-    // This prevents enabling the trigger from sending confirmations for old orders.
-    const createdAt = item.created_at instanceof Date ? item.created_at : new Date(item.created_at);
-    if (!item.confirmation_sent_at && !isNaN(createdAt.getTime()) && now.getTime() - createdAt.getTime() <= 30 * 60 * 1000) pending++;
     if (!item.reminder_sent_at && start >= reminderFrom && start <= reminderTo) pending++;
   });
   safeNotificationLog_("order_notifications_scan", { total_orders: orders.length, pending_notifications: pending });
@@ -586,10 +582,6 @@ function processOrderNotifications() {
     if (item.status === "cancelled" || item.status === "done") return;
     const start = new Date(item.date + "T" + item.time + ":00");
     if (isNaN(start.getTime())) return;
-    const createdAt = item.created_at instanceof Date ? item.created_at : new Date(item.created_at);
-    if (!item.confirmation_sent_at && !isNaN(createdAt.getTime()) && now.getTime() - createdAt.getTime() <= 30 * 60 * 1000) {
-      sendOrderConfirmation_(item);
-    }
     if (start >= reminderFrom && start <= reminderTo) sendOrderReminder_(item);
   });
   safeNotificationLog_("order_notifications_complete", { total_orders: orders.length, pending_notifications: pending });
@@ -639,39 +631,80 @@ function createOrder_(raw) {
   const data = raw && typeof raw === "object" ? raw : {};
   const date = String(data.date || "").trim();
   const time = String(data.time || "").trim();
+  const rrule = String(data.rrule || "").trim().toUpperCase();
+  const until = String(data.until || "").trim();
   if (!date || !time) throw new Error("date_and_time_required");
 
-  const now = new Date();
-  const item = {
-    id: orderId_(),
-    created_at: now,
-    date: date,
-    time: time,
-    type: String(data.type || "Orts"),
-    duration_min: Number(data.duration_min || 15),
-    phone_raw: String(data.phone || data.phone_raw || "").trim(),
-    phone_norm: normalizePhone_(data.phone || data.phone_raw),
-    message: String(data.message || "").trim(),
-    rrule: String(data.rrule || "").trim(),
-    until: String(data.until || "").trim(),
-    gcal_event_id: "",
-    status: "open",
-    status_comment: "",
-    created_by_name: String(data.created_by_name || ""),
-    created_by_device: String(data.created_by_device || ""),
-    confirmation_sent_at: "",
-    reminder_sent_at: "",
-  };
+  const dates = recurrenceDates_(date, rrule, until);
+  const seriesId = dates.length > 1 ? "s_" + Date.now() + "_" + Math.floor(Math.random() * 1000) : "";
+  const sh = orderSheet_();
+  const head = ensureHeaders_(sh, ORDER_HEADERS_);
+  let first = null;
+
+  dates.forEach((occurrenceDate, index) => {
+    const item = {
+      id: orderId_(), created_at: new Date(), date: occurrenceDate, time: time,
+      type: String(data.type || "Orts"), duration_min: Number(data.duration_min || 15),
+      phone_raw: String(data.phone || data.phone_raw || "").trim(),
+      phone_norm: normalizePhone_(data.phone || data.phone_raw),
+      message: String(data.message || "").trim(), rrule: rrule, until: until,
+      series_id: seriesId, gcal_event_id: "", status: "open", status_comment: "",
+      created_by_name: String(data.created_by_name || ""),
+      created_by_device: String(data.created_by_device || ""),
+      confirmation_sent_at: "", reminder_sent_at: "",
+    };
+    sh.appendRow(head.map((key) => item[key] === undefined ? "" : item[key]));
+    const row = sh.getLastRow();
+    const timeCol = head.indexOf("time") + 1;
+    if (timeCol > 0) sh.getRange(row, timeCol).setNumberFormat("@").setValue(time);
+    if (!first) first = item;
+  });
+  return Object.assign({}, first, { recurrence_count: dates.length });
+}
+
+function recurrenceDates_(startDate, rule, until) {
+  if (!rule) return [startDate];
+  if (["DAILY", "WEEKLY", "BIWEEKLY"].indexOf(rule) < 0) throw new Error("invalid_recurrence");
+  if (!until) throw new Error("recurrence_until_required");
+  const start = new Date(startDate + "T00:00:00");
+  const end = new Date(until + "T00:00:00");
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) throw new Error("invalid_recurrence_until");
+  const step = rule === "DAILY" ? 1 : rule === "BIWEEKLY" ? 14 : 7;
+  const result = [];
+  for (let current = new Date(start); current <= end && result.length < 366; current.setDate(current.getDate() + step)) {
+    result.push(Utilities.formatDate(current, Session.getScriptTimeZone() || "Europe/Vienna", "yyyy-MM-dd"));
+  }
+  return result;
+}
+
+function updateOrder_(id, raw) {
+  const orderId = String(id || "").trim();
+  const data = raw && typeof raw === "object" ? raw : {};
+  const date = String(data.date || "").trim();
+  const time = String(data.time || "").trim();
+  if (!orderId || !date || !time) throw new Error("order_update_invalid");
 
   const sh = orderSheet_();
   const head = ensureHeaders_(sh, ORDER_HEADERS_);
-  sh.appendRow(head.map((key) => item[key] === undefined ? "" : item[key]));
-  // Google Sheets otherwise may auto-convert HH:mm into a date in 1899.
-  const row = sh.getLastRow();
+  const values = sh.getDataRange().getValues();
+  const idIndex = head.indexOf("id");
+  const rowIndex = values.slice(1).findIndex((row) => String(row[idIndex] || "") === orderId);
+  if (rowIndex < 0) throw new Error("order_not_found");
+  const row = rowIndex + 2;
+  const set = (key, value) => {
+    const col = head.indexOf(key) + 1;
+    if (col > 0) sh.getRange(row, col).setValue(value);
+  };
+
+  set("date", date);
   const timeCol = head.indexOf("time") + 1;
   if (timeCol > 0) sh.getRange(row, timeCol).setNumberFormat("@").setValue(time);
-  sendOrderConfirmation_(item);
-  return item;
+  set("type", String(data.type || "Orts"));
+  set("duration_min", Number(data.duration_min || 15));
+  set("phone_raw", String(data.phone || data.phone_raw || "").trim());
+  set("phone_norm", normalizePhone_(data.phone || data.phone_raw || ""));
+  set("message", String(data.message || "").trim());
+  return { id: orderId, date: date, time: time };
 }
 
 function readOrders_() {
@@ -694,6 +727,7 @@ function readOrders_() {
       message: String(get("message") || ""),
       rrule: String(get("rrule") || ""),
       until: String(get("until") || ""),
+      series_id: String(get("series_id") || ""),
       gcal_event_id: String(get("gcal_event_id") || ""),
       status: String(get("status") || "open"),
       status_comment: String(get("status_comment") || ""),
@@ -757,7 +791,7 @@ function searchOrders_(query, limit) {
     .reverse();
 }
 
-function updateOrderStatus_(id, status, comment) {
+function updateOrderStatus_(id, status, comment, allSeries) {
   const normalizedStatus = String(status || "").toLowerCase();
   if (["done", "cancelled", "open"].indexOf(normalizedStatus) === -1) throw new Error("invalid_status");
   const sh = orderSheet_();
@@ -765,13 +799,20 @@ function updateOrderStatus_(id, status, comment) {
   const idCol = head.indexOf("id") + 1;
   const statusCol = head.indexOf("status") + 1;
   const commentCol = head.indexOf("status_comment") + 1;
-  const values = sh.getRange(2, idCol, Math.max(sh.getLastRow() - 1, 1), 1).getValues();
-  const index = values.findIndex((row) => String(row[0] || "") === String(id || ""));
+  const values = sh.getDataRange().getValues();
+  const index = values.slice(1).findIndex((row) => String(row[idCol - 1] || "") === String(id || ""));
   if (index < 0) throw new Error("order_not_found");
   const row = index + 2;
-  sh.getRange(row, statusCol).setValue(normalizedStatus);
-  sh.getRange(row, commentCol).setValue(String(comment || ""));
-  return { id: String(id), status: normalizedStatus, comment: String(comment || "") };
+  const seriesCol = head.indexOf("series_id");
+  const seriesId = seriesCol >= 0 ? String(values[index + 1][seriesCol] || "") : "";
+  const rows = allSeries && seriesId
+    ? values.slice(1).map((item, i) => String(item[seriesCol] || "") === seriesId ? i + 2 : 0).filter(Boolean)
+    : [row];
+  rows.forEach((targetRow) => {
+    sh.getRange(targetRow, statusCol).setValue(normalizedStatus);
+    sh.getRange(targetRow, commentCol).setValue(String(comment || ""));
+  });
+  return { id: String(id), status: normalizedStatus, comment: String(comment || ""), updated_count: rows.length };
 }
 
 function addMessage_(body) {

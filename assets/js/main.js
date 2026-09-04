@@ -5,14 +5,64 @@ import { initSearch } from "/assets/js/ui/search.js";
 import { initMainTabs } from "/assets/js/ui/tabs.js";
 
 window.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("f");
+  const dialog = document.createElement("dialog");
+  dialog.id = "orderDialog";
+  dialog.className = "order-dialog";
+  dialog.innerHTML = `
+    <div class="order-dialog__head">
+      <h2>Neue Vorbestellung</h2>
+      <button type="button" class="dialog-close" aria-label="Schließen" title="Schließen">×</button>
+    </div>`;
+  document.body.append(dialog);
+  if (form) {
+    dialog.append(form);
+    form.classList.add("order-dialog__form");
+  }
+  const openForm = ({ reset = false } = {}) => {
+    if (reset && form) {
+      delete form.dataset.editingId;
+      if (form.elements.rrule) form.elements.rrule.value = "";
+      if (form.elements.until) form.elements.until.value = "";
+      form.elements.rrule?.dispatchEvent(new Event("change"));
+    }
+    if (!dialog.open) dialog.showModal();
+    form?.querySelector('[name="date"]')?.focus({ preventScroll: true });
+  };
+  const closeForm = () => dialog.close();
+  dialog.querySelector(".dialog-close")?.addEventListener("click", closeForm);
+  dialog.addEventListener("click", (e) => {
+    if (e.target === dialog) closeForm();
+  });
+  document.getElementById("newOrderFab")?.addEventListener("click", () => openForm({ reset: true }));
+  window.addEventListener("open-order-form", () => openForm({ reset: true }));
+
   // === 1) Форма
   let orders, todos;
-  const { fillForm } = initForm({
+  const formApi = initForm({
     onCreated: () => {
       orders?.load?.();
-      todos?.load?.(168);
+      todos?.load?.(720);
+      closeForm();
     },
   });
+  const fillForm = (data) => {
+    formApi.fillForm(data);
+    openForm();
+  };
+
+  const nextPanel = document.getElementById("panel-next");
+  const searchPanel = document.getElementById("panel-search");
+  const searchToggle = document.getElementById("orderSearchToggle");
+  const searchBack = document.getElementById("orderSearchBack");
+  const searchInput = document.getElementById("q");
+  const setSearchOpen = (open) => {
+    nextPanel?.toggleAttribute("hidden", open);
+    searchPanel?.toggleAttribute("hidden", !open);
+    if (open) searchInput?.focus();
+  };
+  searchToggle?.addEventListener("click", () => setSearchOpen(true));
+  searchBack?.addEventListener("click", () => setSearchOpen(false));
 
   // === 2) Секции (поиск, списки)
   const search = initSearch({ fillForm });
@@ -29,7 +79,7 @@ window.addEventListener("DOMContentLoaded", () => {
       if (v.trim().length >= 2) search?.search?.(v);
     },
     onNextShown: () => {
-      todos?.load?.(168);
+      todos?.load?.(720);
     },
     onDateShown: () => {
       orders?.load?.();

@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const formatDateDE = (d) =>
     d instanceof Date && !isNaN(d) ? d.toLocaleDateString("de-AT") : "—";
 
-  /* ===== дата по умолчанию: весь прошлый месяц ===== */
+  /* ===== дата по умолчанию: последние два дня, как в «Berichte» ===== */
   const initDefaultDates = () => {
     const qs = new URLSearchParams(location.search);
 
@@ -115,16 +115,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!fFrom.value) fFrom.value = qsFrom || "";
       if (!fTo.value) fTo.value = qsTo || "";
     } else {
-      // диапазон по умолчанию: ПРЕДЫДУЩИЙ месяц целиком
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth(); // 0–11, текущий месяц
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
 
-      const firstPrev = new Date(year, month - 1, 1); // 1-е прошлого месяца
-      const lastPrev = new Date(year, month, 0); // последний день прошлого месяца
-
-      if (!fFrom.value) fFrom.value = toISO(firstPrev);
-      if (!fTo.value) fTo.value = toISO(lastPrev);
+      if (!fFrom.value) fFrom.value = toISO(yesterday);
+      if (!fTo.value) fTo.value = toISO(today);
     }
 
     if (qs.get("route") != null) fRoute.value = qs.get("route") || "";

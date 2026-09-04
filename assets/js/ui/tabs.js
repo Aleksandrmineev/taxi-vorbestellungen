@@ -53,7 +53,7 @@ export function initMainTabs({
   onSearchShown,
   onNextShown,
   onDateShown,
-  storageKey = "mt_main_tab",
+  storageKey = "mt_main_tab_v2",
   defaultPanelId = "panel-next", // ← по умолчанию теперь panel-next
 } = {}) {
   const root = document.querySelector(".main-tabs");

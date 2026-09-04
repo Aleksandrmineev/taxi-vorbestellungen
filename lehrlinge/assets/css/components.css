@@ -110,7 +110,7 @@ input[type="date"]:focus {
   font-size: var(--fs-small);
   user-select: none;
   -webkit-user-select: none;
-  cursor: grab;
+  cursor: default;
   touch-action: none;
 }
 .name {
@@ -136,7 +136,7 @@ input[type="date"]:focus {
 }
 
 .point-time {
-  margin-left: auto;
+  margin-left: 4px;
   flex: 0 0 auto;
   color: inherit;
   font-size: inherit;
@@ -147,6 +147,7 @@ input[type="date"]:focus {
 .point-contact {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 5px;
   margin-top: 4px;
   color: var(--muted);

@@ -26,6 +26,9 @@
     return base.slice(0, 2) + (used.size + 1);
   }
 
+  // Временный переключатель: код перестановки остаётся, но интерфейс отключён.
+  const ENABLE_POINT_REORDER = false;
+
   // === Форматтеры и утилиты (кэш) ===========================================
   App.fmt = App.fmt || {};
   App.fmt.num =
@@ -158,7 +161,7 @@
     <input class="chk" type="checkbox" data-point-id="${esc(p.id)}"${
           isChecked(p, index, allPoints) ? " checked" : ""
         }${isRequired(p, index, allPoints) ? " disabled" : ""} aria-label="Einbeziehen">
-    <div class="badge" title="Zum Verschieben gedrückt halten">${esc(shortCode)}</div>
+    <div class="badge" title="Punktcode">${esc(shortCode)}</div>
     <div class="name">
       <div class="point-address">
         <span>${
@@ -229,8 +232,8 @@
       list._persistBound = true;
     }
 
-    // DnD как раньше...
-    list.querySelectorAll(".badge").forEach((badge) => {
+    // DnD как раньше... (пока выключен)
+    if (ENABLE_POINT_REORDER) list.querySelectorAll(".badge").forEach((badge) => {
       let dragging = null,
         startY = 0,
         ph = null,
@@ -464,6 +467,22 @@
     }
   };
 
+  App.formatSequenceShort = function (value) {
+    const ids = Array.isArray(value)
+      ? value.map(String)
+      : String(value || "").split(">").map((id) => id.trim()).filter(Boolean);
+    const points = App.state?.points || [];
+    const byId = new Map(points.map((point) => [String(point.id), point]));
+    const used = new Set();
+    return ids.map((id) => {
+      const point = byId.get(String(id));
+      if (!point) return String(id);
+      const code = String(point.short_code || "").trim() || makeShortCode(point.name, used);
+      used.add(code);
+      return code;
+    }).join(" / ");
+  };
+
   // Карточка «отправлено»
   App.renderConfirmation = function (p) {
     const box = App?.dom?.confirmBox;
@@ -476,6 +495,7 @@
     }
     const dtStr = App.fmtDateTime(parseDateSafe(p.timestamp));
     const carText = p.car_plate || p.car_id || "—";
+    const sequenceText = App.formatSequenceShort(p.sequence) || String(p.sequence_names || "");
 
     box.hidden = false;
     box.innerHTML = `
@@ -491,7 +511,7 @@
       <div><span>Zeit:</span> <b>${p.shift || "—"}</b></div>
       <div><span>km:</span> <b>${App.formatKm(p.total_km)}</b></div>
     </div>
-    <div class="seq">${p.sequence_names || p.sequence || ""}</div>
+    <div class="seq">${esc(sequenceText)}</div>
   </div>`;
   };
 
@@ -553,12 +573,13 @@
   App.showToast = function (p) {
     if (!p || typeof p !== "object") return;
     const dtStr = App.fmtDateTime(parseDateSafe(p.timestamp));
+    const sequenceText = App.formatSequenceShort(p.sequence) || String(p.sequence_names || "");
     const el = document.createElement("div");
     el.className = "toast";
     el.innerHTML = `
 <div><b>Gesendet</b> — ${dtStr}, Route ${p.route ?? "—"},
 ${p.driver_name || "—"}, ${p.shift || "—"}, ${App.formatKm(p.total_km)} km</div>
-<div class="seq">${p.sequence_names || p.sequence || ""}</div>`;
+<div class="seq">${esc(sequenceText)}</div>`;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 6000);
   };

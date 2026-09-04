@@ -1,184 +1,57 @@
 import { Api } from "../api.js";
-import {
-  pad2,
-  todayISO,
-  hhmmFromISO,
-  dateForRepeat,
-  formatDateFromISO,
-} from "../utils/time.js";
+import { pad2, dateForRepeat, hhmmFromISO, formatDateFromISO } from "../utils/time.js";
 import { telHref } from "../utils/phone.js";
 import { promptReason } from "./dialog.js";
 
 export function initTodoList({ fillForm }) {
   const todoList = document.getElementById("todoList");
+  const esc = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  const removeRow = (el) => { el.style.opacity = "0"; el.style.transform = "translateY(4px)"; setTimeout(() => el.remove(), 220); };
 
-  // плавное скрытие карточки и удаление из DOM
-  function fadeOutAndRemove(el) {
-    if (!el) return;
-    el.style.transition = "opacity .2s ease, transform .2s ease";
-    el.style.opacity = 0;
-    el.style.transform = "translateY(4px)";
-    setTimeout(() => el.remove(), 220);
-  }
-
-  async function load(hours = 24) {
+  async function load(hours = 720) {
     todoList.innerHTML = '<div class="item">Laden…</div>';
-
-    const res = await Api.todos(hours).catch((err) => ({
-      ok: false,
-      error: String(err),
-    }));
-
-    if (!res.ok) {
-      todoList.innerHTML = `<div class="item">Fehler: ${res.error}</div>`;
-      return;
-    }
-
-    // показываем только актуальные задачи (не done/cancelled)
-    const items =
-      (res.items || []).filter(
-        (it) => it.status !== "done" && it.status !== "cancelled"
-      ) || [];
-
-    todoList.innerHTML =
-      items
-        .map((it) => {
-          const st = new Date(it.start_iso);
-          const time = `${pad2(st.getHours())}:${pad2(st.getMinutes())}`;
-          const dateHuman = formatDateFromISO(it.start_iso);
-          const badge = `<span class="badge ${it.status}">${it.status}</span>`;
-          const { display, href } = telHref(it.phone);
-          const phoneHtml = display ? `<a href="${href}">${display}</a>` : "";
-          const disabled = it.order_id ? "" : " disabled";
-
-          return `
-          <div class="item"
-               data-order-id="${it.order_id || ""}"
-               data-type="${it.type || ""}"
-               data-dur="${it.duration_min || ""}"
-               data-phone="${display || ""}"
-               data-message="${(it.message || "").replace(/"/g, "&quot;")}"
-               data-start="${it.start_iso}">
-        
-            <div class="item__top">
-              <div class="item__dt">
-                <span class="item__date">${dateHuman}</span>
-                <span class="item__time">${time}</span>
-              </div>
-        
-              <div class="item__right">
-                ${phoneHtml}
-                ${badge}
-              </div>
-            </div>
-        
-            ${it.message ? `<div class="sub">${it.message}</div>` : ``}
-        
-            <div class="item__bottom">
-              <div class="btns">
-                <!-- Wiederholen -->
-                <button class="icon-btn todo-repeat" title="Wiederholen" aria-label="Wiederholen">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M20 12a8 8 0 1 1-2.35-5.65"
-                          fill="none" stroke="currentColor" stroke-width="1.8"
-                          stroke-linecap="round" stroke-linejoin="round"/>
-                    <polyline points="20 4 20 9 15 9"
-                              fill="none" stroke="currentColor" stroke-width="1.8"
-                              stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-        
-                <!-- Bestätigen -->
-                <button class="icon-btn icon-btn--primary todo-done"${disabled} title="Erledigt" aria-label="Erledigt">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M5 12.5l4 4 10-10"
-                          fill="none" stroke="currentColor" stroke-width="2"
-                          stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-        
-                <!-- Stornieren -->
-                <button class="icon-btn todo-cancel"${disabled} title="Stornieren" aria-label="Stornieren">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M18 6L6 18M6 6l12 12"
-                          stroke="currentColor" stroke-width="2"
-                          stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-              </div>
-        
-              <div class="item__meta">
-                <span class="item__id">#${it.order_id || "—"}</span>
-                <span class="item__type">${it.type || "Bestellung"}</span>
-              </div>
-            </div>
-        
-          </div>`;
-        })
-        .join("") || '<div class="item">Keine Aufgaben.</div>';
+    const res = await Api.todos(hours).catch((err) => ({ ok: false, error: String(err) }));
+    if (!res.ok) { todoList.innerHTML = `<div class="item">Fehler: ${esc(res.error)}</div>`; return; }
+    const items = (res.items || []).filter((it) => it.status !== "done" && it.status !== "cancelled").sort((a, b) => new Date(a.start_iso) - new Date(b.start_iso));
+    const visible = items;
+    let lastDate = "";
+    todoList.innerHTML = visible.map((it) => {
+      const date = formatDateFromISO(it.start_iso);
+      const heading = date !== lastDate ? `<h3 class="order-date-heading">${esc(date)}</h3>` : "";
+      lastDate = date;
+      const st = new Date(it.start_iso);
+      const time = `${pad2(st.getHours())}:${pad2(st.getMinutes())}`;
+      const { display, href } = telHref(it.phone);
+      const phone = display ? `<a href="${esc(href)}">${esc(display)}</a>` : "Ohne Telefonnummer";
+      return `${heading}<div class="order-row item" data-order-id="${esc(it.order_id || "")}" data-series-id="${esc(it.series_id || "")}" data-type="${esc(it.type || "Orts")}" data-dur="${esc(it.duration_min || "15")}" data-phone="${esc(display || "")}" data-message="${esc(it.message || "")}" data-start="${esc(it.start_iso)}"><div class="order-row__info"><div class="order-row__primary"><strong class="order-row__time">${esc(time)}</strong><span class="order-row__phone">${phone}</span></div><div class="order-row__secondary">${esc(it.message || "Keine Adresse / Notiz")} · ${esc(it.type || "Bestellung")} · ${esc(it.duration_min || 0)} Min.</div></div><div class="order-row__actions"><button class="order-action todo-repeat" type="button" title="Als neue Vorbestellung kopieren" aria-label="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><small>Kopieren</small></button><button class="order-action todo-cancel" type="button" title="Vorbestellung stornieren" aria-label="Stornieren"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><small>Stornieren</small></button></div></div>`;
+    }).join("") || '<div class="item">Keine aktiven Vorbestellungen.</div>';
   }
-
-  // кнопки фильтра (12h, 24h, 1W)
-  document.querySelectorAll(".todo").forEach((b) => {
-    b.addEventListener("click", () => load(Number(b.dataset.h)));
-  });
-
-  // обработка кликов на действия
-  todoList.addEventListener("click", async (e) => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-
-    const item = btn.closest(".item");
+  todoList.addEventListener("click", async (event) => {
+    const btn = event.target.closest("button");
+    const item = btn?.closest(".order-row");
+    const row = event.target.closest(".order-row");
+    if (!row) return;
+    if (!btn) {
+      const start = row.dataset.start || "";
+      fillForm({ id: row.dataset.orderId, date: start.slice(0, 10), time: hhmmFromISO(start), type: row.dataset.type, duration_min: row.dataset.dur, phone: row.dataset.phone, message: row.dataset.message });
+      return;
+    }
     if (!item) return;
-
-    const orderId = item.dataset.orderId;
-
-    // Повторить (заполнить форму)
-    if (btn.classList.contains("todo-repeat")) {
-      fillForm({
-        date: dateForRepeat(item.dataset.start),
-        time: hhmmFromISO(item.dataset.start),
-        type: item.dataset.type || "Orts",
-        duration_min: item.dataset.dur || "15",
-        phone: item.dataset.phone || "",
-        message: item.dataset.message || "",
-      });
-      return;
-    }
-
-    if (!orderId) return;
-
-    // Завершить
-    if (btn.classList.contains("todo-done")) {
-      await Api.updateStatus(orderId, "done");
-      item.querySelector(".badge").className = "badge done";
-      item.querySelector(".badge").textContent = "done";
-      fadeOutAndRemove(item);
-      return;
-    }
-
-    // Отменить
-    if (btn.classList.contains("todo-cancel")) {
-      const comment =
-        (await promptReason({
-          title: "Bestellung stornieren",
-          message: "Grund (optional):",
-          placeholder: "z. B. Kunde hat abgesagt …",
-          okText: "Stornieren",
-        })) || "";
-
-      await Api.updateStatus(orderId, "cancelled", comment);
-      item.querySelector(".badge").className = "badge cancelled";
-      item.querySelector(".badge").textContent = "cancelled";
-      fadeOutAndRemove(item);
-      return;
-    }
+    if (btn.classList.contains("todo-repeat")) { fillForm({ date: dateForRepeat(item.dataset.start), time: hhmmFromISO(item.dataset.start), type: item.dataset.type, duration_min: item.dataset.dur, phone: item.dataset.phone, message: item.dataset.message }); return; }
+    if (!btn.classList.contains("todo-cancel") || !item.dataset.orderId) return;
+    const seriesId = item.dataset.seriesId || "";
+    const reason = await promptReason({
+      title: "Bestellung stornieren",
+      message: seriesId ? "Was soll storniert werden?" : "Grund (optional):",
+      placeholder: "z. B. Kunde hat abgesagt …",
+      okText: "Stornieren",
+      reasons: seriesId ? ["Nur diesen Auftrag stornieren", "Alle Aufträge dieser Serie stornieren"] : undefined,
+    });
+    if (reason === null) return;
+    const allSeries = reason === "Alle Aufträge dieser Serie stornieren";
+    const result = await Api.updateStatus(item.dataset.orderId, "cancelled", seriesId ? "Serie storniert" : reason, allSeries).catch((err) => ({ ok: false, error: String(err) }));
+    if (result.ok) removeRow(item);
   });
-
-  // авто-обновление при возврате на вкладку
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) load(24);
-  });
-
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
   return { load };
 }

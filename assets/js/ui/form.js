@@ -151,8 +151,19 @@ export function initForm({ onCreated }) {
   if (!f) return { fillForm: () => {} };
 
   const timeInput = f.querySelector("#time");
+  const repeatInput = f.querySelector("#repeat");
+  const repeatUntilWrap = f.querySelector("#repeatUntilWrap");
+  const repeatUntilInput = f.querySelector("#repeatUntil");
   const datalist = document.getElementById("time5");
   const submitBtn = f.querySelector(".icon-btn--primary");
+
+  const syncRepeatFields = () => {
+    const active = Boolean(repeatInput?.value);
+    if (repeatUntilWrap) repeatUntilWrap.hidden = !active;
+    if (repeatUntilInput) repeatUntilInput.required = active;
+  };
+  repeatInput?.addEventListener("change", syncRepeatFields);
+  syncRepeatFields();
 
   // 1) Дефолты
   f.elements.type.addEventListener("change", () => {
@@ -206,7 +217,11 @@ export function initForm({ onCreated }) {
       const data = Object.fromEntries(fd.entries());
       data.phone = (data.phone || "").trim();
 
-      const res = await Api.createOrder(data).catch((err) => ({
+      const editingId = f.dataset.editingId || "";
+      const res = await (editingId
+        ? Api.updateOrder(editingId, data)
+        : Api.createOrder(data)
+      ).catch((err) => ({
         ok: false,
         error: String(err),
       }));
@@ -220,9 +235,10 @@ export function initForm({ onCreated }) {
       }
 
       const payload = res.data || res;
-      const { id, conflicts, gcal_event_id } = payload || {};
-      const feedbackUrl = id
-        ? `${window.location.origin}/feedback.html?order=${encodeURIComponent(id)}`
+      const { id, conflicts, gcal_event_id, recurrence_count } = payload || {};
+      const resultId = id || editingId;
+      const feedbackUrl = resultId
+        ? `${window.location.origin}/feedback.html?order=${encodeURIComponent(resultId)}`
         : "";
 
       let linkHTML = "";
@@ -237,18 +253,24 @@ export function initForm({ onCreated }) {
       const hasConf = conflicts && conflicts.length;
       const msg = hasConf
         ? `Überschneidungen: ${conflicts.length}. Bitte Kalender prüfen.`
+        : recurrence_count > 1
+        ? `${recurrence_count} Vorbestellungen gespeichert.`
         : "Gespeichert.";
 
       showToast({
-        title: `Bestellung Nr.${id}`,
+        title: editingId ? "Bestellung aktualisiert" : `Bestellung Nr.${id}`,
         message: hasConf
           ? `Überschneidungen: ${conflicts.length}. Bitte Kalender prüfen.`
+          : recurrence_count > 1
+          ? `${recurrence_count} Vorbestellungen gespeichert.`
           : "Gespeichert.",
         type: hasConf ? "warn" : "ok",
         linkHTML,
       });
 
       localStorage.setItem("lastOrder", JSON.stringify(data));
+      delete f.dataset.editingId;
+      submitBtn.title = "Speichern";
       onCreated?.();
     } finally {
       makeSubmitLoading(submitBtn, false);
@@ -268,14 +290,20 @@ export function initForm({ onCreated }) {
   });
 
   // Публичная функция
-  function fillForm({ date, time, type, duration_min, phone, message }) {
+  function fillForm({ id, date, time, type, duration_min, phone, message, rrule, until }) {
+    if (id) f.dataset.editingId = String(id);
+    else delete f.dataset.editingId;
     if (date) f.elements.date.value = date;
     if (time) timeInput.value = normalizeTimeLoose(time);
     if (type) f.elements.type.value = type;
     if (duration_min) f.elements.duration_min.value = duration_min;
     if (phone !== undefined) f.elements.phone.value = phone || "";
     if (message !== undefined) f.elements.message.value = message || "";
+    if (rrule !== undefined && repeatInput) repeatInput.value = rrule || "";
+    if (until !== undefined && repeatUntilInput) repeatUntilInput.value = until || "";
+    syncRepeatFields();
     f.elements.type.dispatchEvent(new Event("change"));
+    submitBtn.title = id ? "Änderungen speichern" : "Speichern";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   return { fillForm };

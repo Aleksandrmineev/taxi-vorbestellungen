@@ -155,6 +155,19 @@ export const Api = {
     return postJSON({ action: "create", data: payload });
   },
 
+  /** Изменить существующий заказ */
+  async updateOrder(id, data) {
+    const { deviceId, displayName } = identity();
+    return postJSON({
+      action: "updateorder",
+      id: String(id),
+      data: Object.assign({}, data, {
+        created_by_name: displayName,
+        created_by_device: deviceId,
+      }),
+    });
+  },
+
   /** Список ближайших задач/заказов */
   async todos(hours = 24) {
     return getJSON({
@@ -164,20 +177,22 @@ export const Api = {
   },
 
   /** Обновить статус заказа */
-  async updateStatus(a, b, c) {
-    let id, status, comment;
+  async updateStatus(a, b, c, d) {
+    let id, status, comment, allSeries;
     if (typeof a === "object" && a) {
-      ({ id, status, comment = "" } = a);
+      ({ id, status, comment = "", allSeries = false } = a);
     } else {
       id = a;
       status = b;
       comment = c || "";
+      allSeries = d || false;
     }
     return postJSON({
       action: "updatestatus",
       id: String(id),
       status: String(status),
       comment: String(comment),
+      allSeries: allSeries ? "1" : "0",
     });
   },
 

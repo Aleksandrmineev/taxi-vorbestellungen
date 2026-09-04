@@ -224,10 +224,10 @@ body {
 .row .badge {
   touch-action: none; /* запрет жестов прокрутки/зума на бейдже */
   user-select: none; /* запрет выделения текста */
-  cursor: grab;
+  cursor: default;
 }
 .row.drag .badge {
-  cursor: grabbing;
+  cursor: default;
 }
 
 .back-btn {
