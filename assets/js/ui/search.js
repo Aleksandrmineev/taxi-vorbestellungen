@@ -71,52 +71,30 @@ export function initSearch({ fillForm }) {
           const { display, href } = telHref(it.phone);
           const phoneHtml = display ? `<a href="${href}">${display}</a>` : "";
 
-          const status = it.status || "active";
-          const badge = `<span class="badge ${status}">${status}</span>`;
-
           return `
-            <div class="item"
+            <div class="order-row item search-order-row"
                  data-order-id="${it.id || it.order_id || ""}"
                  data-type="${it.type || ""}"
                  data-dur="${it.duration_min || ""}"
                  data-phone="${display || ""}"
                  data-message="${(it.message || "").replace(/"/g, "&quot;")}"
                  data-start="${start}">
-              
-              <div class="item__top">
-                <div class="item__dt">
-                  <span class="item__date">${dateHuman}</span>
-                  <span class="item__time">${time}</span>
+              <div class="order-row__info">
+                <div class="order-row__primary">
+                  <strong class="order-row__time">${time || "—"}</strong>
+                  <span class="order-row__phone">${phoneHtml || "Ohne Telefonnummer"}</span>
+                  <span class="order-row__date">${dateHuman}</span>
                 </div>
-
-                <div class="item__right">
-                  ${phoneHtml}
-                  ${badge}
+                <div class="order-row__secondary">
+                  ${(it.message || "Keine Adresse / Notiz")} · ${it.type || "Bestellung"} · #${it.id || it.order_id || "—"}
                 </div>
               </div>
-
-              ${it.message ? `<div class="sub">${it.message}</div>` : ``}
-
-              <div class="item__bottom">
-                <div class="btns">
-                  <button class="icon-btn search-repeat" title="Wiederholen" aria-label="Wiederholen">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M20 12a8 8 0 1 1-2.35-5.65"
-                            fill="none" stroke="currentColor" stroke-width="1.8"
-                            stroke-linecap="round" stroke-linejoin="round"/>
-                      <polyline points="20 4 20 9 15 9"
-                                fill="none" stroke="currentColor" stroke-width="1.8"
-                                stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </button>
-                </div>
-
-                <div class="item__meta">
-                  <span class="item__id">#${it.id || it.order_id || "—"}</span>
-                  <span class="item__type">${it.type || "Bestellung"}</span>
-                </div>
+              <div class="order-row__actions">
+                <button class="order-action search-repeat" type="button" title="Als neue Vorbestellung kopieren" aria-label="Kopieren">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+                  <small>Kopieren</small>
+                </button>
               </div>
-
             </div>`;
         })
         .join("") || '<div class="item">Nichts gefunden.</div>';

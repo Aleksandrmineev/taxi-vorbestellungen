@@ -42,7 +42,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const formApi = initForm({
     onCreated: () => {
       orders?.load?.();
-      todos?.load?.(720);
+      todos?.load?.(24 * 366);
       closeForm();
     },
   });
@@ -79,7 +79,7 @@ window.addEventListener("DOMContentLoaded", () => {
       if (v.trim().length >= 2) search?.search?.(v);
     },
     onNextShown: () => {
-      todos?.load?.(720);
+      todos?.load?.(24 * 366);
     },
     onDateShown: () => {
       orders?.load?.();

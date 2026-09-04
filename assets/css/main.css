@@ -359,6 +359,13 @@ form {
   white-space: nowrap;
   font-size: 14px;
 }
+.order-row__date {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
 .order-row__secondary {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -444,6 +451,7 @@ form {
   .order-row__primary { gap: 7px; }
   .order-row__time { flex-basis: 40px; font-size: 16px; }
   .order-row__phone { font-size: 13px; }
+  .search-order-row .order-row__date { font-size: 10px; }
   .order-action { width: 48px; }
   .order-action small { font-size: 8px; }
 }

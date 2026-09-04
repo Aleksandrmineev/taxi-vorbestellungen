@@ -783,10 +783,22 @@ function getTodoOrders_(hours) {
 }
 
 function searchOrders_(query, limit) {
-  const q = String(query || "").toLowerCase().trim();
+  const normalizeSearch_ = (value) => String(value || "")
+    .toLocaleLowerCase("de-DE")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const q = normalizeSearch_(query).trim();
+  const qCompact = q.replace(/[^a-z0-9]/g, "");
   if (!q) return [];
   return readOrders_()
-    .filter((item) => [item.phone, item.message, item.type, item.date, item.time].join(" ").toLowerCase().indexOf(q) !== -1)
+    .filter((item) => {
+      const text = normalizeSearch_([
+        item.id, item.phone, item.phone_norm, item.message, item.type,
+        item.date, item.time, item.created_by_name,
+      ].join(" "));
+      const phone = String(item.phone_norm || item.phone || "").replace(/\D/g, "");
+      return text.indexOf(q) !== -1 || (qCompact && phone.indexOf(qCompact) !== -1);
+    })
     .slice(-Math.max(1, limit || 50))
     .reverse();
 }
