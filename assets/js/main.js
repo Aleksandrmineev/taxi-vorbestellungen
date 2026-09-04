@@ -25,6 +25,9 @@ window.addEventListener("DOMContentLoaded", () => {
       if (form.elements.rrule) form.elements.rrule.value = "";
       if (form.elements.until) form.elements.until.value = "";
       form.elements.rrule?.dispatchEvent(new Event("change"));
+      form.elements.date.value = "";
+      form.elements.time.value = "";
+      formApi?.setNewOrderDefaults?.();
     }
     if (!dialog.open) dialog.showModal();
     form?.querySelector('[name="date"]')?.focus({ preventScroll: true });
