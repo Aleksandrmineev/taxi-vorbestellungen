@@ -1,9 +1,7 @@
 // config.js
 export const CONFIG = {
   GAS_URL:
-    typeof window !== "undefined" && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)
-      ? "https://script.google.com/macros/s/AKfycbwS88JTgj1NVqhGAaMKi3MXxTawF9zA6mkG6avgxmIj8c61_20EjNZdY0_0U6kKor29/exec"
-      : "https://taxi-vorbestellungen.vercel.app/api/gas",
+    "https://script.google.com/macros/s/AKfycbwS88JTgj1NVqhGAaMKi3MXxTawF9zA6mkG6avgxmIj8c61_20EjNZdY0_0U6kKor29/exec",
   PUSH_SENDER_URL: "https://taxi-vorbestellungen.vercel.app/api/send",
   PUSH_SENDER_SECRET: "murtal123pushkey",
 };

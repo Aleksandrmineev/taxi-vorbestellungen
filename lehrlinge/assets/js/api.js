@@ -2,9 +2,7 @@
 
 const GAS_URL =
   "https://script.google.com/macros/s/AKfycbwS88JTgj1NVqhGAaMKi3MXxTawF9zA6mkG6avgxmIj8c61_20EjNZdY0_0U6kKor29/exec";
-const GAS_PROXY_URL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
-  ? GAS_URL
-  : "https://taxi-vorbestellungen.vercel.app/api/gas";
+const GAS_PROXY_URL = GAS_URL;
 const API_SECRET = "102030";
 const ADMIN_TOKEN_KEY = "lehrlinge_admin_token";
 window.GAS_URL = window.GAS_URL || GAS_URL;
