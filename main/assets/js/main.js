@@ -1,6 +1,6 @@
 // ===== Google Apps Script endpoint (общий с Lehrlinge) =====
 const GS_ENDPOINT =
-  "https://script.google.com/macros/s/AKfycbxpGn11PT70usKYe0xE7S28FlwNIrJhXXEzaeK022VPZx7RObBEMvjq4ghpewnRyPGa/exec";
+  "https://script.google.com/macros/s/AKfycbwS88JTgj1NVqhGAaMKi3MXxTawF9zA6mkG6avgxmIj8c61_20EjNZdY0_0U6kKor29/exec";
 const API_SECRET_QR = "102030";
 
 // Тихая отправка записи в Google Sheets (лист QR_Zahlungen)
