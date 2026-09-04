@@ -338,6 +338,17 @@ form {
   border-radius: 12px;
   cursor: pointer;
 }
+.order-row--today {
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+}
+[data-rrule]:not([data-rrule=""]).order-row--today {
+  box-shadow: 6px 6px 0 -1px color-mix(in srgb, var(--primary) 7%, var(--surface)), 6px 6px 0 0 var(--border);
+}
+[data-rrule]:not([data-rrule=""]) {
+  margin-bottom: 15px;
+  box-shadow: 6px 6px 0 -1px var(--surface), 6px 6px 0 0 var(--border);
+}
 .order-row__info {
   min-width: 0;
   flex: 1 1 auto;

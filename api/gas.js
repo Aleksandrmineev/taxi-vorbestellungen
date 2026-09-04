@@ -5,7 +5,11 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-secret');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const GAS_URL = process.env.GAS_URL;
+  const configuredGasUrl = String(process.env.GAS_URL || "").trim();
+  // Защита от старого нерабочего Library deployment в Vercel env.
+  const GAS_URL = configuredGasUrl && !configuredGasUrl.includes("AKfycbxpGn11PT70usKYe0xE7S28FlwNIrJhXXEzaeK022VPZx7RObBEMvjq4ghpewnRyPGa")
+    ? configuredGasUrl
+    : "https://script.google.com/macros/s/AKfycbwS88JTgj1NVqhGAaMKi3MXxTawF9zA6mkG6avgxmIj8c61_20EjNZdY0_0U6kKor29/exec";
   const debug = String(req.query?.debug || '') === '1';
 
   try {

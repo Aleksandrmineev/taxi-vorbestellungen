@@ -43,6 +43,11 @@ export function initTodoList({ fillForm }) {
       const secondary = [it.message || "Keine Adresse / Notiz", it.type || "Bestellung", `${it.duration_min || 0} Min.`, repeat].filter(Boolean).join(" · ");
       return `${heading}<div class="order-row item" data-order-id="${esc(it.order_id || "")}" data-series-id="${esc(it.series_id || "")}" data-type="${esc(it.type || "Orts")}" data-dur="${esc(it.duration_min || "15")}" data-phone="${esc(display || "")}" data-message="${esc(it.message || "")}" data-rrule="${esc(it.rrule || "")}" data-until="${esc(it.until || "")}" data-start="${esc(it.start_iso)}"><div class="order-row__info"><div class="order-row__primary"><strong class="order-row__time">${esc(time)}</strong><span class="order-row__phone">${phone}</span></div><div class="order-row__secondary">${esc(secondary)}</div></div><div class="order-row__actions"><button class="order-action todo-repeat" type="button" title="Als neue Vorbestellung kopieren" aria-label="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0 2 2v10a2 2 0 0 1-2 2H8" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><small>Kopieren</small></button><button class="order-action todo-cancel" type="button" title="Vorbestellung stornieren" aria-label="Stornieren"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><small>Stornieren</small></button></div></div>`;
     }).join("") || '<div class="item">Keine aktiven Vorbestellungen.</div>';
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
+    todoList.querySelectorAll(".order-row[data-start]").forEach((row) => {
+      if ((row.dataset.start || "").slice(0, 10) === todayKey) row.classList.add("order-row--today");
+    });
   }
   todoList.addEventListener("click", async (event) => {
     const btn = event.target.closest("button");
