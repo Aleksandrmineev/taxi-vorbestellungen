@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vorbestellungen Admin · MurtalTaxi</title>
+    <link rel="stylesheet" href="assets/css/global.css?v=20260114" />
+    <link rel="stylesheet" href="assets/css/header.css?v=20260114" />
+    <link rel="stylesheet" href="assets/css/main.css?v=20260904-9" />
+    <link rel="stylesheet" href="assets/css/order-admin.css?v=20260904-1" />
+  </head>
+  <body>
+    <main class="order-admin page">
+      <section class="order-admin__card">
+        <a class="order-admin__back" href="vorbestellungen.html">← Vorbestellungen</a>
+        <div id="loginView">
+          <p class="eyebrow">GESCHÜTZTER BEREICH</p>
+          <h1>Vorbestellungen Admin</h1>
+          <p class="order-admin__muted">Nummern für SMS-Benachrichtigungen verwalten.</p>
+          <form id="loginForm" class="order-admin__form">
+            <label>Admin-Passwort<input id="adminPassword" type="password" required autocomplete="current-password" /></label>
+            <button class="primary" type="submit">Einloggen</button>
+            <p id="loginError" class="order-admin__error" role="alert"></p>
+          </form>
+        </div>
+        <div id="settingsView" hidden>
+          <div class="order-admin__head"><div><p class="eyebrow">SMS-BENACHRICHTIGUNGEN</p><h1>Telefonnummern</h1></div><button id="logoutBtn" class="btn--small" type="button">Abmelden</button></div>
+          <p class="order-admin__muted">Der Zeitpunkt des Auftrags entscheidet automatisch über die Nummer.</p>
+          <form id="settingsForm" class="order-admin__form">
+            <fieldset><legend>Tagschicht <small>06:00–17:59</small></legend><label>Nummer 1<input id="dayPhone1" type="tel" placeholder="+43…" autocomplete="tel" /></label><label>Nummer 2<input id="dayPhone2" type="tel" placeholder="+43…" autocomplete="tel" /></label></fieldset>
+            <fieldset><legend>Nachtschicht <small>18:00–05:59</small></legend><label>Nummer 1<input id="nightPhone1" type="tel" placeholder="+43…" autocomplete="tel" /></label><label>Nummer 2<input id="nightPhone2" type="tel" placeholder="+43…" autocomplete="tel" /></label></fieldset>
+            <button class="primary" type="submit">Speichern</button>
+            <p id="settingsStatus" class="order-admin__status" role="status"></p>
+          </form>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="assets/js/order-admin.js?v=20260904-1"></script>
+  </body>
+</html>

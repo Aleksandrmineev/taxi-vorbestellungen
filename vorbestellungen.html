@@ -53,7 +53,7 @@
     <!-- CSS -->
     <link rel="stylesheet" href="assets/css/global.css?v=20260114" />
     <link rel="stylesheet" href="assets/css/header.css?v=20260114" />
-    <link rel="stylesheet" href="assets/css/main.css?v=20260904-8" />
+    <link rel="stylesheet" href="assets/css/main.css?v=20260904-11" />
     <link rel="stylesheet" href="assets/css/footer.css?v=20260902-1" />
     <link rel="stylesheet" href="assets/css/responsive.css?v=20260114" />
     <link rel="stylesheet" href="assets/css/components.css?v=20260114" />
@@ -256,8 +256,13 @@
 
           <div class="full">
             <label class="label">Fahrtart</label>
-            <select name="type">
-              <option value="Orts">Taxifahrt</option>
+            <div class="type-choice" role="group" aria-label="Fahrtart auswählen">
+              <button type="button" class="type-choice__button is-selected" data-type="Orts" aria-pressed="true"><span class="type-choice__icon" aria-hidden="true">⌖</span><span>Orts</span></button>
+              <button type="button" class="type-choice__button" data-type="KT" aria-pressed="false"><span class="type-choice__icon" aria-hidden="true">✚</span><span>KT</span></button>
+              <button type="button" class="type-choice__button" data-type="RE" aria-pressed="false"><span class="type-choice__icon" aria-hidden="true">▤</span><span>RE</span></button>
+            </div>
+            <select name="type" class="type-choice__input" aria-hidden="true" tabindex="-1">
+              <option value="Orts">Ortsfahrt</option>
               <option value="KT">Krankentransport</option>
               <option value="RE">Rechnungsfahrt</option>
             </select>
@@ -612,11 +617,17 @@
           </svg>
           <span class="footer-label">Hilfe</span>
         </a>
+
+        <!-- Admin -->
+        <a href="vorbestellungen-admin.html" class="footer-link" aria-label="Admin öffnen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 4v10l-7 4-7-4V7l7-4zm0 4.2L8 9.4v5.2l4 2.2 4-2.2V9.4l-4-2.2zm0 2.1a2.7 2.7 0 1 1 0 5.4 2.7 2.7 0 0 1 0-5.4z" fill="currentColor"/></svg>
+          <span class="footer-label">Admin</span>
+        </a>
       </div>
     </footer>
 
     <!-- JS -->
     <script type="module" src="./assets/js/theme.js"></script>
-    <script type="module" src="./assets/js/main.js?v=20260904-8"></script>
+    <script type="module" src="./assets/js/main.js?v=20260904-11"></script>
   </body>
 </html>

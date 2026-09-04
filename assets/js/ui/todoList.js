@@ -1,4 +1,4 @@
-import { Api } from "../api.js";
+import { Api } from "../api.js?v=20260904-3";
 import { pad2, dateForRepeat, hhmmFromISO, formatDateFromISO } from "../utils/time.js";
 import { telHref } from "../utils/phone.js";
 import { promptReason } from "./dialog.js";
@@ -10,6 +10,12 @@ export function initTodoList({ fillForm }) {
     const date = new Date(value);
     if (isNaN(date.getTime())) return String(value).slice(0, 10);
     return `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}.${date.getFullYear()}`;
+  };
+  const formatListDate = (iso) => {
+    const date = new Date(iso);
+    const human = formatDateFromISO(iso);
+    const today = new Date();
+    return date.toDateString() === today.toDateString() ? `Heute ${human}` : human;
   };
   const removeRow = (el) => { el.style.opacity = "0"; el.style.transform = "translateY(4px)"; setTimeout(() => el.remove(), 220); };
 
@@ -32,7 +38,7 @@ export function initTodoList({ fillForm }) {
     });
     let lastDate = "";
     todoList.innerHTML = visible.map((it) => {
-      const date = formatDateFromISO(it.start_iso);
+      const date = formatListDate(it.start_iso);
       const heading = date !== lastDate ? `<h3 class="order-date-heading">${esc(date)}</h3>` : "";
       lastDate = date;
       const st = new Date(it.start_iso);

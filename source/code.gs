@@ -16,6 +16,10 @@ const ORDER_NOTIFICATION_PROPERTIES_ = {
   ZADARMA_SECRET: "ZADARMA_API_SECRET",
   ZADARMA_BALANCE_LEVEL: "ZADARMA_BALANCE_WARNING_LEVEL",
   SMS_NOTIFICATION_PHONE: "SMS_NOTIFICATION_PHONE",
+  SMS_NOTIFICATION_PHONE_DAY: "SMS_NOTIFICATION_PHONE_DAY",
+  SMS_NOTIFICATION_PHONE_NIGHT: "SMS_NOTIFICATION_PHONE_NIGHT",
+  SMS_NOTIFICATION_PHONE_DAY_2: "SMS_NOTIFICATION_PHONE_DAY_2",
+  SMS_NOTIFICATION_PHONE_NIGHT_2: "SMS_NOTIFICATION_PHONE_NIGHT_2",
   PUBLIC_BASE_URL: "PUBLIC_BASE_URL",
 };
 
@@ -128,6 +132,11 @@ function doGet(e) {
       return json({ ok: true, ...out });
     }
 
+    if (fn === "order_admin_settings") {
+      requireAdminToken_(e.parameter.adminToken || "");
+      return json({ ok: true, settings: getOrderAdminSettings_() });
+    }
+
     if (fn === "shift_profile") {
       const profile = getShiftProfile_(String(e.parameter.driver || ""));
       return profile
@@ -190,6 +199,11 @@ function doPost(e) {
       cacheRemove_("getdata:1");
       cacheRemove_("getdata:2");
       return json({ ok: true, saved });
+    }
+
+    if (action === "order_admin_settings_save") {
+      requireAdminToken_(body.adminToken || "");
+      return json({ ok: true, settings: saveOrderAdminSettings_(body) });
     }
 
     // ===== ВЕТКА VORBESTELLUNGEN =====
@@ -382,8 +396,60 @@ function orderNotificationConfig_() {
     key: String(props.getProperty(ORDER_NOTIFICATION_PROPERTIES_.ZADARMA_KEY) || "").trim(),
     secret: String(props.getProperty(ORDER_NOTIFICATION_PROPERTIES_.ZADARMA_SECRET) || "").trim(),
     notifyPhone: String(props.getProperty(ORDER_NOTIFICATION_PROPERTIES_.SMS_NOTIFICATION_PHONE) || "").trim(),
+    notifyPhoneDay: String(props.getProperty(ORDER_NOTIFICATION_PROPERTIES_.SMS_NOTIFICATION_PHONE_DAY) || "").trim(),
+    notifyPhoneDay2: String(props.getProperty(ORDER_NOTIFICATION_PROPERTIES_.SMS_NOTIFICATION_PHONE_DAY_2) || "").trim(),
+    notifyPhoneNight: String(props.getProperty(ORDER_NOTIFICATION_PROPERTIES_.SMS_NOTIFICATION_PHONE_NIGHT) || "").trim(),
+    notifyPhoneNight2: String(props.getProperty(ORDER_NOTIFICATION_PROPERTIES_.SMS_NOTIFICATION_PHONE_NIGHT_2) || "").trim(),
     baseUrl: String(props.getProperty(ORDER_NOTIFICATION_PROPERTIES_.PUBLIC_BASE_URL) || "https://taxi-vorbestellungen.vercel.app").replace(/\/$/, ""),
   };
+}
+
+function getOrderAdminSettings_() {
+  const cfg = orderNotificationConfig_();
+  return {
+    dayPhone1: cfg.notifyPhoneDay,
+    dayPhone2: cfg.notifyPhoneDay2,
+    nightPhone1: cfg.notifyPhoneNight,
+    nightPhone2: cfg.notifyPhoneNight2,
+  };
+}
+
+function saveOrderAdminSettings_(body) {
+  const props = orderNotificationProperties_();
+  const dayPhone1 = normalizePhone_(body.dayPhone1 || body.dayPhone || "");
+  const dayPhone2 = normalizePhone_(body.dayPhone2 || "");
+  const nightPhone1 = normalizePhone_(body.nightPhone1 || body.nightPhone || "");
+  const nightPhone2 = normalizePhone_(body.nightPhone2 || "");
+  props.setProperty(ORDER_NOTIFICATION_PROPERTIES_.SMS_NOTIFICATION_PHONE_DAY, dayPhone1);
+  props.setProperty(ORDER_NOTIFICATION_PROPERTIES_.SMS_NOTIFICATION_PHONE_DAY_2, dayPhone2);
+  props.setProperty(ORDER_NOTIFICATION_PROPERTIES_.SMS_NOTIFICATION_PHONE_NIGHT, nightPhone1);
+  props.setProperty(ORDER_NOTIFICATION_PROPERTIES_.SMS_NOTIFICATION_PHONE_NIGHT_2, nightPhone2);
+  return { dayPhone1: dayPhone1, dayPhone2: dayPhone2, nightPhone1: nightPhone1, nightPhone2: nightPhone2 };
+}
+
+function orderNotificationPhones_(time) {
+  const cfg = orderNotificationConfig_();
+  const hour = Number(String(time || "").slice(0, 2));
+  const phones = hour >= 6 && hour < 18
+    ? [cfg.notifyPhoneDay, cfg.notifyPhoneDay2]
+    : [cfg.notifyPhoneNight, cfg.notifyPhoneNight2];
+  if (!phones.some(Boolean) && cfg.notifyPhone) phones.push(cfg.notifyPhone);
+  return [...new Set(phones.filter(Boolean))];
+}
+
+function sendOrderSms_(item, reminder) {
+  const phones = orderNotificationPhones_(item.time);
+  if (!phones.length) return { skipped: true };
+  let sent = false;
+  phones.forEach((phone) => {
+    try {
+      const result = sendZadarmaSms_(phone, orderSmsText_(item, reminder));
+      if (!result || !result.skipped) sent = true;
+    } catch (err) {
+      safeNotificationLog_(reminder ? "order_reminder_error" : "order_confirmation_error", { message: redactLogText_(err && err.message, 180) });
+    }
+  });
+  return sent ? { sent: true } : { skipped: true };
 }
 
 function formEncode_(value) {
@@ -546,7 +612,7 @@ function setOrderNotification_(orderId, field, value) {
 function sendOrderConfirmation_(item) {
   if (!item || item.confirmation_sent_at) return;
   try {
-    const result = sendZadarmaSms_(orderNotificationConfig_().notifyPhone, orderSmsText_(item, false));
+    const result = sendOrderSms_(item, false);
     if (result && result.skipped) return;
     setOrderNotification_(item.id, "confirmation_sent_at", new Date());
   } catch (err) {
@@ -557,7 +623,7 @@ function sendOrderConfirmation_(item) {
 function sendOrderReminder_(item) {
   if (!item || item.reminder_sent_at) return;
   try {
-    const result = sendZadarmaSms_(orderNotificationConfig_().notifyPhone, orderSmsText_(item, true));
+    const result = sendOrderSms_(item, true);
     if (result && result.skipped) return;
     setOrderNotification_(item.id, "reminder_sent_at", new Date());
   } catch (err) {

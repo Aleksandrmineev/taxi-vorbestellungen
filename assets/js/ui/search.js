@@ -1,5 +1,5 @@
 // assets/js/ui/search.js
-import { Api } from "../api.js";
+import { Api } from "../api.js?v=20260904-3";
 import { pad2, formatDateFromISO } from "../utils/time.js";
 import { telHref } from "../utils/phone.js";
 

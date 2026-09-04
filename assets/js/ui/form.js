@@ -1,7 +1,7 @@
 // ui/form.js
 // === Управление формой создания заказа (дефолты, нормализация, лок.история, отправка, toasts)
 
-import { Api } from "../api.js";
+import { Api } from "../api.js?v=20260904-3";
 import {
   todayISO,
   buildTimeOptionsHTML,
@@ -156,6 +156,17 @@ export function initForm({ onCreated }) {
   const repeatUntilInput = f.querySelector("#repeatUntil");
   const datalist = document.getElementById("time5");
   const submitBtn = f.querySelector(".icon-btn--primary");
+  const typeButtons = [...f.querySelectorAll(".type-choice__button")];
+  const syncTypeButtons = () => typeButtons.forEach((button) => {
+    const selected = button.dataset.type === f.elements.type.value;
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+  typeButtons.forEach((button) => button.addEventListener("click", () => {
+    f.elements.type.value = button.dataset.type;
+    f.elements.type.dispatchEvent(new Event("change", { bubbles: true }));
+    syncTypeButtons();
+  }));
 
   const syncRepeatFields = () => {
     const active = Boolean(repeatInput?.value);
@@ -183,6 +194,7 @@ export function initForm({ onCreated }) {
   });
 
   f.elements.type.dispatchEvent(new Event("change"));
+  syncTypeButtons();
 
   // 2) Время + нормализация
   datalist.innerHTML = buildTimeOptionsHTML();
@@ -303,6 +315,7 @@ export function initForm({ onCreated }) {
     if (until !== undefined && repeatUntilInput) repeatUntilInput.value = until || "";
     syncRepeatFields();
     f.elements.type.dispatchEvent(new Event("change"));
+    syncTypeButtons();
     submitBtn.title = id ? "Änderungen speichern" : "Speichern";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
