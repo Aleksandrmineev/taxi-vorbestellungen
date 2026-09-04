@@ -156,7 +156,18 @@ export function initForm({ onCreated }) {
   const repeatUntilInput = f.querySelector("#repeatUntil");
   const datalist = document.getElementById("time5");
   const submitBtn = f.querySelector(".icon-btn--primary");
+  const durationInput = f.elements.duration_min;
+  durationInput?.addEventListener("input", () => {
+    durationInput.value = durationInput.value.replace(/\D/g, "").slice(0, 3);
+  });
   const typeButtons = [...f.querySelectorAll(".type-choice__button")];
+  const setNewOrderDefaults = () => {
+    const now = new Date();
+    const target = new Date(now.getTime() + 60 * 60 * 1000);
+    target.setMinutes(Math.ceil(target.getMinutes() / 5) * 5, 0, 0);
+    f.elements.date.value = `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, "0")}-${String(target.getDate()).padStart(2, "0")}`;
+    timeInput.value = `${String(target.getHours()).padStart(2, "0")}:${String(target.getMinutes()).padStart(2, "0")}`;
+  };
   const syncTypeButtons = () => typeButtons.forEach((button) => {
     const selected = button.dataset.type === f.elements.type.value;
     button.classList.toggle("is-selected", selected);
@@ -195,6 +206,7 @@ export function initForm({ onCreated }) {
 
   f.elements.type.dispatchEvent(new Event("change"));
   syncTypeButtons();
+  if (!f.elements.date.value || !timeInput.value) setNewOrderDefaults();
 
   // 2) Время + нормализация
   datalist.innerHTML = buildTimeOptionsHTML();
@@ -203,7 +215,7 @@ export function initForm({ onCreated }) {
   });
 
   // 3) Удобства ввода
-  document.querySelectorAll("input, textarea").forEach((el) => {
+  document.querySelectorAll('input:not([type="time"]):not([type="date"]), textarea').forEach((el) => {
     el.addEventListener("focus", function () {
       setTimeout(() => {
         try {
@@ -297,7 +309,7 @@ export function initForm({ onCreated }) {
       if (f.elements[k]) f.elements[k].value = v;
     }
     f.elements.type.dispatchEvent(new Event("change"));
-    if (!timeInput.value) timeInput.value = "08:00";
+    if (!timeInput.value) setNewOrderDefaults();
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
@@ -319,7 +331,7 @@ export function initForm({ onCreated }) {
     submitBtn.title = id ? "Änderungen speichern" : "Speichern";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  return { fillForm };
+  return { fillForm, setNewOrderDefaults };
 }
 
 /* ----------------- Локальная история (тел./адрес) ----------------- */

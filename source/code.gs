@@ -757,6 +757,10 @@ function updateOrder_(id, raw) {
   const rowIndex = values.slice(1).findIndex((row) => String(row[idIndex] || "") === orderId);
   if (rowIndex < 0) throw new Error("order_not_found");
   const row = rowIndex + 2;
+  const oldRow = values[rowIndex + 1];
+  const oldDate = orderDateValue_(oldRow[head.indexOf("date")]);
+  const oldTime = orderTimeValue_(oldRow[head.indexOf("time")]);
+  const scheduleChanged = oldDate !== date || oldTime !== time;
   const set = (key, value) => {
     const col = head.indexOf(key) + 1;
     if (col > 0) sh.getRange(row, col).setValue(value);
@@ -770,6 +774,7 @@ function updateOrder_(id, raw) {
   set("phone_raw", String(data.phone || data.phone_raw || "").trim());
   set("phone_norm", normalizePhone_(data.phone || data.phone_raw || ""));
   set("message", String(data.message || "").trim());
+  if (scheduleChanged) set("reminder_sent_at", "");
   return { id: orderId, date: date, time: time };
 }
 
