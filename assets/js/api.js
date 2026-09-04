@@ -1,4 +1,4 @@
-import { API } from "./config.js"; // базовый URL
+import { API } from "./config.js?v=20260904-2"; // базовый URL
 
 // Должен совпадать с API_SECRET в Google Apps Script.
 const API_SECRET = "102030";
@@ -202,6 +202,30 @@ export const Api = {
       action: "search",
       q: String(q || ""),
       limit: String(limit),
+    });
+  },
+
+  async adminLogin(password) {
+    const res = await postJSON({ action: "admin_login", password: String(password || "") });
+    if (!res?.token) throw new Error(res?.error || "admin_login failed");
+    sessionStorage.setItem("vorbestellungen_admin_token", res.token);
+    return res;
+  },
+
+  async orderAdminSettings() {
+    return getJSON({ action: "order_admin_settings", adminToken: sessionStorage.getItem("vorbestellungen_admin_token") || "" });
+  },
+
+  async saveOrderAdminSettings(settings) {
+    return postJSON({
+      action: "order_admin_settings_save",
+      adminToken: sessionStorage.getItem("vorbestellungen_admin_token") || "",
+      dayPhone: settings.dayPhone || "",
+      nightPhone: settings.nightPhone || "",
+      dayPhone1: settings.dayPhone1 || "",
+      dayPhone2: settings.dayPhone2 || "",
+      nightPhone1: settings.nightPhone1 || "",
+      nightPhone2: settings.nightPhone2 || "",
     });
   },
 };

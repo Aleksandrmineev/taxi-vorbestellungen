@@ -377,6 +377,12 @@ form {
   font-size: 11px;
   white-space: nowrap;
 }
+.type-choice { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.type-choice__button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.type-choice__button:hover, .type-choice__button:focus-visible { border-color: var(--primary); }
+.type-choice__button.is-selected { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--surface)); color: var(--primary); font-weight: 700; }
+.type-choice__icon { font-size: 18px; line-height: 1; }
+.type-choice__input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .order-row__secondary {
   overflow: hidden;
   text-overflow: ellipsis;
