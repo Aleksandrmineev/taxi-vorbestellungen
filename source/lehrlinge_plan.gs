@@ -32,6 +32,13 @@ const LEHRLINGE_PLAN_HEADERS = [
   "updated_at",
 ];
 
+function lehrlingePlanDate_(value) {
+  if (value instanceof Date) return Utilities.formatDate(value, "Europe/Vienna", "yyyy-MM-dd");
+  const text = String(value || "").trim();
+  const european = text.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  return european ? `${european[3]}-${european[2]}-${european[1]}` : text;
+}
+
 /** Явно запускается один раз администратором после проверки проекта. */
 function setupLehrlingePlanSheets() {
   const ss = SpreadsheetApp.getActive();
@@ -106,7 +113,7 @@ function seedLehrlingePlanFromPdf() {
   const existing = new Set();
   if (sh.getLastRow() >= 2) {
     sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues().forEach((row) => {
-      existing.add(String(row[0] || "").trim() + "|" + String(row[1] || "").trim());
+      existing.add(lehrlingePlanDate_(row[0]) + "|" + String(row[1] || "").trim());
     });
   }
 
@@ -128,22 +135,24 @@ function getLehrlingePlan_(from, to) {
   const sh = SpreadsheetApp.getActive().getSheetByName(LEHRLINGE_PLAN_SHEET);
   const start = String(from || "").trim();
   const end = String(to || "").trim();
-  const items = [];
+  const itemsByKey = {};
   const holidays = new Set();
   if (!sh || sh.getLastRow() < 2) return { items: items, holidays: [] };
 
   sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_PLAN_HEADERS.length).getValues().forEach((row) => {
-    const date = row[0] instanceof Date
-      ? Utilities.formatDate(row[0], "Europe/Vienna", "yyyy-MM-dd")
-      : String(row[0] || "").trim();
+    const date = lehrlingePlanDate_(row[0]);
     const studentId = String(row[1] || "").trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !studentId || (start && date < start) || (end && date > end)) return;
     const morning = String(row[4] === "" || row[4] == null ? row[2] : row[4]) === "1";
     const evening = String(row[5] === "" || row[5] == null ? row[3] : row[5]) === "1";
-    items.push({ date: date, student_id: studentId, status: morning && evening ? "both" : morning ? "out" : evening ? "back" : "none" });
+    itemsByKey[date + "|" + studentId] = {
+      date: date,
+      student_id: studentId,
+      status: morning && evening ? "both" : morning ? "out" : evening ? "back" : "none",
+    };
     if (String(row[6] || "").trim() === "holiday") holidays.add(date);
   });
-  return { items: items, holidays: Array.from(holidays).sort() };
+  return { items: Object.keys(itemsByKey).sort().map((key) => itemsByKey[key]), holidays: Array.from(holidays).sort() };
 }
 
 function saveLehrlingePlan_(body) {
@@ -154,9 +163,13 @@ function saveLehrlingePlan_(body) {
   const existingRows = sh.getLastRow() >= 2
     ? sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_PLAN_HEADERS.length).getValues()
     : [];
+  const existingDisplay = sh.getLastRow() >= 2
+    ? sh.getRange(2, 1, sh.getLastRow() - 1, 2).getDisplayValues()
+    : [];
   const rowByKey = {};
   existingRows.forEach((row, index) => {
-    rowByKey[String(row[0] || "").trim() + "|" + String(row[1] || "").trim()] = index;
+    const displayDate = existingDisplay[index]?.[0] || row[0];
+    rowByKey[lehrlingePlanDate_(displayDate) + "|" + String(row[1] || "").trim()] = index;
   });
   const now = new Date();
   const newRows = [];
@@ -204,6 +217,39 @@ function saveLehrlingePlan_(body) {
   flushBlock();
   if (newRows.length) sh.getRange(sh.getLastRow() + 1, 1, newRows.length, LEHRLINGE_PLAN_HEADERS.length).setValues(newRows);
   return { ok: true, saved: saved };
+}
+
+/** Удаляет дубли date + student_id, сохраняя последнюю строку как актуальную. */
+function dedupeLehrlingePlan() {
+  const sh = SpreadsheetApp.getActive().getSheetByName(LEHRLINGE_PLAN_SHEET);
+  if (!sh || sh.getLastRow() < 2) return { ok: true, removed: 0 };
+  const values = sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_PLAN_HEADERS.length).getValues();
+  const groups = {};
+  let invalid = 0;
+  values.forEach((row) => {
+    const date = lehrlingePlanDate_(row[0]);
+    const studentId = String(row[1] || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !studentId) {
+      invalid += 1;
+      return;
+    }
+    const key = date + "|" + studentId;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push({ row: row, date: date });
+  });
+  const unique = Object.keys(groups).sort().map((key) => {
+    const entries = groups[key];
+    const latest = entries[entries.length - 1];
+    const baseline = entries.find((entry) => String(entry.row[7] || "").trim() === "pdf_seed") || entries[0];
+    const row = latest.row.slice();
+    row[0] = latest.date;
+    row[2] = baseline.row[2];
+    row[3] = baseline.row[3];
+    return row;
+  });
+  sh.getRange(2, 1, values.length, LEHRLINGE_PLAN_HEADERS.length).clearContent();
+  if (unique.length) sh.getRange(2, 1, unique.length, LEHRLINGE_PLAN_HEADERS.length).setValues(unique);
+  return { ok: true, before: values.length, after: unique.length, removed: values.length - unique.length, invalid: invalid };
 }
 
 function ensureLehrlingeSheet_(ss, name, headers) {
