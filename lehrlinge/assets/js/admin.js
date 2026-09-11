@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     activeTab: "points",
     routeFilter: "1",
     dirty: false,
+    dataDirty: false,
     saving: false,
     data: {
       points: [],
@@ -18,6 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
       holidays: new Set(),
       values: {},
       dirty: false,
+      originalValues: {},
+      originalHolidays: [],
     },
   };
 
@@ -52,8 +55,10 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
 
-  function setDirty(flag = true) {
+  function setDirty(flag = true, dataChanged = flag) {
     state.dirty = !!flag;
+    if (flag && dataChanged) state.dataDirty = true;
+    if (!flag) state.dataDirty = false;
     renderStatus();
   }
 
@@ -167,12 +172,24 @@ document.addEventListener("DOMContentLoaded", () => {
       `${state.data.cars.length} Autos`,
       `${state.data.matrix.ids.length} Matrix`,
     ].join(" · ");
-    dom.dirtyText.textContent = state.dirty
-      ? "Ungespeicherte Änderungen"
-      : "Alles gespeichert";
+    dom.dirtyText.textContent = state.saving
+      ? "⏳ Speichere Änderungen…"
+      : state.dirty
+        ? "● Ungespeicherte Änderungen"
+        : "✓ Alles gespeichert";
+    dom.dirtyText.classList.toggle("is-saving", state.saving);
+    dom.dirtyText.classList.toggle("is-dirty", !state.saving && state.dirty);
+    dom.dirtyText.classList.toggle("is-saved", !state.saving && !state.dirty);
     dom.saveBtn.disabled = state.saving;
     dom.reloadBtn.disabled = state.saving;
-    dom.saveBtn.textContent = state.saving ? "Speichere…" : "Alles speichern";
+    dom.saveBtn.textContent = state.saving
+      ? "⏳ Speichere…"
+      : state.dirty
+        ? "Änderungen speichern"
+        : "✓ Gespeichert";
+    dom.saveBtn.classList.toggle("is-saving", state.saving);
+    dom.saveBtn.classList.toggle("is-dirty", !state.saving && state.dirty);
+    dom.saveBtn.classList.toggle("is-saved", !state.saving && !state.dirty);
   }
 
   function setAuthenticated(flag) {
@@ -705,6 +722,8 @@ document.addEventListener("DOMContentLoaded", () => {
         state.schedule.values[`${item.student_id}|${item.date}`] = item.status;
       });
       state.schedule.holidays = new Set(result.holidays || []);
+      state.schedule.originalValues = { ...state.schedule.values };
+      state.schedule.originalHolidays = Array.from(state.schedule.holidays).sort();
       state.schedule.dirty = false;
       return true;
     } catch (error) {
@@ -866,7 +885,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         });
         state.schedule.dirty = true;
-        setDirty();
+        setDirty(true, false);
         renderSchedule();
       });
     });
@@ -876,7 +895,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const order = ["both", "out", "back", "none"];
         values[key] = order[(order.indexOf(values[key] || "both") + 1) % order.length];
         state.schedule.dirty = true;
-        setDirty();
+        setDirty(true, false);
         renderSchedule();
       });
     });
@@ -917,19 +936,27 @@ document.addEventListener("DOMContentLoaded", () => {
     renderStatus("Speichere Änderungen…");
     try {
       ensureMatrixIntegrity();
-      await window.saveAdminData(state.data);
+      if (state.dataDirty) await window.saveAdminData(state.data);
       if (state.schedule.dirty && typeof window.saveLehrlingePlan === "function") {
-        const rows = Object.entries(state.schedule.values).map(([key, status]) => {
+        const rows = Object.entries(state.schedule.values)
+          .filter(([key, status]) => state.schedule.originalValues[key] !== status)
+          .map(([key, status]) => {
           const separator = key.indexOf("|");
           return { student_id: key.slice(0, separator), date: key.slice(separator + 1), status };
-        });
-        await window.saveLehrlingePlan({
-          rows,
-          holidays: Array.from(state.schedule.holidays),
-        });
+          });
+        const holidays = Array.from(state.schedule.holidays).sort();
+        const holidaysChanged = JSON.stringify(holidays) !== JSON.stringify(state.schedule.originalHolidays);
+        if (rows.length || holidaysChanged) {
+          await window.saveLehrlingePlan({ rows, holidays });
+          rows.forEach((row) => {
+            state.schedule.originalValues[`${row.student_id}|${row.date}`] = row.status;
+          });
+          state.schedule.originalHolidays = holidays;
+        }
         state.schedule.dirty = false;
       }
       state.data.points.forEach((point) => { point.lehrling_pin = ""; });
+      state.dataDirty = false;
       state.dirty = false;
       renderStatus("Änderungen gespeichert");
       render();

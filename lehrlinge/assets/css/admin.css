@@ -95,6 +95,37 @@
   padding-inline: 18px;
 }
 
+.admin-save.is-saving {
+  cursor: wait;
+  opacity: 0.82;
+}
+
+.admin-save.is-dirty {
+  border-color: color-mix(in oklab, #e7a83e 65%, var(--line));
+  background: color-mix(in oklab, #e7a83e 88%, var(--surface-1));
+  color: #17110a;
+}
+
+.admin-save.is-saved {
+  border-color: color-mix(in oklab, #35b875 55%, var(--line));
+  background: color-mix(in oklab, #35b875 22%, var(--surface-2));
+}
+
+.admin-status__meta .is-saving {
+  color: #e7a83e;
+  font-weight: 850;
+}
+
+.admin-status__meta .is-dirty {
+  color: #e7a83e;
+  font-weight: 800;
+}
+
+.admin-status__meta .is-saved {
+  color: #35b875;
+  font-weight: 800;
+}
+
 .admin-status {
   justify-content: space-between;
 }
