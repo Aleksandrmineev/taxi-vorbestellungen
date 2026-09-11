@@ -71,6 +71,117 @@ function seedLehrlingeRoster() {
   return { ok: true, seeded: students.length, pinCount: 0 };
 }
 
+/**
+ * Одноразово переносит базовый график из проверенного PDF в _LehrlingePlan.
+ * Уже существующие строки не перезаписывает, чтобы не потерять ручные изменения.
+ */
+function seedLehrlingePlanFromPdf() {
+  setupLehrlingePlanSheets();
+  const source = {
+    "2026-09-01": ["oliver", "leon", "patrick", "sebastian", "marie", "fabian", "elias", "lukas"],
+    "2026-09-02": ["oliver", "leon", "patrick", "sebastian", "marcel", "marie", "fabian", "elias", "niklas", "lukas"],
+    "2026-09-03": ["oliver", "leon", "patrick", "sebastian", "marcel", "marie", "fabian", "elias", "niklas", "lukas"],
+    "2026-09-04": ["oliver", "leon", "patrick", "sebastian", "marcel", "marie", "fabian", "elias", "niklas", "lukas"],
+    "2026-09-07": ["oliver", "leon", "patrick", "sebastian", "marcel", "marie", "fabian", "lorenz", "elias", "niklas", "lukas"],
+    "2026-09-08": ["oliver", "leon", "patrick", "sebastian", "marcel", "marie", "fabian", "lorenz", "elias", "niklas", "lukas"],
+    "2026-09-09": ["oliver", "leon", "patrick", "sebastian", "marcel", "marie", "fabian", "lorenz", "elias", "niklas", "lukas"],
+    "2026-09-10": ["oliver", "leon", "patrick", "sebastian", "marcel", "marie", "fabian", "lorenz", "elias", "niklas", "lukas"],
+    "2026-09-11": ["oliver", "patrick", "sebastian", "marcel", "marie", "fabian", "lorenz", "elias", "niklas", "lukas"],
+    "2026-09-14": ["oliver", "patrick", "sebastian", "marcel", "marie", "fabian", "niklas", "lukas"],
+    "2026-09-15": ["oliver", "patrick", "sebastian", "marcel", "marie", "fabian", "niklas", "lukas"],
+    "2026-09-16": ["oliver", "patrick", "sebastian", "marcel", "marie", "fabian", "niklas", "lukas"],
+    "2026-09-17": ["oliver", "patrick", "sebastian", "marcel", "marie", "fabian", "niklas", "lukas"],
+    "2026-09-18": ["oliver", "patrick", "sebastian", "marcel", "marie", "fabian", "niklas", "lukas"],
+    "2026-09-21": ["oliver", "patrick", "sebastian", "marcel", "marie", "fabian", "niklas", "lukas"],
+    "2026-09-22": ["oliver", "patrick", "sebastian", "marcel", "marie", "fabian", "niklas", "lukas"],
+    "2026-09-23": ["oliver", "sebastian", "marcel", "marie", "fabian", "niklas", "lukas"],
+    "2026-09-24": ["oliver", "patrick", "sebastian", "marcel", "marie", "fabian", "niklas", "lukas"],
+    "2026-09-25": ["oliver", "patrick", "sebastian", "marcel", "marie", "fabian", "niklas", "lukas"],
+    "2026-09-28": ["oliver", "patrick", "sebastian", "marcel", "marie", "fabian", "lorenz", "niklas", "lukas"],
+    "2026-09-29": ["oliver", "patrick", "sebastian", "marcel", "fabian", "lorenz", "niklas", "lukas"],
+    "2026-09-30": ["oliver", "patrick", "sebastian", "marcel", "fabian", "lorenz", "niklas", "lukas"],
+  };
+
+  const sh = SpreadsheetApp.getActive().getSheetByName(LEHRLINGE_PLAN_SHEET);
+  const existing = new Set();
+  if (sh.getLastRow() >= 2) {
+    sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues().forEach((row) => {
+      existing.add(String(row[0] || "").trim() + "|" + String(row[1] || "").trim());
+    });
+  }
+
+  const rows = [];
+  Object.keys(source).forEach((date) => {
+    const active = new Set(source[date]);
+    ["oliver", "sebastian", "marcel", "patrick", "leon", "niklas", "marie", "fabian", "lorenz", "lukas", "elias", "jakob"].forEach((studentId) => {
+      const key = date + "|" + studentId;
+      if (existing.has(key)) return;
+      const rides = active.has(studentId) ? "1" : "0";
+      rows.push([date, studentId, rides, rides, "", "", "", "pdf_seed", new Date()]);
+    });
+  });
+  if (rows.length) sh.getRange(sh.getLastRow() + 1, 1, rows.length, LEHRLINGE_PLAN_HEADERS.length).setValues(rows);
+  return { ok: true, dates: Object.keys(source).length, inserted: rows.length };
+}
+
+function getLehrlingePlan_(from, to) {
+  const sh = SpreadsheetApp.getActive().getSheetByName(LEHRLINGE_PLAN_SHEET);
+  const start = String(from || "").trim();
+  const end = String(to || "").trim();
+  const items = [];
+  const holidays = new Set();
+  if (!sh || sh.getLastRow() < 2) return { items: items, holidays: [] };
+
+  sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_PLAN_HEADERS.length).getValues().forEach((row) => {
+    const date = row[0] instanceof Date
+      ? Utilities.formatDate(row[0], "Europe/Vienna", "yyyy-MM-dd")
+      : String(row[0] || "").trim();
+    const studentId = String(row[1] || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !studentId || (start && date < start) || (end && date > end)) return;
+    const morning = String(row[4] === "" || row[4] == null ? row[2] : row[4]) === "1";
+    const evening = String(row[5] === "" || row[5] == null ? row[3] : row[5]) === "1";
+    items.push({ date: date, student_id: studentId, status: morning && evening ? "both" : morning ? "out" : evening ? "back" : "none" });
+    if (String(row[6] || "").trim() === "holiday") holidays.add(date);
+  });
+  return { items: items, holidays: Array.from(holidays).sort() };
+}
+
+function saveLehrlingePlan_(body) {
+  const parsed = JSON.parse(String(body.rows || "[]"));
+  const rows = Array.isArray(parsed) ? parsed : [];
+  const holidays = new Set(JSON.parse(String(body.holidays || "[]")) || []);
+  const sh = ensureLehrlingeSheet_(SpreadsheetApp.getActive(), LEHRLINGE_PLAN_SHEET, LEHRLINGE_PLAN_HEADERS);
+  const rowByKey = {};
+  if (sh.getLastRow() >= 2) {
+    sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues().forEach((row, index) => {
+      rowByKey[String(row[0] || "").trim() + "|" + String(row[1] || "").trim()] = index + 2;
+    });
+  }
+  const now = new Date();
+  let saved = 0;
+  rows.forEach((item) => {
+    const date = String(item.date || "").trim();
+    const studentId = String(item.student_id || "").trim();
+    const status = String(item.status || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !studentId || !["both", "out", "back", "none"].includes(status)) return;
+    const morning = status === "both" || status === "out" ? "1" : "0";
+    const evening = status === "both" || status === "back" ? "1" : "0";
+    const key = date + "|" + studentId;
+    const rowNumber = rowByKey[key];
+    const existing = rowNumber
+      ? sh.getRange(rowNumber, 1, 1, LEHRLINGE_PLAN_HEADERS.length).getValues()[0]
+      : null;
+    const values = [[date, studentId, existing?.[2] ?? morning, existing?.[3] ?? evening, morning, evening, holidays.has(date) ? "holiday" : "", "admin", now]];
+    if (rowNumber) sh.getRange(rowNumber, 1, 1, LEHRLINGE_PLAN_HEADERS.length).setValues(values);
+    else {
+      sh.appendRow(values[0]);
+      rowByKey[key] = sh.getLastRow();
+    }
+    saved += 1;
+  });
+  return { ok: true, saved: saved };
+}
+
 function ensureLehrlingeSheet_(ss, name, headers) {
   const sh = ss.getSheetByName(name) || ss.insertSheet(name);
   if (sh.getLastRow() === 0) {

@@ -141,6 +141,11 @@ function doGet(e) {
       return json({ ok: true, ...out });
     }
 
+    if (fn === "lehrlinge_plan") {
+      requireAdminToken_(e.parameter.adminToken || "");
+      return json({ ok: true, ...getLehrlingePlan_(e.parameter.from, e.parameter.to) });
+    }
+
     if (fn === "order_admin_settings") {
       requireAdminToken_(e.parameter.adminToken || "");
       return json({ ok: true, settings: getOrderAdminSettings_() });
@@ -214,6 +219,11 @@ function doPost(e) {
       cacheRemove_("getdata:1");
       cacheRemove_("getdata:2");
       return json({ ok: true, saved });
+    }
+
+    if (action === "lehrlinge_plan_save") {
+      requireAdminToken_(String(body.adminToken || ""));
+      return json({ ok: true, saved: saveLehrlingePlan_(body) });
     }
 
     if (action === "order_admin_settings_save") {

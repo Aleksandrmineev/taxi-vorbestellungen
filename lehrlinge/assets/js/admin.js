@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
       student: "all",
       holidays: new Set(),
       values: {},
+      dirty: false,
     },
   };
 
@@ -685,6 +686,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  async function loadLiveSchedule() {
+    if (typeof window.loadLehrlingePlan !== "function") return false;
+    try {
+      const result = await window.loadLehrlingePlan(state.schedule.from, state.schedule.to);
+      const liveStudents = state.data.points
+        .filter((point) => point.lehrling_id && (point.lehrling_name || point.contact_name))
+        .map((point) => ({
+          id: point.lehrling_id,
+          name: point.lehrling_name || point.contact_name,
+          address: point.name,
+          route: point.route,
+          pointId: point.id,
+        }));
+      if (liveStudents.length) demoStudents = liveStudents;
+      state.schedule.values = {};
+      (result.items || []).forEach((item) => {
+        state.schedule.values[`${item.student_id}|${item.date}`] = item.status;
+      });
+      state.schedule.holidays = new Set(result.holidays || []);
+      state.schedule.dirty = false;
+      return true;
+    } catch (error) {
+      console.warn("Live Fahrtenplan unavailable; using local fixture", error);
+      return false;
+    }
+  }
+
   function scheduleDates() {
     const from = new Date(`${state.schedule.from}T12:00:00`);
     const to = new Date(`${state.schedule.to}T12:00:00`);
@@ -803,12 +831,16 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     dom.panels.schedule.querySelector("#schedulePrintBtn")?.addEventListener("click", () => window.print());
-    dom.panels.schedule.querySelector("#scheduleFrom").addEventListener("change", (event) => {
+    dom.panels.schedule.querySelector("#scheduleFrom").addEventListener("change", async (event) => {
       state.schedule.from = event.target.value;
       renderSchedule();
+      await loadLiveSchedule();
+      renderSchedule();
     });
-    dom.panels.schedule.querySelector("#scheduleTo").addEventListener("change", (event) => {
+    dom.panels.schedule.querySelector("#scheduleTo").addEventListener("change", async (event) => {
       state.schedule.to = event.target.value;
+      renderSchedule();
+      await loadLiveSchedule();
       renderSchedule();
     });
     dom.panels.schedule.querySelector("#scheduleRoute").addEventListener("change", (event) => {
@@ -833,6 +865,8 @@ document.addEventListener("DOMContentLoaded", () => {
             visibleStudents.forEach((student) => { values[`${student.id}|${date}`] = action; });
           }
         });
+        state.schedule.dirty = true;
+        setDirty();
         renderSchedule();
       });
     });
@@ -841,6 +875,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const key = `${button.dataset.student}|${button.dataset.date}`;
         const order = ["both", "out", "back", "none"];
         values[key] = order[(order.indexOf(values[key] || "both") + 1) % order.length];
+        state.schedule.dirty = true;
+        setDirty();
         renderSchedule();
       });
     });
@@ -862,6 +898,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await window.loadAdminData();
       state.data = normalizeData(data);
       ensureMatrixIntegrity();
+      await loadLiveSchedule();
       setDirty(false);
       renderStatus("Daten geladen");
       render();
@@ -881,6 +918,17 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       ensureMatrixIntegrity();
       await window.saveAdminData(state.data);
+      if (state.schedule.dirty && typeof window.saveLehrlingePlan === "function") {
+        const rows = Object.entries(state.schedule.values).map(([key, status]) => {
+          const separator = key.indexOf("|");
+          return { student_id: key.slice(0, separator), date: key.slice(separator + 1), status };
+        });
+        await window.saveLehrlingePlan({
+          rows,
+          holidays: Array.from(state.schedule.holidays),
+        });
+        state.schedule.dirty = false;
+      }
       state.data.points.forEach((point) => { point.lehrling_pin = ""; });
       state.dirty = false;
       renderStatus("Änderungen gespeichert");

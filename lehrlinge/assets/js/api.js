@@ -383,6 +383,13 @@ async function loadAdminData() {
   );
 }
 
+async function loadLehrlingePlan(from, to) {
+  return proxyGet(
+    { fn: "lehrlinge_plan", adminToken: getAdminToken(), from: String(from || ""), to: String(to || "") },
+    { retries: 1, timeoutMs: 20000, bustCache: true }
+  );
+}
+
 async function loginAdmin(password) {
   // Apps Script redirects POST requests to googleusercontent.com; browsers then
   // follow the redirect as GET and return 405. Login has no side effects, so
@@ -433,6 +440,20 @@ async function saveAdminData(payload) {
   return res.saved;
 }
 
+async function saveLehrlingePlan(payload) {
+  const res = await proxyPost(
+    {
+      action: "lehrlinge_plan_save",
+      adminToken: getAdminToken(),
+      rows: JSON.stringify(payload?.rows || []),
+      holidays: JSON.stringify(payload?.holidays || []),
+    },
+    { retries: 0, timeoutMs: 25000 }
+  );
+  if (!res || res.ok === false) throw new Error(res?.error || "lehrlinge_plan_save failed");
+  return res.saved;
+}
+
 setInterval(() => {
   ping().catch(() => {});
 }, 3_600_000);
@@ -445,7 +466,9 @@ window.loadRecent = loadRecent;
 window.saveSubmission = saveSubmission;
 window.ping = ping;
 window.loadAdminData = loadAdminData;
+window.loadLehrlingePlan = loadLehrlingePlan;
 window.saveAdminData = saveAdminData;
+window.saveLehrlingePlan = saveLehrlingePlan;
 window.loginAdmin = loginAdmin;
 window.logoutAdmin = logoutAdmin;
 window.getAdminToken = getAdminToken;
