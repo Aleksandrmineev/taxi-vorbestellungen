@@ -151,13 +151,15 @@ function saveLehrlingePlan_(body) {
   const rows = Array.isArray(parsed) ? parsed : [];
   const holidays = new Set(JSON.parse(String(body.holidays || "[]")) || []);
   const sh = ensureLehrlingeSheet_(SpreadsheetApp.getActive(), LEHRLINGE_PLAN_SHEET, LEHRLINGE_PLAN_HEADERS);
+  const existingRows = sh.getLastRow() >= 2
+    ? sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_PLAN_HEADERS.length).getValues()
+    : [];
   const rowByKey = {};
-  if (sh.getLastRow() >= 2) {
-    sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues().forEach((row, index) => {
-      rowByKey[String(row[0] || "").trim() + "|" + String(row[1] || "").trim()] = index + 2;
-    });
-  }
+  existingRows.forEach((row, index) => {
+    rowByKey[String(row[0] || "").trim() + "|" + String(row[1] || "").trim()] = index;
+  });
   const now = new Date();
+  const newRows = [];
   let saved = 0;
   rows.forEach((item) => {
     const date = String(item.date || "").trim();
@@ -167,18 +169,40 @@ function saveLehrlingePlan_(body) {
     const morning = status === "both" || status === "out" ? "1" : "0";
     const evening = status === "both" || status === "back" ? "1" : "0";
     const key = date + "|" + studentId;
-    const rowNumber = rowByKey[key];
-    const existing = rowNumber
-      ? sh.getRange(rowNumber, 1, 1, LEHRLINGE_PLAN_HEADERS.length).getValues()[0]
-      : null;
+    const existingIndex = rowByKey[key];
+    const existing = existingIndex == null ? null : existingRows[existingIndex];
     const values = [[date, studentId, existing?.[2] ?? morning, existing?.[3] ?? evening, morning, evening, holidays.has(date) ? "holiday" : "", "admin", now]];
-    if (rowNumber) sh.getRange(rowNumber, 1, 1, LEHRLINGE_PLAN_HEADERS.length).setValues(values);
-    else {
-      sh.appendRow(values[0]);
-      rowByKey[key] = sh.getLastRow();
-    }
+    if (existingIndex == null) {
+      newRows.push(values[0]);
+      rowByKey[key] = existingRows.length + newRows.length - 1;
+    } else existingRows[existingIndex] = values[0];
     saved += 1;
   });
+  const changedIndexes = [];
+  rows.forEach((item) => {
+    const key = String(item.date || "").trim() + "|" + String(item.student_id || "").trim();
+    if (rowByKey[key] != null && rowByKey[key] < existingRows.length && !changedIndexes.includes(rowByKey[key])) changedIndexes.push(rowByKey[key]);
+  });
+  changedIndexes.sort((a, b) => a - b);
+  let blockStart = null;
+  let previous = null;
+  const flushBlock = () => {
+    if (blockStart == null) return;
+    const blockEnd = previous;
+    sh.getRange(2 + blockStart, 1, blockEnd - blockStart + 1, LEHRLINGE_PLAN_HEADERS.length)
+      .setValues(existingRows.slice(blockStart, blockEnd + 1));
+    blockStart = null;
+  };
+  changedIndexes.forEach((index) => {
+    if (blockStart == null) blockStart = index;
+    else if (index !== previous + 1) {
+      flushBlock();
+      blockStart = index;
+    }
+    previous = index;
+  });
+  flushBlock();
+  if (newRows.length) sh.getRange(sh.getLastRow() + 1, 1, newRows.length, LEHRLINGE_PLAN_HEADERS.length).setValues(newRows);
   return { ok: true, saved: saved };
 }
 
