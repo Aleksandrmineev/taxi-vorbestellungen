@@ -140,10 +140,13 @@ async function proxyPost(body, { retries = 1, timeoutMs = 10000 } = {}) {
     GAS_PROXY_URL,
     {
       method: "POST",
+      // application/json triggers an OPTIONS preflight, which Google Apps
+      // Script Web Apps do not handle. Form-encoded POST stays a simple CORS
+      // request and is parsed by doPost via e.parameter.
       headers: {
-        "Content-Type": "application/json;charset=UTF-8",
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
       },
-      body: JSON.stringify({ ...(body || {}), secret: API_SECRET }),
+      body: new URLSearchParams({ ...(body || {}), secret: API_SECRET }),
     },
     { retries, timeoutMs }
   );
