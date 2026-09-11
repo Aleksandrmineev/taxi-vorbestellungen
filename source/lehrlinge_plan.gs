@@ -1,0 +1,254 @@
+/**
+ * Lehrlinge Plan / Student Portal
+ *
+ * Изолированный модуль для учеников. Не изменяет Points, Matrix, Drivers,
+ * Cars или существующую админскую модель. Листы создаются только явным
+ * вызовом setupLehrlingePlanSheets().
+ */
+
+const LEHRLINGE_STUDENTS_SHEET = "_Lehrlinge";
+const LEHRLINGE_PLAN_SHEET = "_LehrlingePlan";
+const LEHRLINGE_STUDENT_TOKEN_PREFIX = "lehrlinge_student_token:";
+const LEHRLINGE_STUDENT_TOKEN_TTL_SEC = 12 * 60 * 60;
+
+const LEHRLINGE_STUDENT_HEADERS = [
+  "student_id",
+  "name",
+  "point_id",
+  "active",
+  "pin_hash",
+  "updated_at",
+];
+
+const LEHRLINGE_PLAN_HEADERS = [
+  "date",
+  "student_id",
+  "baseline_morning",
+  "baseline_evening",
+  "override_morning",
+  "override_evening",
+  "note",
+  "updated_by",
+  "updated_at",
+];
+
+/** Явно запускается один раз администратором после проверки проекта. */
+function setupLehrlingePlanSheets() {
+  const ss = SpreadsheetApp.getActive();
+  const students = ensureLehrlingeSheet_(ss, LEHRLINGE_STUDENTS_SHEET, LEHRLINGE_STUDENT_HEADERS);
+  const plan = ensureLehrlingeSheet_(ss, LEHRLINGE_PLAN_SHEET, LEHRLINGE_PLAN_HEADERS);
+  return {
+    ok: true,
+    studentsSheet: students.getName(),
+    planSheet: plan.getName(),
+    note: "Sheets created/updated and hidden; existing sheets were not changed.",
+  };
+}
+
+/**
+ * Одноразово заполняет roster текущими Lehrlinge из проверенного PDF.
+ * Работает только через upsert и не удаляет уже существующие строки.
+ * PINы намеренно не заполняются.
+ */
+function seedLehrlingeRoster() {
+  const students = [
+    ["oliver", "Oliver Kreuzer", "1R4"],
+    ["sebastian", "Sebastian Pirker", "1R5"],
+    ["marcel", "Marcel Feistl", "1R7"],
+    ["patrick", "Patrick Hasler", "1R8"],
+    ["leon", "Leon Jocham", "1R10"],
+    ["niklas", "Niklas Jocham", "2R2"],
+    ["marie", "Marie Kaltenegger", "2R3"],
+    ["fabian", "Fabian Gruber", "2R4"],
+    ["lorenz", "Lorenz Diethart", "FAL"],
+    ["lukas", "Lukas Kaiser", "2R5"],
+    ["elias", "Elias Führer", "2R6"],
+    ["jakob", "Jakob Pichler", "2R7"],
+  ];
+
+  setupLehrlingePlanSheets();
+  students.forEach(([id, name, pointId]) => upsertLehrlingStudent(id, name, pointId, "1"));
+  return { ok: true, seeded: students.length, pinCount: 0 };
+}
+
+function ensureLehrlingeSheet_(ss, name, headers) {
+  const sh = ss.getSheetByName(name) || ss.insertSheet(name);
+  if (sh.getLastRow() === 0) {
+    sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+  if (!sh.isSheetHidden()) sh.hideSheet();
+  return sh;
+}
+
+/**
+ * Администратор задаёт PIN как последние 4 цифры номера самого Lehrling.
+ * В таблицу попадает только SHA-256 hash, не PIN.
+ */
+function setLehrlingPin(studentId, lastFourDigits) {
+  const id = String(studentId || "").trim();
+  const pin = String(lastFourDigits || "").replace(/\D/g, "");
+  if (!id) throw new Error("student_id_required");
+  if (!/^\d{4}$/.test(pin)) throw new Error("pin_must_be_4_digits");
+
+  const ss = SpreadsheetApp.getActive();
+  const sh = ensureLehrlingeSheet_(ss, LEHRLINGE_STUDENTS_SHEET, LEHRLINGE_STUDENT_HEADERS);
+  const row = findLehrlingStudentRow_(sh, id);
+  if (!row) throw new Error("student_not_found");
+  sh.getRange(row, 5, 1, 2).setValues([[sha256Hex_(pin), new Date()]]);
+  return { ok: true, studentId: id };
+}
+
+function upsertLehrlingStudent(studentId, name, pointId, active) {
+  const id = String(studentId || "").trim();
+  const normalizedName = String(name || "").trim();
+  const normalizedPointId = String(pointId || "").trim();
+  if (!id || !normalizedName || !normalizedPointId) {
+    throw new Error("student_id_name_point_required");
+  }
+
+  const ss = SpreadsheetApp.getActive();
+  const sh = ensureLehrlingeSheet_(ss, LEHRLINGE_STUDENTS_SHEET, LEHRLINGE_STUDENT_HEADERS);
+  const existingRow = findLehrlingStudentRow_(sh, id);
+  const values = [id, normalizedName, normalizedPointId, String(active || "1") === "0" ? "0" : "1"];
+  if (existingRow) {
+    sh.getRange(existingRow, 1, 1, 4).setValues([values]);
+    sh.getRange(existingRow, 6).setValue(new Date());
+  } else {
+    sh.appendRow([...values, "", new Date()]);
+  }
+  return { ok: true, studentId: id };
+}
+
+function getLehrlingeByPointId_() {
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName(LEHRLINGE_STUDENTS_SHEET);
+  const out = {};
+  if (!sh || sh.getLastRow() < 2) return out;
+  const values = sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_STUDENT_HEADERS.length).getValues();
+  values.forEach((row) => {
+    const studentId = String(row[0] || "").trim();
+    const pointId = String(row[2] || "").trim();
+    if (!studentId || !pointId) return;
+    out[pointId] = {
+      lehrling_id: studentId,
+      lehrling_name: String(row[1] || ""),
+      lehrling_has_pin: Boolean(String(row[4] || "").trim()),
+    };
+  });
+  return out;
+}
+
+function syncLehrlingeRosterFromPoints_(points) {
+  const ss = SpreadsheetApp.getActive();
+  const sh = ensureLehrlingeSheet_(ss, LEHRLINGE_STUDENTS_SHEET, LEHRLINGE_STUDENT_HEADERS);
+  const rows = sh.getLastRow() >= 2
+    ? sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_STUDENT_HEADERS.length).getValues()
+    : [];
+  const rowByPoint = {};
+  rows.forEach((row, index) => {
+    const pointId = String(row[2] || "").trim();
+    if (pointId) rowByPoint[pointId] = index + 2;
+  });
+
+  (points || []).forEach((point) => {
+    const pointId = String(point.id || "").trim();
+    // contact_name remains the legacy field; here it is the Lehrling name.
+    const name = String(point.lehrling_name || point.contact_name || "").trim();
+    if (!pointId || !name) return;
+
+    const rowNumber = rowByPoint[pointId];
+    const existing = rowNumber
+      ? sh.getRange(rowNumber, 1, 1, LEHRLINGE_STUDENT_HEADERS.length).getValues()[0]
+      : null;
+    const studentId = String(point.lehrling_id || existing?.[0] || pointId).trim();
+    const pin = String(point.lehrling_pin || "").trim();
+    if (pin && !/^\d{4}$/.test(pin)) throw new Error("pin_must_be_4_digits_for_" + pointId);
+    const pinHash = pin ? sha256Hex_(pin) : String(existing?.[4] || "");
+    const values = [[
+      studentId,
+      name,
+      pointId,
+      String(point.active || "1") === "0" ? "0" : "1",
+      pinHash,
+      new Date(),
+    ]];
+    if (rowNumber) sh.getRange(rowNumber, 1, 1, LEHRLINGE_STUDENT_HEADERS.length).setValues(values);
+    else sh.appendRow(values[0]);
+  });
+}
+
+function loginLehrling_(studentId, pin) {
+  const id = String(studentId || "").trim();
+  const normalizedPin = String(pin || "").replace(/\D/g, "");
+  if (!id || !/^\d{4}$/.test(normalizedPin)) throw new Error("invalid_credentials");
+
+  const student = getLehrlingStudent_(id);
+  if (!student || student.active !== "1" || !student.pinHash) {
+    throw new Error("invalid_credentials");
+  }
+  if (sha256Hex_(normalizedPin) !== student.pinHash) {
+    throw new Error("invalid_credentials");
+  }
+
+  const token = Utilities.getUuid() + Utilities.getUuid();
+  cachePut_(LEHRLINGE_STUDENT_TOKEN_PREFIX + token, {
+    role: "student",
+    studentId: student.id,
+  }, LEHRLINGE_STUDENT_TOKEN_TTL_SEC);
+  return { token: token, expiresInSec: LEHRLINGE_STUDENT_TOKEN_TTL_SEC, studentId: student.id };
+}
+
+function requireLehrlingStudentToken_(token) {
+  const normalized = String(token || "").trim();
+  const session = cacheGet_(LEHRLINGE_STUDENT_TOKEN_PREFIX + normalized);
+  if (!session || session.role !== "student" || !session.studentId) {
+    throw new Error("student_auth_required");
+  }
+  return session;
+}
+
+function getLehrlingStudent_(studentId) {
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName(LEHRLINGE_STUDENTS_SHEET);
+  if (!sh || sh.getLastRow() < 2) return null;
+  const values = sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_STUDENT_HEADERS.length).getValues();
+  for (const row of values) {
+    if (String(row[0] || "").trim() !== String(studentId || "").trim()) continue;
+    return {
+      id: String(row[0] || "").trim(),
+      name: String(row[1] || ""),
+      pointId: String(row[2] || "").trim(),
+      active: String(row[3] || "") === "1" ? "1" : "0",
+      pinHash: String(row[4] || "").trim().toLowerCase(),
+    };
+  }
+  return null;
+}
+
+function findLehrlingStudentRow_(sh, studentId) {
+  if (sh.getLastRow() < 2) return 0;
+  const values = sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues();
+  for (let index = 0; index < values.length; index += 1) {
+    if (String(values[index][0] || "").trim() === String(studentId || "").trim()) {
+      return index + 2;
+    }
+  }
+  return 0;
+}
+
+function lehrlingeCutoffOpen_(dateValue, direction, now) {
+  const date = String(dateValue || "").trim();
+  const current = now || new Date();
+  const today = Utilities.formatDate(current, "Europe/Vienna", "yyyy-MM-dd");
+  if (date > today) return true;
+  if (date < today) return false;
+
+  const hour = Number(Utilities.formatDate(current, "Europe/Vienna", "H"));
+  return direction === "morning" ? hour < 3 : hour < 12;
+}
+
+function assertLehrlingeCutoffOpen_(dateValue, direction) {
+  if (!lehrlingeCutoffOpen_(dateValue, direction)) {
+    throw new Error(direction === "morning" ? "morning_cutoff_passed" : "evening_cutoff_passed");
+  }
+}

@@ -200,6 +200,12 @@ function doPost(e) {
       return json({ ok: true, ...session });
     }
 
+    // Отдельный вход Student Portal. Не даёт доступ к админским endpoint'ам.
+    if (action === "student_login") {
+      const session = loginLehrling_(body.studentId, body.pin);
+      return json({ ok: true, ...session });
+    }
+
     // ===== ВЕТКА АДМИНКИ LEHRLINGE =====
     if (action === "admin_save") {
       requireAdminToken_(String(body.adminToken || ""));

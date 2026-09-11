@@ -10,6 +10,14 @@ document.addEventListener("DOMContentLoaded", () => {
       cars: [],
       matrix: { ids: [], rows: [] },
     },
+    schedule: {
+      from: "2026-09-14",
+      to: "2026-09-18",
+      route: "all",
+      student: "all",
+      holidays: new Set(),
+      values: {},
+    },
   };
 
   const dom = {
@@ -32,6 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
       matrix: document.getElementById("tab-matrix"),
       drivers: document.getElementById("tab-drivers"),
       cars: document.getElementById("tab-cars"),
+      schedule: document.getElementById("tab-schedule"),
     },
   };
 
@@ -73,6 +82,10 @@ document.addEventListener("DOMContentLoaded", () => {
           contact_name: String(p?.contact_name || ""),
           phone: String(p?.phone || ""),
           arrival_time: String(p?.arrival_time || ""),
+          lehrling_id: String(p?.lehrling_id || "").trim(),
+          lehrling_name: String(p?.lehrling_name || ""),
+          lehrling_has_pin: p?.lehrling_has_pin === true,
+          lehrling_pin: "",
           auto_id: false,
         }))
       : [];
@@ -363,8 +376,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             <tr class="admin-point-row admin-point-row--contact" data-point-index="${idx}">
                               <td>
                                 <div class="admin-point-contact-fields">
-                                  <input type="text" data-field="contact_name" value="${esc(p.contact_name)}" placeholder="Kontaktname" />
+                                  <input type="text" data-field="contact_name" value="${esc(p.contact_name || p.lehrling_name)}" placeholder="Lehrling" />
                                   <input type="tel" data-field="phone" value="${esc(p.phone)}" placeholder="Telefon: +43 …" />
+                                  <input type="password" data-field="lehrling_pin" value="" inputmode="numeric" maxlength="4" placeholder="PIN (4 Ziffern)" />
+                                  <span class="admin-pin-status">${p.lehrling_has_pin ? "PIN gesetzt" : "PIN nicht gesetzt"}</span>
                                 </div>
                               </td>
                             </tr>
@@ -405,6 +420,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           } else {
             state.data.points[index][field] = value;
+            if (field === "contact_name") state.data.points[index].lehrling_name = value;
           }
           setDirty();
           if (field === "route") render();
@@ -627,17 +643,222 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  let demoStudents = [
+    ["oliver", "Oliver Kreuzer", "Schulgasse 25a", "1"],
+    ["leon", "Leon Jocham", "Rainergasse 13", "1"],
+    ["patrick", "Patrick Hasler", "Ostwerkgasse 8a", "1"],
+    ["sebastian", "Sebastian Pirker", "Dinsendorferweg 5", "1"],
+    ["marcel", "Marcel Feistl", "Hochwiesenweg 6", "1"],
+    ["marie", "Marie Kaltenegger", "Pusterwald 22", "2"],
+    ["fabian", "Fabian Gruber", "Falbweg 7c", "2"],
+    ["elias", "Elias Führer", "Wiesenweg 15a", "2"],
+    ["niklas", "Niklas Jocham", "Schwarzenbergsiedlung 47", "2"],
+    ["jakob", "Jakob Pichler", "Mauterndorf 57", "2"],
+    ["lukas", "Lukas Kaiser", "Zistl 9", "2"],
+  ].map(([id, name, address, route]) => ({ id, name, address, route }));
+  let scheduleBaseline = new Map();
+
+  async function loadScheduleFixture() {
+    try {
+      const response = await fetch("../student-portal/data/schedule.json", { cache: "no-store" });
+      const fixture = await response.json();
+      const pointsById = new Map((fixture.points || []).map((point) => [point.id, point]));
+      demoStudents = fixture.students.map((student) => ({
+        ...(pointsById.get(student.pointId) || {}),
+        ...student,
+        id: student.id,
+      }));
+      scheduleBaseline = new Map(
+        fixture.days.map((day) => [day.date, new Set(day.active || [])])
+      );
+      fixture.days.forEach((day) => {
+        const active = new Set(day.active || []);
+        fixture.students.forEach((student) => {
+          const key = `${student.id}|${day.date}`;
+          if (!state.schedule.values[key]) {
+            state.schedule.values[key] = active.has(student.id) ? "both" : "none";
+          }
+        });
+      });
+    } catch (error) {
+      console.warn("Schedule fixture unavailable; using demo data", error);
+    }
+  }
+
+  function scheduleDates() {
+    const from = new Date(`${state.schedule.from}T12:00:00`);
+    const to = new Date(`${state.schedule.to}T12:00:00`);
+    const dates = [];
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from > to) return dates;
+    for (const date = new Date(from); date <= to; date.setDate(date.getDate() + 1)) {
+      const day = date.getDay();
+      const key = date.toISOString().slice(0, 10);
+      if (day !== 0 && day !== 6) dates.push(key);
+    }
+    return dates;
+  }
+
+  function scheduleStatus(studentId, date) {
+    const key = `${studentId}|${date}`;
+    if (state.schedule.values[key]) return state.schedule.values[key];
+    const baseline = scheduleBaseline.get(date);
+    return baseline ? (baseline.has(studentId) ? "both" : "none") : "both";
+  }
+
+  function scheduleLabel(status) {
+    return { both: "Hin + zurück", out: "Nur hin", back: "Nur zurück", none: "Nicht eingeplant" }[status];
+  }
+
+  function scheduleShort(status) {
+    return { both: "↔", out: "→", back: "←", none: "—" }[status];
+  }
+
+  function formatScheduleDate(key) {
+    return new Date(`${key}T12:00:00`).toLocaleDateString("de-AT", {
+      weekday: "short", day: "2-digit", month: "2-digit",
+    });
+  }
+
+  function renderSchedule() {
+    const dates = scheduleDates();
+    const values = state.schedule.values;
+    const visibleStudents = demoStudents.filter((student) =>
+      (state.schedule.route === "all" || student.route === state.schedule.route) &&
+      (state.schedule.student === "all" || student.id === state.schedule.student)
+    );
+    const summary = dates.reduce((out, date) => {
+      visibleStudents.forEach((student) => {
+        const status = scheduleStatus(student.id, date);
+        if (status !== "none") out.passengers += 1;
+        if (status === "out" || status === "both") out.out += 1;
+        if (status === "back" || status === "both") out.back += 1;
+      });
+      return out;
+    }, { passengers: 0, out: 0, back: 0 });
+
+    dom.panels.schedule.innerHTML = `
+      <article class="card schedule-preview">
+        <div class="schedule-heading">
+          <div>
+            <div class="meta">Lokale Vorschau · noch nicht gespeichert</div>
+            <h3>Fahrtenplan</h3>
+            <p class="admin-note">Hier testen wir die spätere Verwaltung der Lehrlinge-Abmeldungen. Die bestehende Tabelle und Google Sheets werden nicht verändert.</p>
+          </div>
+          <div class="schedule-summary">
+            <button type="button" class="btn schedule-print-button" id="schedulePrintBtn">PDF / Drucken</button>
+            <span><strong>${summary.passengers}</strong> Buchungen</span>
+            <span><strong>${summary.out}</strong> Hin</span>
+            <span><strong>${summary.back}</strong> Zurück</span>
+          </div>
+        </div>
+
+        <div class="schedule-controls">
+          <div class="schedule-controls__title">Massenänderungen</div>
+          <label>Route
+            <select id="scheduleRoute">
+              <option value="all"${state.schedule.route === "all" ? " selected" : ""}>Alle Routen</option>
+              <option value="1"${state.schedule.route === "1" ? " selected" : ""}>Route 1</option>
+              <option value="2"${state.schedule.route === "2" ? " selected" : ""}>Route 2</option>
+            </select>
+          </label>
+          <label>Lehrling
+            <select id="scheduleStudent">
+              <option value="all"${state.schedule.student === "all" ? " selected" : ""}>Alle Lehrlinge</option>
+              ${demoStudents.map((student) => `<option value="${student.id}"${state.schedule.student === student.id ? " selected" : ""}>${esc(student.name)}</option>`).join("")}
+            </select>
+          </label>
+          <label>Von <input id="scheduleFrom" type="date" value="${esc(state.schedule.from)}"></label>
+          <label>Bis <input id="scheduleTo" type="date" value="${esc(state.schedule.to)}"></label>
+          <label class="schedule-check"><input id="scheduleWeekdays" type="checkbox" checked disabled> nur Werktage</label>
+          <div class="schedule-controls__actions">
+            <button type="button" class="btn" data-schedule-action="both">Hin + zurück</button>
+            <button type="button" class="btn" data-schedule-action="out">Nur hin</button>
+            <button type="button" class="btn" data-schedule-action="back">Nur zurück</button>
+            <button type="button" class="btn" data-schedule-action="none">Keine Fahrt</button>
+            <button type="button" class="btn" data-schedule-action="holiday">Als Ferien markieren</button>
+            <button type="button" class="btn" data-schedule-action="schoolday">Ferien entfernen</button>
+          </div>
+        </div>
+
+        <div class="schedule-legend">
+          <span class="schedule-pill schedule-pill--both">↔ Hin + zurück</span>
+          <span class="schedule-pill schedule-pill--out">→ Nur hin</span>
+          <span class="schedule-pill schedule-pill--back">← Nur zurück</span>
+          <span class="schedule-pill schedule-pill--none">— Nicht eingeplant</span>
+          <span class="meta">Klick auf eine Zelle wechselt den Status.</span>
+        </div>
+
+        <div class="admin-table-wrap schedule-table-wrap">
+          <table class="admin-table schedule-table">
+            <thead><tr><th class="schedule-date-head">Datum</th>${visibleStudents.map((student) => `<th title="${esc(student.address)}"><strong class="schedule-name">${esc(student.name)}</strong><small class="schedule-address">${esc(student.address || "Adresse nicht hinterlegt")}</small><small>Route ${esc(student.route || "—")}</small></th>`).join("")}</tr></thead>
+            <tbody>
+              ${dates.map((date) => `<tr><th class="schedule-date"><strong>${formatScheduleDate(date)}</strong><small>${state.schedule.holidays.has(date) ? "Ferien" : "Schultag"}</small></th>${visibleStudents.map((student) => {
+                const status = scheduleStatus(student.id, date);
+                return `<td><button type="button" class="schedule-cell schedule-cell--${status}" data-student="${student.id}" data-date="${date}" title="${scheduleLabel(status)}">${scheduleShort(status)}<small>${status === "both" ? "beide" : status === "out" ? "hin" : status === "back" ? "zurück" : "frei"}</small></button></td>`;
+              }).join("")}</tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    `;
+
+    dom.panels.schedule.querySelector("#schedulePrintBtn")?.addEventListener("click", () => window.print());
+    dom.panels.schedule.querySelector("#scheduleFrom").addEventListener("change", (event) => {
+      state.schedule.from = event.target.value;
+      renderSchedule();
+    });
+    dom.panels.schedule.querySelector("#scheduleTo").addEventListener("change", (event) => {
+      state.schedule.to = event.target.value;
+      renderSchedule();
+    });
+    dom.panels.schedule.querySelector("#scheduleRoute").addEventListener("change", (event) => {
+      state.schedule.route = event.target.value;
+      renderSchedule();
+    });
+    dom.panels.schedule.querySelector("#scheduleStudent").addEventListener("change", (event) => {
+      state.schedule.student = event.target.value;
+      renderSchedule();
+    });
+    dom.panels.schedule.querySelectorAll("[data-schedule-action]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const action = button.dataset.scheduleAction;
+        dates.forEach((date) => {
+          if (action === "holiday") {
+            state.schedule.holidays.add(date);
+            visibleStudents.forEach((student) => { values[`${student.id}|${date}`] = "none"; });
+          } else if (action === "schoolday") {
+            state.schedule.holidays.delete(date);
+            visibleStudents.forEach((student) => { values[`${student.id}|${date}`] = "both"; });
+          } else {
+            visibleStudents.forEach((student) => { values[`${student.id}|${date}`] = action; });
+          }
+        });
+        renderSchedule();
+      });
+    });
+    dom.panels.schedule.querySelectorAll("[data-student][data-date]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const key = `${button.dataset.student}|${button.dataset.date}`;
+        const order = ["both", "out", "back", "none"];
+        values[key] = order[(order.indexOf(values[key] || "both") + 1) % order.length];
+        renderSchedule();
+      });
+    });
+  }
+
   function render() {
     renderStatus();
     if (state.activeTab === "points") renderPoints();
     if (state.activeTab === "matrix") renderMatrix();
     if (state.activeTab === "drivers") renderDrivers();
     if (state.activeTab === "cars") renderCars();
+    if (state.activeTab === "schedule") renderSchedule();
   }
 
   async function load() {
     dom.statusText.textContent = "Lade Daten…";
     try {
+      await loadScheduleFixture();
       const data = await window.loadAdminData();
       state.data = normalizeData(data);
       ensureMatrixIntegrity();
@@ -660,6 +881,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       ensureMatrixIntegrity();
       await window.saveAdminData(state.data);
+      state.data.points.forEach((point) => { point.lehrling_pin = ""; });
       state.dirty = false;
       renderStatus("Änderungen gespeichert");
       render();
@@ -704,6 +926,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
+      await loadScheduleFixture();
       setAuthenticated(true);
       await load();
       setAuthStatus("Eingeloggt");

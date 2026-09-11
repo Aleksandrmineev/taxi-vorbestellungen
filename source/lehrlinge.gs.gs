@@ -211,8 +211,13 @@ function getRecentSubmissions(route, limit) {
 
 function getAdminData_() {
   const snapshot = getLehrlingeSnapshot_();
+  const studentsByPoint = getLehrlingeByPointId_();
   return {
-    points: snapshot.points || [],
+    points: (snapshot.points || []).map((point) => ({
+      ...point,
+      ...(studentsByPoint[point.id] || {}),
+      lehrling_pin: "",
+    })),
     drivers: snapshot.drivers || [],
     cars: snapshot.cars || [],
     matrix: snapshot.matrix || { ids: [], rows: [] },
@@ -240,6 +245,7 @@ function saveAdminData_(body) {
       p.arrival_time,
     ])
   );
+  syncLehrlingeRosterFromPoints_(payload.points);
   const pointsSheet = ss.getSheetByName("Points");
   if (pointsSheet && pointsSheet.getLastRow() > 1) {
     pointsSheet
@@ -524,6 +530,9 @@ function normalizePoints_(list) {
     contact_name: String(item?.contact_name || "").trim(),
     phone: String(item?.phone || "").trim(),
     arrival_time: String(item?.arrival_time || "").trim(),
+    lehrling_id: String(item?.lehrling_id || "").trim(),
+    lehrling_name: String(item?.lehrling_name || "").trim(),
+    lehrling_pin: String(item?.lehrling_pin || "").trim(),
   }));
 }
 
