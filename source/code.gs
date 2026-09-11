@@ -4,6 +4,8 @@ const SHEET_QR = "QR_Zahlungen";
 const ADMIN_SETTINGS_SHEET = "Settings";
 const ADMIN_PASSWORD_HASH_KEY = "admin_password_hash";
 const ADMIN_PASSWORD_PLAIN_KEY = "admin_password";
+const ADMIN_DEVELOPER_PASSWORD_HASH_KEY = "admin_password_developer_hash";
+const ADMIN_DEVELOPER_PASSWORD_PLAIN_KEY = "admin_password_developer";
 const ADMIN_TOKEN_CACHE_PREFIX = "admin_token:";
 const ADMIN_TOKEN_TTL_SEC = 12 * 60 * 60;
 const SHIFT_DRIVERS_SHEET = "_Shift_Drivers";
@@ -118,6 +120,13 @@ function doGet(e) {
       const limit = Number(e.parameter.limit || 5);
       const items = getRecentQrPayments_(limit); // из qr.gs
       return json({ ok: true, items });
+    }
+
+    // Логин Lehrlinge Admin через GET: Google Web App перенаправляет POST,
+    // после чего браузер превращает его в GET и получает 405.
+    if (fn === "admin_login") {
+      const session = loginAdmin_(String(e.parameter.password || ""));
+      return json({ ok: true, ...session });
     }
 
     // ---- Данные для админки Lehrlinge ----
@@ -978,17 +987,26 @@ function requireAdminToken_(token) {
 
 function checkAdminPassword_(password) {
   const settings = getSettingsMap_();
-  const plain = String(settings[ADMIN_PASSWORD_PLAIN_KEY] || "");
-  if (plain) {
-    return password === plain;
+  const passwordHash = sha256Hex_(password);
+  const configured = [
+    [ADMIN_PASSWORD_PLAIN_KEY, ADMIN_PASSWORD_HASH_KEY],
+    [ADMIN_DEVELOPER_PASSWORD_PLAIN_KEY, ADMIN_DEVELOPER_PASSWORD_HASH_KEY],
+  ];
+
+  let hasConfiguredPassword = false;
+  for (const [plainKey, hashKey] of configured) {
+    const plain = String(settings[plainKey] || "");
+    const expectedHash = String(settings[hashKey] || "").trim().toLowerCase();
+    if (plain || expectedHash) hasConfiguredPassword = true;
+    if ((plain && password === plain) || (expectedHash && passwordHash === expectedHash)) {
+      return true;
+    }
   }
 
-  const expectedHash = String(settings[ADMIN_PASSWORD_HASH_KEY] || "").trim().toLowerCase();
-  if (!expectedHash) {
+  if (!hasConfiguredPassword) {
     throw new Error("admin_password_not_configured");
   }
-
-  return sha256Hex_(password) === expectedHash;
+  return false;
 }
 
 function sha256Hex_(value) {
@@ -1061,6 +1079,27 @@ function setLehrlingeAdminPasswordPlain(password) {
 
   upsertSetting_(ADMIN_PASSWORD_PLAIN_KEY, normalized);
   return { ok: true, updated: ADMIN_PASSWORD_PLAIN_KEY };
+}
+
+function setLehrlingeDeveloperPassword(password) {
+  const normalized = String(password || "");
+  if (!normalized) {
+    throw new Error("password_required");
+  }
+
+  upsertSetting_(ADMIN_DEVELOPER_PASSWORD_HASH_KEY, sha256Hex_(normalized));
+  upsertSetting_(ADMIN_DEVELOPER_PASSWORD_PLAIN_KEY, "");
+  return { ok: true, updated: ADMIN_DEVELOPER_PASSWORD_HASH_KEY };
+}
+
+function setLehrlingeDeveloperPasswordPlain(password) {
+  const normalized = String(password || "");
+  if (!normalized) {
+    throw new Error("password_required");
+  }
+
+  upsertSetting_(ADMIN_DEVELOPER_PASSWORD_PLAIN_KEY, normalized);
+  return { ok: true, updated: ADMIN_DEVELOPER_PASSWORD_PLAIN_KEY };
 }
 
 function resetAdminPassword() {

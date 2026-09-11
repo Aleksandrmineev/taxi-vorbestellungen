@@ -381,12 +381,15 @@ async function loadAdminData() {
 }
 
 async function loginAdmin(password) {
-  const res = await proxyPost(
+  // Apps Script redirects POST requests to googleusercontent.com; browsers then
+  // follow the redirect as GET and return 405. Login has no side effects, so
+  // use the dedicated GET endpoint and receive only a short-lived token.
+  const res = await apiGet(
     {
       action: "admin_login",
       password: String(password || ""),
     },
-    { retries: 0, timeoutMs: 12000 }
+    { retries: 0, timeoutMs: 12000, bustCache: true }
   );
 
   if (!res || res.ok === false || !res.token) {
