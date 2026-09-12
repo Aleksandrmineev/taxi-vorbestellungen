@@ -414,7 +414,7 @@ function logoutAdmin() {
   setAdminToken("");
 }
 
-async function saveAdminData(payload) {
+async function saveAdminData(payload, sections = []) {
   const res = await proxyPost(
     {
       action: "admin_save",
@@ -423,6 +423,7 @@ async function saveAdminData(payload) {
       drivers: JSON.stringify(payload?.drivers || []),
       cars: JSON.stringify(payload?.cars || []),
       matrix: JSON.stringify(payload?.matrix || { ids: [], rows: [] }),
+      sections: JSON.stringify(Array.isArray(sections) ? sections : []),
     },
     { retries: 0, timeoutMs: 25000 }
   );

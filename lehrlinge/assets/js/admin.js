@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     routeFilter: "1",
     dirty: false,
     dataDirty: false,
+    dataSections: new Set(),
     saving: false,
     saveToastTimer: null,
     data: {
@@ -60,8 +61,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setDirty(flag = true, dataChanged = flag) {
     state.dirty = !!flag;
-    if (flag && dataChanged) state.dataDirty = true;
-    if (!flag) state.dataDirty = false;
+    if (flag && dataChanged && state.activeTab !== "schedule") {
+      state.dataDirty = true;
+      state.dataSections.add(state.activeTab);
+    }
+    if (!flag) {
+      state.dataDirty = false;
+      state.dataSections.clear();
+    }
     renderStatus();
   }
 
@@ -962,7 +969,9 @@ document.addEventListener("DOMContentLoaded", () => {
     renderStatus("Speichere Änderungen…");
     try {
       ensureMatrixIntegrity();
-      if (state.dataDirty) await window.saveAdminData(state.data);
+      if (state.dataDirty) {
+        await window.saveAdminData(state.data, Array.from(state.dataSections));
+      }
       if (state.schedule.dirty && typeof window.saveLehrlingePlan === "function") {
         const rows = Object.entries(state.schedule.values)
           .filter(([key, status]) => state.schedule.originalValues[key] !== status)
@@ -983,6 +992,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       state.data.points.forEach((point) => { point.lehrling_pin = ""; });
       state.dataDirty = false;
+      state.dataSections.clear();
       state.dirty = false;
       showSaveToast("Änderungen gespeichert", "success", 2600);
       renderStatus("Änderungen gespeichert");

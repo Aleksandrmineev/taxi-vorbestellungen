@@ -251,41 +251,56 @@ function getAdminData_() {
 
 function saveAdminData_(body) {
   const payload = parseAdminPayload_(body);
+  let sections = [];
+  try {
+    sections = JSON.parse(String(body.sections || "[]"));
+  } catch (_) {
+    sections = [];
+  }
+  sections = new Set(Array.isArray(sections) ? sections : []);
+  const savePoints = sections.size === 0 || sections.has("points");
+  const saveDrivers = sections.size === 0 || sections.has("drivers");
+  const saveCars = sections.size === 0 || sections.has("cars");
+  const saveMatrix = sections.size === 0 || sections.has("matrix") || savePoints;
 
-  validateAdminPayload_(payload);
+  validateAdminPayload_(payload, { savePoints, saveDrivers, saveCars, saveMatrix });
 
   const ss = SpreadsheetApp.getActive();
   ensureDriversSchema_(ss);
-  writeSheetRows_(
-    ss,
-    "Points",
-    ["id", "name", "route", "active", "url", "contact_name", "phone", "arrival_time"],
-    payload.points.map((p) => [
-      p.id,
-      p.name,
-      p.route,
-      p.active,
-      p.url,
-      p.contact_name,
-      p.phone,
-      p.arrival_time,
-    ])
-  );
-  syncLehrlingeRosterFromPoints_(payload.points);
-  const pointsSheet = ss.getSheetByName("Points");
-  if (pointsSheet && pointsSheet.getLastRow() > 1) {
-    pointsSheet
-      .getRange(2, 8, pointsSheet.getLastRow() - 1, 1)
-      .setNumberFormat("HH:mm");
+  if (savePoints) {
+    writeSheetRows_(
+      ss,
+      "Points",
+      ["id", "name", "route", "active", "url", "contact_name", "phone", "arrival_time"],
+      payload.points.map((p) => [
+        p.id,
+        p.name,
+        p.route,
+        p.active,
+        p.url,
+        p.contact_name,
+        p.phone,
+        p.arrival_time,
+      ])
+    );
+    syncLehrlingeRosterFromPoints_(payload.points);
+    const pointsSheet = ss.getSheetByName("Points");
+    if (pointsSheet && pointsSheet.getLastRow() > 1) {
+      pointsSheet
+        .getRange(2, 8, pointsSheet.getLastRow() - 1, 1)
+        .setNumberFormat("HH:mm");
+    }
   }
-  saveDriversSheet_(ss, payload.drivers);
-  writeSheetRows_(
-    ss,
-    "Cars",
-    ["CarId", "Kennzeichen"],
-    payload.cars.map((c) => [c.id, c.plate])
-  );
-  writeMatrixSheet_(ss, payload.matrix);
+  if (saveDrivers) saveDriversSheet_(ss, payload.drivers);
+  if (saveCars) {
+    writeSheetRows_(
+      ss,
+      "Cars",
+      ["CarId", "Kennzeichen"],
+      payload.cars.map((c) => [c.id, c.plate])
+    );
+  }
+  if (saveMatrix) writeMatrixSheet_(ss, payload.matrix);
   const snapshot = rebuildLehrlingeSnapshot_();
 
   return {
@@ -913,9 +928,13 @@ function normalizeMatrix_(matrix) {
   };
 }
 
-function validateAdminPayload_(payload) {
+function validateAdminPayload_(payload, options = {}) {
+  const savePoints = options.savePoints !== false;
+  const saveDrivers = options.saveDrivers !== false;
+  const saveCars = options.saveCars !== false;
+  const saveMatrix = options.saveMatrix !== false;
   const pointIds = {};
-  payload.points.forEach((p) => {
+  (savePoints ? payload.points : []).forEach((p) => {
     if (!p.id) throw new Error("Point id is required");
     if (!p.name) throw new Error("Point name is required for " + p.id);
     if (!p.route) throw new Error("Point route is required for " + p.id);
@@ -925,7 +944,7 @@ function validateAdminPayload_(payload) {
 
   const driverIds = {};
   const taxiNumbers = {};
-  payload.drivers.forEach((d) => {
+  (saveDrivers ? payload.drivers : []).forEach((d) => {
     if (!d.id) throw new Error("Driver id is required");
     if (!d.name) throw new Error("Driver name is required for " + d.id);
     if (driverIds[d.id]) throw new Error("Duplicate driver id: " + d.id);
@@ -943,13 +962,14 @@ function validateAdminPayload_(payload) {
   });
 
   const carIds = {};
-  payload.cars.forEach((c) => {
+  (saveCars ? payload.cars : []).forEach((c) => {
     if (!c.id) throw new Error("Car id is required");
     if (carIds[c.id]) throw new Error("Duplicate car id: " + c.id);
     carIds[c.id] = true;
   });
 
   const expectedIds = payload.points.map((p) => p.id);
+  if (!saveMatrix) return;
   if (payload.matrix.ids.length !== expectedIds.length) {
     throw new Error("Matrix size does not match points count");
   }
