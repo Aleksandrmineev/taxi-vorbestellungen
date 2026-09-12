@@ -180,10 +180,7 @@
     return Boolean(readSession());
   }
 
-  const existing = readSession();
-  if (existing) setLoggedIn(existing);
-  else if (hasAppAccess()) setLoggedIn(readSession());
-  else {
+  function lockApp() {
     appGrid.hidden = true;
     mainHeader.hidden = true;
     mainTitle.hidden = true;
@@ -193,6 +190,16 @@
     driverAuth.hidden = false;
     document.body.classList.add("driver-auth-locked");
   }
+
+  function syncAccess() {
+    const session = readSession();
+    if (session) setLoggedIn(session);
+    else if (hasGuestAccess()) continueWithoutLogin();
+    else lockApp();
+  }
+
+  syncAccess();
+  window.addEventListener("pageshow", syncAccess);
 
   showLogin.addEventListener("click", () => openForm("login"));
   showRegister.addEventListener("click", () => openForm("register"));

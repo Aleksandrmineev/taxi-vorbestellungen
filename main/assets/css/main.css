@@ -247,6 +247,7 @@
 .driver-support:hover { text-decoration: underline; }
 .install-app-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; align-self: center; margin-top: 8px; padding: 8px 12px; border: 1px solid color-mix(in oklab, var(--accent) 35%, var(--button-border)); border-radius: var(--radius-pill); background: var(--button-bg); color: var(--accent); font-size: .86rem; font-weight: 750; }
 .install-app-button:hover { background: color-mix(in oklab, var(--accent) 9%, var(--button-bg)); border-color: var(--accent); }
+.footer__link.install-app-button { margin-top: 0; min-width: 88px; }
 .driver-logout {
   flex: 1 1 0;
   display: inline-flex;
