@@ -516,7 +516,9 @@
   }
 
   .schedule-table-wrap {
-    overflow: visible;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
   .schedule-table {
@@ -539,6 +541,11 @@
     background: #edf0f4 !important;
     color: #111 !important;
     font-size: 7pt;
+  }
+
+  .schedule-date-head,
+  .schedule-date {
+    position: static !important;
   }
 
   .schedule-table thead th:first-child,
