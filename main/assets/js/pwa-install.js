@@ -6,6 +6,7 @@
   if (isStandalone) return;
 
   let deferredPrompt = null;
+  button.hidden = false;
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     deferredPrompt = event;
@@ -13,7 +14,10 @@
   });
 
   button.addEventListener("click", async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      window.location.href = "./hilfe.html#app-installieren";
+      return;
+    }
     deferredPrompt.prompt();
     await deferredPrompt.userChoice;
     deferredPrompt = null;
