@@ -63,7 +63,12 @@
   function readSession() {
     try {
       const value = JSON.parse(localStorage.getItem(TOKEN_KEY) || "null");
-      return value && value.expiresAt > Date.now() ? value : null;
+      if (!value?.token) return null;
+      if (!Number(value.expiresAt)) {
+        value.expiresAt = Date.now() + 365 * 24 * 60 * 60 * 1000;
+        localStorage.setItem(TOKEN_KEY, JSON.stringify(value));
+      }
+      return value.expiresAt > Date.now() ? value : null;
     } catch (_) { return null; }
   }
 
