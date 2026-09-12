@@ -321,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function goHome() {
-  location.href = "../?v=20260912";
+  location.href = "../";
 }
 
 // ===== Сохранение выбора водителя в localStorage и синхронизация между селектами =====
