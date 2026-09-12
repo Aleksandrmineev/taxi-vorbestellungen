@@ -7,25 +7,25 @@
     <base href="/main/" />
     <meta name="color-scheme" content="dark light" />
     <meta name="description" content="Zentrale Startseite von MurtalTaxi für Fahrer und interne Taxi-Dienste." />
-    <link rel="canonical" href="https://taxi-vorbestellungen.vercel.app/" />
+    <link rel="canonical" href="https://taxi-murtal.vercel.app/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MurtalTaxi" />
     <meta property="og:locale" content="de_AT" />
     <meta property="og:title" content="MurtalTaxi – Zentrale Startseite" />
     <meta property="og:description" content="Zentrale Startseite von MurtalTaxi für Fahrer und interne Taxi-Dienste." />
-    <meta property="og:url" content="https://taxi-vorbestellungen.vercel.app/" />
-    <meta property="og:image" content="https://taxi-vorbestellungen.vercel.app/main/assets/favicon/android-chrome-512x512.png" />
+    <meta property="og:url" content="https://taxi-murtal.vercel.app/" />
+    <meta property="og:image" content="https://taxi-murtal.vercel.app/main/assets/favicon/android-chrome-512x512.png" />
     <meta property="og:image:alt" content="MurtalTaxi" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="MurtalTaxi – Zentrale Startseite" />
     <meta name="twitter:description" content="Zentrale Startseite von MurtalTaxi für Fahrer und interne Taxi-Dienste." />
-    <meta name="twitter:image" content="https://taxi-vorbestellungen.vercel.app/main/assets/favicon/android-chrome-512x512.png" />
+    <meta name="twitter:image" content="https://taxi-murtal.vercel.app/main/assets/favicon/android-chrome-512x512.png" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "MurtalTaxi",
-        "url": "https://taxi-vorbestellungen.vercel.app/",
+        "url": "https://taxi-murtal.vercel.app/",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web"
       }
@@ -106,7 +106,7 @@
           <button class="primary" type="button" id="showLoginButton">Anmelden</button>
           <button class="btn-base" type="button" id="showRegisterButton">Registrieren</button>
           <button class="driver-skip driver-reset-link" type="button" id="showResetButton">PIN vergessen?</button>
-          <button class="driver-skip" type="button" id="skipDriverAuthButton">Später fortfahren</button>
+          <button class="driver-skip driver-reset-link" type="button" id="driverGuestButton">Später fortfahren</button>
         </div>
         <form id="driverLoginForm" class="driver-auth__form" hidden>
           <label>Taxi-Nr.<input id="driverTaxiNumber" inputmode="numeric" autocomplete="username" minlength="2" maxlength="3" pattern="[0-9]{2,3}" placeholder="z. B. 80" title="2 bis 3 Ziffern" required /></label>

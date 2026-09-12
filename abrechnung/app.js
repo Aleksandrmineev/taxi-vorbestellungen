@@ -24,7 +24,7 @@ let pendingReport = null;
 const GAS_PROXY =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1"
-    ? "https://taxi-vorbestellungen.vercel.app/api/gas"
+    ? "https://taxi-murtal.vercel.app/api/gas"
     : "/api/gas";
 const API_SECRET = "102030";
 

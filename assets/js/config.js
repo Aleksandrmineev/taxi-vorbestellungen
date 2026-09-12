@@ -1,8 +1,8 @@
 // config.js
 export const CONFIG = {
   GAS_URL:
-    "https://taxi-vorbestellungen.vercel.app/api/gas",
-  PUSH_SENDER_URL: "https://taxi-vorbestellungen.vercel.app/api/send",
+    "https://taxi-murtal.vercel.app/api/gas",
+  PUSH_SENDER_URL: "https://taxi-murtal.vercel.app/api/send",
   PUSH_SENDER_SECRET: "murtal123pushkey",
 };
 export const API = CONFIG.GAS_URL;

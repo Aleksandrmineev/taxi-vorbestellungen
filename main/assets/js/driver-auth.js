@@ -2,12 +2,12 @@
   const form = document.getElementById("driverLoginForm");
   if (!form) return;
   const GAS_PROXY = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-    ? "https://taxi-vorbestellungen.vercel.app/api/gas"
+    ? "https://taxi-murtal.vercel.app/api/gas"
     : "/api/gas";
   const API_SECRET = "102030";
   const TOKEN_KEY = "mt:driver-session";
-  const GUEST_KEY = "mt:driver-auth-skipped";
   const AUTH_KEY = "mt:driver-authenticated";
+  const GUEST_KEY = "mt:driver-guest-until";
   const LAST_TAXI_KEY = "mt:last-driver-taxi";
   const driverAuth = document.getElementById("driverAuth");
   const message = document.getElementById("driverAuthMessage");
@@ -30,7 +30,6 @@
   const showRegister = document.getElementById("showRegisterButton");
   const showReset = document.getElementById("showResetButton");
   const back = document.getElementById("driverAuthBack");
-  const skip = document.getElementById("skipDriverAuthButton");
   const resetForm = document.getElementById("driverPinResetForm");
   const resetBack = document.getElementById("resetAuthBack");
   const resetButton = document.getElementById("resetPinButton");
@@ -82,6 +81,7 @@
     const sessionTtl = Number.isFinite(expiresInSec) && expiresInSec > 0 ? expiresInSec : 365 * 24 * 60 * 60;
     localStorage.setItem(TOKEN_KEY, JSON.stringify({ token: session.token, expiresAt: Date.now() + sessionTtl * 1000, driver }));
     localStorage.setItem(AUTH_KEY, "1");
+    localStorage.removeItem(GUEST_KEY);
     if (driver.id) localStorage.setItem("mt:lastDriver", driver.id);
     if (driver.taxiNumber) localStorage.setItem("taxi-current-driver", driver.taxiNumber);
     driverAuth.classList.add("is-authenticated");
@@ -127,6 +127,30 @@
     message.textContent = "Bitte anmelden oder als neuer Fahrer registrieren.";
   }
 
+  function hasGuestAccess() {
+    const expiresAt = Number(localStorage.getItem(GUEST_KEY) || 0);
+    if (expiresAt > Date.now()) return true;
+    localStorage.removeItem(GUEST_KEY);
+    return false;
+  }
+
+  function showAppAsGuest() {
+    document.body.classList.remove("driver-auth-locked");
+    driverAuth.hidden = true;
+    appGrid.hidden = false;
+    mainHeader.hidden = false;
+    mainTitle.hidden = false;
+    mainSubtitle.hidden = false;
+    mainFooter.hidden = false;
+    logoutButton.hidden = true;
+  }
+
+  function continueWithoutLogin() {
+    localStorage.removeItem(AUTH_KEY);
+    localStorage.setItem(GUEST_KEY, String(Date.now() + 24 * 60 * 60 * 1000));
+    showAppAsGuest();
+  }
+
   function openResetForm() {
     actions.hidden = true;
     form.hidden = true;
@@ -146,38 +170,13 @@
     resetTaxi.focus();
   }
 
-  function continueWithoutLogin() {
-    sessionStorage.setItem(GUEST_KEY, "1");
-    localStorage.removeItem(GUEST_KEY);
-    document.body.classList.remove("driver-auth-locked");
-    driverAuth.hidden = true;
-    appGrid.hidden = false;
-    mainHeader.hidden = false;
-    mainTitle.hidden = false;
-    mainSubtitle.hidden = false;
-    mainFooter.hidden = false;
-    logoutButton.hidden = false;
-    logoutButton.querySelector("span").textContent = "Anmelden";
-    logoutButton.setAttribute("aria-label", "Anmelden");
-  }
-
   function logout() {
     localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(GUEST_KEY);
-    sessionStorage.removeItem(GUEST_KEY);
     localStorage.removeItem(AUTH_KEY);
     localStorage.removeItem("mt:lastDriver");
     localStorage.removeItem("taxi-current-driver");
+    localStorage.removeItem(GUEST_KEY);
     window.location.reload();
-  }
-
-  function hasGuestAccess() {
-    return sessionStorage.getItem(GUEST_KEY) === "1";
-  }
-
-  function hasAppAccess() {
-    // Guest access is intentionally temporary and must never unlock the app on a new load.
-    return Boolean(readSession());
   }
 
   function lockApp() {
@@ -194,7 +193,7 @@
   function syncAccess() {
     const session = readSession();
     if (session) setLoggedIn(session);
-    else if (hasGuestAccess()) continueWithoutLogin();
+    else if (hasGuestAccess()) showAppAsGuest();
     else lockApp();
   }
 
@@ -204,9 +203,9 @@
   showLogin.addEventListener("click", () => openForm("login"));
   showRegister.addEventListener("click", () => openForm("register"));
   showReset.addEventListener("click", openResetForm);
+  document.getElementById("driverGuestButton")?.addEventListener("click", continueWithoutLogin);
   back.addEventListener("click", closeForm);
   resetBack.addEventListener("click", closeForm);
-  skip.addEventListener("click", continueWithoutLogin);
   logoutButton.addEventListener("click", logout);
 
   form.addEventListener("submit", async (event) => {
