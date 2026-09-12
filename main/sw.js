@@ -1,4 +1,4 @@
-const CACHE = "mt-main-v21";
+const CACHE = "mt-main-v22";
 
 const ASSETS = [
   // Страницы
@@ -17,7 +17,7 @@ const ASSETS = [
   // JS
   "/main/assets/js/theme.js",
   "/main/assets/js/main.js",
-  "/main/assets/js/driver-auth.js?v=20260912-15",
+  "/main/assets/js/driver-auth.js?v=20260912-16",
 
   // Медиа/иконки
   "/main/assets/img/logo1.png",

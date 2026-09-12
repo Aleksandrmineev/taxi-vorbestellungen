@@ -169,12 +169,13 @@
   }
 
   function hasAppAccess() {
-    return readSession() || localStorage.getItem(AUTH_KEY) === "1" || hasGuestAccess();
+    // Guest access is intentionally temporary and must never unlock the app on a new load.
+    return Boolean(readSession());
   }
 
   const existing = readSession();
   if (existing) setLoggedIn(existing);
-  else if (hasAppAccess()) continueWithoutLogin();
+  else if (hasAppAccess()) setLoggedIn(readSession());
   else {
     appGrid.hidden = true;
     mainHeader.hidden = true;
