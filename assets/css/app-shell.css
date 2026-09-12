@@ -1,0 +1,35 @@
+/* Shared application header. Pages may add only layout-specific classes. */
+.app-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  overflow: hidden;
+}
+.app-header__back,
+.app-header__logo,
+.app-header__call,
+.app-header > .lehrlinge-brandbar__back,
+.app-header > .lehrlinge-brandbar__logo,
+.app-header > .lehrlinge-brandbar__call {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+}
+.app-header__back, .app-header > .lehrlinge-brandbar__back { border: 1px solid var(--border, var(--link-chip-border)); background: var(--surface-2, var(--link-chip-bg)); color: var(--text); text-decoration: none; }
+.app-header__logo, .app-header > .lehrlinge-brandbar__logo { overflow: hidden; background: transparent; box-shadow: 0 1px 4px rgba(0, 0, 0, .08); }
+.app-header__logo img, .app-header > .lehrlinge-brandbar__logo img { width: 100%; height: 100%; object-fit: contain; }
+.app-header__title, .app-header > .lehrlinge-brandbar__title { min-width: 0; overflow: hidden; color: var(--text); font-size: 15px; font-weight: 750; line-height: 1.1; white-space: nowrap; text-overflow: ellipsis; }
+.app-header__spacer, .app-header > .lehrlinge-brandbar__spacer { flex: 1 1 auto; min-width: 0; }
+.app-header__call, .app-header > .lehrlinge-brandbar__call { border: 1px solid var(--gold-border, var(--link-chip-border)); background: var(--gold-bg, var(--link-chip-bg)); color: var(--gold-ink, var(--text)); box-shadow: var(--shadow, 0 1px 4px rgba(0, 0, 0, .08)); text-decoration: none; }
+.app-header__back svg, .app-header__call svg, .app-header > .lehrlinge-brandbar__call svg { width: 18px; height: 18px; display: block; }
+@media (max-width: 600px) { .app-header__title { display: none; } }
