@@ -156,12 +156,12 @@
 /* ===== Узкие экраны ===== */
 @media (max-width: 600px) {
   .brand__logo {
-    width: 24px;
-    height: 24px;
+    width: 42px;
+    height: 42px;
   }
   .brand__logo img {
-    width: 24px;
-    height: 24px;
+    width: 42px;
+    height: 42px;
   }
   .brand__title {
     font-size: 16px;

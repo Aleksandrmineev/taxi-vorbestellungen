@@ -17,7 +17,7 @@ button { cursor: pointer; }
 [hidden] { display: none !important; }
 .module-header { min-height: 72px; display: flex; align-items: center; gap: 14px; padding: 12px clamp(16px, 4vw, 34px); border-bottom: 1px solid var(--header-border); background: var(--header-bg); backdrop-filter: var(--backdrop-strong); min-width: 0; overflow: hidden; }
 .module-brand { display: flex; align-items: center; gap: 11px; color: inherit; text-decoration: none; }
-.module-logo { width: 44px; height: 44px; display: grid; place-items: center; overflow: hidden; border-radius: 50%; background: var(--logo-shell-grad); box-shadow: inset 0 0 0 2px var(--ring); }
+.module-logo { width: 42px; height: 42px; display: grid; place-items: center; overflow: hidden; border-radius: 50%; background: transparent; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); }
 .module-logo img { width: 100%; height: 100%; object-fit: contain; }
 .module-brand-title { display: none; }
 .home-button { margin-left: auto; width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0; border: 1px solid var(--button-border); border-radius: 50%; background: var(--button-bg); color: var(--button-text); text-decoration: none; box-shadow: var(--button-shadow); font-size: .82rem; font-weight: 750; }

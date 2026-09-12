@@ -22,9 +22,9 @@
 /* Keep the global header calm: logo = home, phone = icon. */
 .site-header .brand__title { display: none; }
 .site-header .pill--gold {
-  flex: 0 0 40px;
-  width: 40px;
-  height: 40px;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
   justify-content: center;
   padding: 0;
 }
@@ -33,9 +33,9 @@
 .site-header .app-back {
   display: inline-grid;
   place-items: center;
-  flex: 0 0 40px;
-  width: 40px;
-  height: 40px;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
   border: 1px solid var(--border);
   border-radius: 50%;
   color: var(--text);
@@ -45,8 +45,8 @@
 .site-header .app-back:hover { background: var(--surface-3, var(--surface-2)); }
 .site-header .app-back svg { width: 18px; height: 18px; }
 .brand__logo {
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   object-fit: contain;
   border-radius: 8px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
