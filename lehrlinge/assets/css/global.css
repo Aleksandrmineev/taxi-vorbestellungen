@@ -18,16 +18,16 @@ body {
   overflow-x: hidden;
 }
 
-.lehrlinge-brandbar { display: flex; align-items: center; gap: 10px; min-width: 0; margin-bottom: 14px; }
+.lehrlinge-brandbar { display: flex; align-items: center; flex-wrap: nowrap; gap: 10px; width: 100%; min-width: 0; height: 42px; margin-bottom: 14px; overflow: hidden; }
 .lehrlinge-brandbar__spacer { flex: 1 1 auto; min-width: 0; }
 .lehrlinge-brandbar__logo { display: inline-grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px; border-radius: 50%; overflow: hidden; background: transparent; box-shadow: 0 1px 4px rgba(0, 0, 0, .08); }
 .lehrlinge-brandbar__logo img { width: 100%; height: 100%; object-fit: contain; }
 .lehrlinge-brandbar__title { min-width: 0; color: var(--text); font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lehrlinge-brandbar__back { order: 1; margin: 0; }
+.lehrlinge-brandbar__back { order: 1; flex: 0 0 42px !important; width: 42px !important; height: 42px !important; min-width: 42px; margin: 0 !important; padding: 0 !important; }
 .lehrlinge-brandbar__logo { order: 2; }
-.lehrlinge-brandbar__title { order: 3; }
+.lehrlinge-brandbar__title { order: 3; flex: 0 1 auto; }
 .lehrlinge-brandbar__spacer { order: 4; }
-.lehrlinge-brandbar__call { order: 5; display: inline-grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px; border: 1px solid var(--link-chip-border); border-radius: 50%; color: var(--text); background: var(--link-chip-bg); }
+.lehrlinge-brandbar__call { order: 5; display: inline-grid !important; place-items: center; flex: 0 0 42px; width: 42px; height: 42px; min-width: 42px; margin: 0; border: 1px solid var(--link-chip-border); border-radius: 50%; color: var(--text); background: var(--link-chip-bg); visibility: visible; opacity: 1; }
 .lehrlinge-brandbar__call svg { width: 18px; height: 18px; }
 @media (max-width: 600px) {
   .lehrlinge-brandbar__title { display: none; }
