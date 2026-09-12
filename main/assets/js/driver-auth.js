@@ -78,7 +78,9 @@
     const greeting = hour < 5 ? "Guten Abend" : hour < 12 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";
     const driverName = [driver.name, driver.surname].filter(Boolean).join(" ") || "Fahrer";
     document.body.classList.remove("driver-auth-locked");
-    localStorage.setItem(TOKEN_KEY, JSON.stringify({ token: session.token, expiresAt: Date.now() + Number(session.expiresInSec || 0) * 1000, driver }));
+    const expiresInSec = Number(session.expiresInSec);
+    const sessionTtl = Number.isFinite(expiresInSec) && expiresInSec > 0 ? expiresInSec : 365 * 24 * 60 * 60;
+    localStorage.setItem(TOKEN_KEY, JSON.stringify({ token: session.token, expiresAt: Date.now() + sessionTtl * 1000, driver }));
     localStorage.setItem(AUTH_KEY, "1");
     if (driver.id) localStorage.setItem("mt:lastDriver", driver.id);
     if (driver.taxiNumber) localStorage.setItem("taxi-current-driver", driver.taxiNumber);
