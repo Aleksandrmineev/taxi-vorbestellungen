@@ -11,13 +11,35 @@
   }
 
   .page__grid {
-    grid-template-columns: 0.3fr 0.7fr;
+    grid-template-columns: minmax(320px, 0.3fr) minmax(0, 0.7fr);
+    grid-template-rows: auto 1fr auto;
+    min-height: calc(100vh - 80px);
     gap: 24px;
     padding: 20px;
   }
+
+  .page__grid > .aside {
+    grid-column: 1;
+    grid-row: 1 / -1;
+  }
+
+  .page__grid > #list {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .page__grid > .bottom.as-block {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: end;
+  }
+
+  #list {
+    min-width: 0;
+  }
 }
 
-/* Мобайл/планшет: одна колонка, bottom снова фиксируем (как раньше) */
+/* Мобайл/планшет: одна колонка, нижний блок в обычном потоке */
 @media (max-width: 900px) {
   .page__grid {
     padding-top: 0;
@@ -42,8 +64,17 @@
     padding: 7px 9px;
   }
 
+  .panel .rowHead .plan-link {
+    gap: 4px;
+    padding: 7px 8px;
+  }
+
   .panel .rowHead .back-btn span {
     display: none;
+  }
+
+  .panel .rowHead .plan-link span {
+    display: inline;
   }
 
   .back-btn--desktop {
@@ -122,16 +153,13 @@
 
   /* вернуть fixed-бар на узких экранах */
   .bottom.as-block {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 10;
-    background: var(--surface-1);
-    border-top: 1px solid var(--line);
-    box-shadow: 0 -10px 34px rgba(0, 0, 0, 0.35);
-    padding: clamp(12px, 4vw, 18px) clamp(12px, 4vw, 18px)
-      max(12px, env(safe-area-inset-bottom));
+    position: static;
+    grid-column: 1;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+    margin-top: 10px;
   }
   .bottom__inner {
     border-radius: 0;
@@ -143,10 +171,10 @@
     padding: 0;
   }
 
-  /* отступ снизу под фиксированный бар */
+  /* нижний блок находится после списка, поэтому дополнительный отступ не нужен */
   html,
   body {
-    scroll-padding-bottom: 120px;
+    scroll-padding-bottom: 20px;
   }
 }
 
@@ -167,16 +195,13 @@
     border-radius: 12px;
   }
   .row {
-    grid-template-columns: 32px 72px 1fr auto;
-    padding: 12px;
+    grid-template-columns: 24px minmax(0, 1fr) 52px;
+    gap: 7px;
+    padding: 8px 10px;
   }
   .chk {
-    width: 22px;
-    height: 22px;
-  }
-  .badge {
-    min-width: 56px;
-    padding: 8px 10px;
+    width: 18px;
+    height: 18px;
   }
 }
 
@@ -201,4 +226,69 @@
   .ctrl label {
     font-size: 13px;
   } /* на случай если где-то оставим видимый label */
+}
+
+/* Компактные карточки точек на телефоне */
+@media (max-width: 900px) {
+  .page__grid {
+    grid-template-rows: auto 1fr auto;
+    min-height: calc(100vh - 24px);
+  }
+
+  .page__grid > .aside {
+    grid-row: 1;
+  }
+
+  .page__grid > #list {
+    grid-row: 2;
+  }
+
+  .page__grid > .bottom.as-block {
+    grid-row: 3;
+    align-self: end;
+  }
+
+  #list {
+    gap: 8px;
+  }
+
+  #list .row {
+    grid-template-columns: 22px minmax(0, 1fr) 48px;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  #list .chk {
+    width: 17px;
+    height: 17px;
+  }
+
+  #list .name {
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  #list .point-address {
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  #list .point-contact {
+    justify-content: flex-end;
+    gap: 4px;
+    margin-top: 2px;
+    font-size: 11px;
+  }
+
+  #list .leg {
+    gap: 0;
+    font-size: 11px;
+  }
+
+  #list .leg-time,
+  #list .leg .badge {
+    font-size: 9px;
+    line-height: 1.1;
+  }
 }

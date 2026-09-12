@@ -179,6 +179,10 @@ body {
   width: min(100%, 420px);
   position: relative;
 }
+.confirm-modal__dialog[role="dialog"] {
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+}
 
 .confirm-modal__dialog.card {
   background: var(--row-bg);
@@ -205,6 +209,40 @@ body {
 
 .confirm-modal__close:hover {
   background: var(--button-hover-bg);
+}
+
+.confirm-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.preview-addresses {
+  margin-top: 12px;
+}
+
+.preview-addresses ol {
+  margin: 6px 0 0;
+  padding-left: 22px;
+}
+
+.preview-addresses li + li {
+  margin-top: 2px;
+}
+
+.confirm-value {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--accent-weak);
+  color: var(--accent) !important;
+}
+
+@media (max-width: 600px) {
+  .confirm-modal__actions {
+    justify-content: flex-end;
+  }
 }
 
 .visually-hidden {
@@ -254,4 +292,10 @@ body {
 .back-btn svg {
   width: 18px;
   height: 18px;
+}
+
+.plan-link {
+  margin-bottom: 0;
+  font-size: 13px;
+  text-decoration: none;
 }

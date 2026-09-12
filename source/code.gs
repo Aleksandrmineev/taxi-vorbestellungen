@@ -129,6 +129,24 @@ function doGet(e) {
       return json({ ok: true, ...session });
     }
 
+    if (fn === "student_login") {
+      const session = loginLehrling_(e.parameter.studentId, e.parameter.pin);
+      return json({ ok: true, ...session });
+    }
+
+    if (fn === "driver_schedule") {
+      return json({ ok: true, ...getLehrlingeDriverSchedule_(e.parameter.from, e.parameter.to, e.parameter.route, e.parameter.direction) });
+    }
+
+    if (fn === "student_plan") {
+      const session = requireLehrlingStudentToken_(e.parameter.studentToken || "");
+      return json({ ok: true, ...getLehrlingeStudentPlan_(session, e.parameter.from, e.parameter.to) });
+    }
+
+    if (fn === "student_logout") {
+      return json(logoutLehrling_(e.parameter.studentToken || ""));
+    }
+
     // ---- Данные для админки Lehrlinge ----
     if (fn === "admin_data") {
       requireAdminToken_(e.parameter.adminToken || "");
@@ -209,6 +227,11 @@ function doPost(e) {
     if (action === "student_login") {
       const session = loginLehrling_(body.studentId, body.pin);
       return json({ ok: true, ...session });
+    }
+
+    if (action === "student_plan_save") {
+      const session = requireLehrlingStudentToken_(body.studentToken || "");
+      return json({ ok: true, saved: saveLehrlingeStudentPlan_(session, body) });
     }
 
     // ===== ВЕТКА АДМИНКИ LEHRLINGE =====

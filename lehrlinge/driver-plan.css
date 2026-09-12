@@ -1,0 +1,47 @@
+:root { --bg: #f3f6f8; --card: #fff; --ink: #18222d; --muted: #6e7b87; --line: #dfe6eb; --accent: #0b806d; --green: #dff5ed; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 Inter, system-ui, sans-serif; }
+button, input, select { font: inherit; }
+.plan-shell { width: min(1100px, calc(100% - 28px)); margin: 0 auto; padding: 28px 0 50px; }
+.back-btn { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--accent); text-decoration: none; }
+.back-btn:hover { background: #e5f1ee; }
+.back-btn svg { width: 18px; height: 18px; }
+.plan-header { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+.filters-details { margin-bottom: 4px; }
+.filters-details summary { display: inline-block; cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 750; }
+.filters-details summary::before { content: "▸"; display: inline-block; width: 16px; color: var(--accent); }
+.filters-details[open] summary::before { content: "▾"; }
+.filters-details[open] summary { margin-bottom: 5px; }
+.eyebrow { color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+h1 { margin: 4px 0 2px; font-size: clamp(28px, 5vw, 42px); line-height: 1.05; }
+.muted { color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); }
+.controls label { display: grid; gap: 4px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.controls input, .controls select { min-width: 150px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfd; color: var(--ink); }
+button { border: 0; border-radius: 10px; padding: 10px 15px; cursor: pointer; font-weight: 800; }
+.primary { background: var(--accent); color: #fff; }
+.status { min-height: 18px; padding: 4px 2px 2px; color: var(--muted); font-size: 12px; }
+.day { margin-top: 8px; }
+.day-title { margin: 0 0 4px; font-size: 17px; }
+.route-block { margin-top: 4px; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--card); }
+.route-title { display: block; cursor: pointer; padding: 5px 9px; background: #eef7f4; color: var(--accent); font-size: 13px; font-weight: 850; list-style: none; }
+.route-title::-webkit-details-marker { display: none; }
+.route-title::before { content: "＋"; display: inline-block; width: 19px; color: var(--muted); }
+.route-block[open] .route-title::before { content: "−"; }
+.route-points { display: grid; }
+.stop { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(110px, .8fr); gap: 6px; align-items: center; padding: 5px 9px; border-top: 1px solid var(--line); }
+.stop-address { font-size: 13px; font-weight: 650; line-height: 1.2; }
+.stop-address a { color: inherit; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 2px; }
+.stop-students { display: flex; align-items: center; justify-content: flex-end; gap: 5px; min-width: 0; color: var(--muted); }
+.student { display: block; font-size: 12px; line-height: 1.2; }
+.call-link { display: inline-flex; align-items: center; justify-content: center; width: 21px; height: 21px; flex: 0 0 auto; border-radius: 50%; background: #dff5ed; color: #0b806d; font-size: 12px; text-decoration: none; }
+.empty { padding: 28px 14px; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); text-align: center; }
+@media (max-width: 640px) {
+  .plan-shell { width: min(100% - 20px, 1100px); padding-top: 20px; }
+  .back-btn { padding: 0; }
+  .controls { display: grid; grid-template-columns: 1fr 1fr; padding: 10px; }
+  .controls label, .controls input, .controls select { min-width: 0; width: 100%; }
+  .controls button { grid-column: 1 / -1; }
+  .stop { grid-template-columns: minmax(0, 1.6fr) minmax(100px, .9fr); gap: 5px; padding: 5px 8px; }
+  .stop-students { grid-column: auto; }
+}

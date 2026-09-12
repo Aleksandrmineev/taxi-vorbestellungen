@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     dirty: false,
     dataDirty: false,
     saving: false,
+    saveToastTimer: null,
     data: {
       points: [],
       drivers: [],
@@ -33,6 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
     authStatus: document.getElementById("authStatus"),
     passwordInput: document.getElementById("adminPassword"),
     saveBtn: document.getElementById("saveBtn"),
+    saveToast: document.getElementById("saveToast"),
+    saveToastText: document.getElementById("saveToastText"),
     reloadBtn: document.getElementById("reloadBtn"),
     routeFilter: document.getElementById("routeFilter"),
     statusText: document.getElementById("statusText"),
@@ -60,6 +63,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (flag && dataChanged) state.dataDirty = true;
     if (!flag) state.dataDirty = false;
     renderStatus();
+  }
+
+  function showSaveToast(message, type = "saving", duration = 0) {
+    if (!dom.saveToast || !dom.saveToastText) return;
+    clearTimeout(state.saveToastTimer);
+    dom.saveToastText.textContent = message;
+    dom.saveToast.className = `admin-save-toast admin-save-toast--${type}`;
+    dom.saveToast.hidden = false;
+    if (duration) {
+      state.saveToastTimer = setTimeout(() => {
+        dom.saveToast.hidden = true;
+      }, duration);
+    }
   }
 
   function shortCodeFromName(name, used) {
@@ -397,7 +413,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                   <input type="text" data-field="contact_name" value="${esc(p.contact_name || p.lehrling_name)}" placeholder="Lehrling" />
                                   <input type="tel" data-field="phone" value="${esc(p.phone)}" placeholder="Telefon: +43 …" />
                                   <input type="password" data-field="lehrling_pin" value="" inputmode="numeric" maxlength="4" placeholder="PIN (4 Ziffern)" />
-                                  <span class="admin-pin-status">${p.lehrling_has_pin ? "PIN gesetzt" : "PIN nicht gesetzt"}</span>
+                                  <span class="admin-pin-status${p.lehrling_has_pin ? " admin-pin-status--set" : ""}">${p.lehrling_has_pin ? "PIN gesetzt" : "PIN nicht gesetzt"}</span>
                                 </div>
                               </td>
                             </tr>
@@ -933,6 +949,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function save() {
     state.saving = true;
+    showSaveToast("Speichere Änderungen…", "saving");
     renderStatus("Speichere Änderungen…");
     try {
       ensureMatrixIntegrity();
@@ -958,6 +975,7 @@ document.addEventListener("DOMContentLoaded", () => {
       state.data.points.forEach((point) => { point.lehrling_pin = ""; });
       state.dataDirty = false;
       state.dirty = false;
+      showSaveToast("Änderungen gespeichert", "success", 2600);
       renderStatus("Änderungen gespeichert");
       render();
     } catch (err) {
@@ -968,6 +986,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setAuthStatus("Sitzung abgelaufen. Bitte erneut einloggen.");
       }
       renderStatus(`Fehler beim Speichern: ${err?.message || err}`);
+      showSaveToast("Speichern fehlgeschlagen", "error", 5000);
       alert(`Fehler beim Speichern: ${err?.message || err}`);
     } finally {
       state.saving = false;

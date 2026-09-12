@@ -61,7 +61,7 @@ input[type="date"]:focus {
 /* ===== LIST ROW ===== */
 .row {
   display: grid;
-  grid-template-columns: 40px 50px 0.95fr 0.1fr;
+  grid-template-columns: 28px minmax(0, 1fr) 58px;
   align-items: center;
   max-width: 100vw;
   gap: 10px;
@@ -86,16 +86,35 @@ input[type="date"]:focus {
 }
 
 .leg {
-  margin-left: 12px;
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+  margin-left: 0;
+  min-width: 0;
   white-space: nowrap;
   color: var(--muted);
   font-weight: 800;
-  font-size: var(--fs-small);
+  font-size: 12px;
 }
 .chk {
-  width: 40px;
-  height: 40px;
+  width: 20px;
+  height: 20px;
   accent-color: var(--accent);
+}
+.leg .badge {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+.leg-time {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
 }
 .badge {
   display: flex;
@@ -464,16 +483,16 @@ input[type="date"]:focus {
 
 .links-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
-  padding: 8px 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 6px 0;
 }
 
 .link-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   text-decoration: none;
   color: inherit;
   font-size: 11px;
@@ -481,8 +500,8 @@ input[type="date"]:focus {
 }
 
 .icon-circle {
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: color-mix(in oklab, var(--button-bg) 92%, transparent);
   display: flex;
@@ -494,8 +513,8 @@ input[type="date"]:focus {
 }
 
 .icon-circle svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .link-item:hover .icon-circle {
@@ -542,22 +561,22 @@ input[type="date"]:focus {
 
 @media (min-width: 992px) {
   .links-grid {
-    gap: 12px;
+    gap: 6px;
   }
 
   .link-item {
-    gap: 6px;
+    gap: 3px;
     font-size: 12px;
   }
 
   .icon-circle {
-    width: 42px;
-    height: 42px;
+    width: 34px;
+    height: 34px;
   }
 
   .icon-circle svg {
-    width: 20px;
-    height: 20px;
+    width: 17px;
+    height: 17px;
   }
 
   .label {

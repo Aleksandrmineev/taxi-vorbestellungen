@@ -45,6 +45,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // НЕТ themeBtn — темой управляет только theme.js
   };
 
+  const pageGrid = document.querySelector(".page__grid");
+  const bottomBar = document.querySelector(".bottom.as-block");
+  if (pageGrid && bottomBar && bottomBar.parentElement !== pageGrid) {
+    pageGrid.appendChild(bottomBar);
+  }
+
   if (App.dom.showAllPoints) {
     App.dom.showAllPoints.checked = localStorage.getItem("mt:showAllPoints") === "1";
     App.dom.showAllPoints.addEventListener("change", () => {
@@ -233,6 +239,24 @@ document.addEventListener("DOMContentLoaded", () => {
       const btn = App.dom.saveBtn;
       const prevText = btn.textContent;
       btn.disabled = true;
+      btn.textContent = "Prüfen…";
+      const confirmed = typeof App.confirmBeforeSave === "function"
+        ? await App.confirmBeforeSave({
+            sequence: seq,
+            total_km: km,
+            driver_name: drvName,
+            car_id: carId,
+            car_plate: carPlate,
+            reportDate,
+            shift,
+            route: App.state.route,
+          })
+        : true;
+      if (!confirmed) {
+        btn.textContent = prevText;
+        btn.disabled = false;
+        return;
+      }
       btn.textContent = "Speichere…";
 
       try {

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b806d" />
+    <title>Fahrtenplan · Lehrlinge</title>
+    <link rel="icon" href="./assets/favicon/favicon.ico" sizes="any" />
+    <link rel="stylesheet" href="./assets/css/theme.css" />
+    <link rel="stylesheet" href="./driver-plan.css" />
+  </head>
+  <body>
+    <main class="plan-shell">
+      <header class="plan-header">
+        <a class="back-btn" href="./index.html" aria-label="Zurück">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+        <div>
+          <div class="eyebrow">MurtalTaxi · Lehrlinge</div>
+          <h1>Fahrtenplan</h1>
+        </div>
+      </header>
+
+      <details class="filters-details">
+        <summary>Zeitraum & Filter</summary>
+        <section class="controls" aria-label="Fahrtenplan filtern">
+          <label>Von <input id="from" type="date" /></label>
+          <label>Bis <input id="to" type="date" /></label>
+          <label>Route
+            <select id="route">
+              <option value="all">Alle Routen</option>
+              <option value="1">Route 1</option>
+              <option value="2">Route 2</option>
+            </select>
+          </label>
+          <label>Fahrt
+            <select id="direction">
+              <option value="all" selected>Alle</option>
+              <option value="morning">Hinfahrt</option>
+              <option value="evening">Rückfahrt</option>
+            </select>
+          </label>
+          <button id="load" class="primary" type="button">Aktualisieren</button>
+        </section>
+      </details>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <section id="schedule" class="schedule" aria-live="polite"></section>
+    </main>
+    <script src="./driver-plan.js"></script>
+  </body>
+</html>

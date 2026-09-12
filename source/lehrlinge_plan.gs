@@ -10,6 +10,8 @@ const LEHRLINGE_STUDENTS_SHEET = "_Lehrlinge";
 const LEHRLINGE_PLAN_SHEET = "_LehrlingePlan";
 const LEHRLINGE_STUDENT_TOKEN_PREFIX = "lehrlinge_student_token:";
 const LEHRLINGE_STUDENT_TOKEN_TTL_SEC = 12 * 60 * 60;
+const LEHRLINGE_REMEMBER_TOKEN_PREFIX = "lehrlinge_remember_token:";
+const LEHRLINGE_REMEMBER_TOKEN_TTL_SEC = 365 * 24 * 60 * 60;
 
 const LEHRLINGE_STUDENT_HEADERS = [
   "student_id",
@@ -34,6 +36,10 @@ const LEHRLINGE_PLAN_HEADERS = [
 
 function lehrlingePlanDate_(value) {
   if (value instanceof Date) return Utilities.formatDate(value, "Europe/Vienna", "yyyy-MM-dd");
+  if (typeof value === "number" && isFinite(value)) {
+    const serialDate = new Date(Date.UTC(1899, 11, 30) + value * 24 * 60 * 60 * 1000);
+    return Utilities.formatDate(serialDate, "Europe/Vienna", "yyyy-MM-dd");
+  }
   const text = String(value || "").trim();
   const european = text.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
   return european ? `${european[3]}-${european[2]}-${european[1]}` : text;
@@ -155,6 +161,91 @@ function getLehrlingePlan_(from, to) {
   return { items: Object.keys(itemsByKey).sort().map((key) => itemsByKey[key]), holidays: Array.from(holidays).sort() };
 }
 
+function getLehrlingeDriverSchedule_(from, to, route, direction) {
+  const start = String(from || "").trim();
+  const end = String(to || "").trim();
+  const selectedRoute = String(route || "all").trim();
+  const selectedDirections = direction === "all"
+    ? ["morning", "evening"]
+    : [direction === "evening" ? "evening" : "morning"];
+  const snapshot = getLehrlingeSnapshot_();
+  const plan = getLehrlingePlan_(start, end);
+  const studentsByPoint = {};
+
+  const studentsSheet = SpreadsheetApp.getActive().getSheetByName(LEHRLINGE_STUDENTS_SHEET);
+  if (studentsSheet && studentsSheet.getLastRow() >= 2) {
+    studentsSheet.getRange(2, 1, studentsSheet.getLastRow() - 1, LEHRLINGE_STUDENT_HEADERS.length).getValues().forEach((row) => {
+      const id = String(row[0] || "").trim();
+      const pointId = String(row[2] || "").trim();
+      if (!id || !pointId || String(row[3] || "") !== "1") return;
+      if (!studentsByPoint[pointId]) studentsByPoint[pointId] = [];
+      studentsByPoint[pointId].push({ id: id, name: String(row[1] || "").trim() });
+    });
+  }
+
+  const statusByKey = {};
+  (plan.items || []).forEach((item) => {
+    statusByKey[item.date + "|" + item.student_id] = item.status;
+  });
+
+  const daysByDate = {};
+  (snapshot.points || []).forEach((point, pointIndex) => {
+    const pointId = String(point.id || "").trim();
+    const pointRoute = String(point.route || "").trim();
+    if (!pointId || String(point.active || "") !== "1" || !studentsByPoint[pointId]) return;
+    if (selectedRoute !== "all" && pointRoute !== selectedRoute) return;
+
+    selectedDirections.forEach((selectedDirection) => {
+      const studentsByDate = {};
+      (plan.items || []).forEach((item) => {
+        const students = studentsByPoint[pointId].filter((student) => {
+          const status = statusByKey[item.date + "|" + student.id];
+          return selectedDirection === "morning"
+            ? status === "both" || status === "out"
+            : status === "both" || status === "back";
+        });
+        if (students.length) studentsByDate[item.date] = students;
+      });
+
+      Object.keys(studentsByDate).forEach((date) => {
+        if (!daysByDate[date]) daysByDate[date] = {};
+        const routeKey = pointRoute + "|" + selectedDirection;
+        if (!daysByDate[date][routeKey]) daysByDate[date][routeKey] = {
+          route: pointRoute,
+          direction: selectedDirection,
+          points: [],
+        };
+        daysByDate[date][routeKey].points.push({
+          pointId: pointId,
+          address: String(point.name || "").trim(),
+          url: String(point.url || "").trim(),
+          phone: String(point.phone || "").trim(),
+          order: pointIndex,
+          students: studentsByDate[date],
+        });
+      });
+    });
+  });
+
+  const days = Object.keys(daysByDate).sort().map((date) => ({
+    date: date,
+    routes: Object.keys(daysByDate[date]).sort((a, b) => {
+      const [routeA, directionA] = a.split("|");
+      const [routeB, directionB] = b.split("|");
+      return Number(routeA) - Number(routeB) || (directionA === "morning" ? -1 : 1) - (directionB === "morning" ? -1 : 1);
+    }).map((routeKey) => {
+      const route = daysByDate[date][routeKey];
+      route.points.sort((a, b) => route.direction === "evening"
+        ? b.order - a.order
+        : a.order - b.order);
+      route.count = route.points.reduce((total, point) => total + point.students.length, 0);
+      return route;
+    }),
+  }));
+
+  return { from: start, to: end, direction: direction === "all" ? "all" : selectedDirections[0], days: days };
+}
+
 function saveLehrlingePlan_(body) {
   const parsed = JSON.parse(String(body.rows || "[]"));
   const rows = Array.isArray(parsed) ? parsed : [];
@@ -184,7 +275,7 @@ function saveLehrlingePlan_(body) {
     const key = date + "|" + studentId;
     const existingIndex = rowByKey[key];
     const existing = existingIndex == null ? null : existingRows[existingIndex];
-    const values = [[date, studentId, existing?.[2] ?? morning, existing?.[3] ?? evening, morning, evening, holidays.has(date) ? "holiday" : "", "admin", now]];
+    const values = [[date, studentId, existing?.[2] ?? morning, existing?.[3] ?? evening, morning, evening, holidays.has(date) ? "holiday" : "", String(body.updatedBy || "admin"), now]];
     if (existingIndex == null) {
       newRows.push(values[0]);
       rowByKey[key] = existingRows.length + newRows.length - 1;
@@ -247,6 +338,9 @@ function dedupeLehrlingePlan() {
     row[3] = baseline.row[3];
     return row;
   });
+  if (values.length > 20 && invalid > values.length / 4) {
+    throw new Error("dedupe_aborted_suspicious_date_values");
+  }
   sh.getRange(2, 1, values.length, LEHRLINGE_PLAN_HEADERS.length).clearContent();
   if (unique.length) sh.getRange(2, 1, unique.length, LEHRLINGE_PLAN_HEADERS.length).setValues(unique);
   return { ok: true, before: values.length, after: unique.length, removed: values.length - unique.length, invalid: invalid };
@@ -256,6 +350,19 @@ function ensureLehrlingeSheet_(ss, name, headers) {
   const sh = ss.getSheetByName(name) || ss.insertSheet(name);
   if (sh.getLastRow() === 0) {
     sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+  } else {
+    const currentWidth = Math.max(sh.getLastColumn(), 1);
+    const currentHeaders = sh.getRange(1, 1, 1, currentWidth).getDisplayValues()[0].map((value) => String(value || "").trim());
+    if (headers.includes("pin_hash") && !currentHeaders.includes("pin_hash") && currentHeaders.includes("updated_at")) {
+      const updatedAtColumn = currentHeaders.indexOf("updated_at") + 1;
+      sh.insertColumnBefore(updatedAtColumn);
+      sh.getRange(1, updatedAtColumn).setValue("pin_hash");
+      currentHeaders.splice(updatedAtColumn - 1, 0, "pin_hash");
+    }
+    const missing = headers.filter((header) => !currentHeaders.includes(header));
+    if (missing.length) {
+      sh.getRange(1, currentWidth + 1, 1, missing.length).setValues([missing]);
+    }
   }
   if (!sh.isSheetHidden()) sh.hideSheet();
   return sh;
@@ -359,7 +466,7 @@ function syncLehrlingeRosterFromPoints_(points) {
 }
 
 function loginLehrling_(studentId, pin) {
-  const id = String(studentId || "").trim();
+  const id = String(studentId || "").trim().toLowerCase();
   const normalizedPin = String(pin || "").replace(/\D/g, "");
   if (!id || !/^\d{4}$/.test(normalizedPin)) throw new Error("invalid_credentials");
 
@@ -371,16 +478,85 @@ function loginLehrling_(studentId, pin) {
     throw new Error("invalid_credentials");
   }
 
-  const token = Utilities.getUuid() + Utilities.getUuid();
-  cachePut_(LEHRLINGE_STUDENT_TOKEN_PREFIX + token, {
-    role: "student",
-    studentId: student.id,
-  }, LEHRLINGE_STUDENT_TOKEN_TTL_SEC);
-  return { token: token, expiresInSec: LEHRLINGE_STUDENT_TOKEN_TTL_SEC, studentId: student.id };
+  const token = student.id + "." + Utilities.getUuid() + Utilities.getUuid();
+  PropertiesService.getScriptProperties().setProperty(
+    LEHRLINGE_REMEMBER_TOKEN_PREFIX + student.id,
+    JSON.stringify({ hash: sha256Hex_(token), expiresAt: Date.now() + LEHRLINGE_REMEMBER_TOKEN_TTL_SEC * 1000 })
+  );
+  return { token: token, expiresInSec: LEHRLINGE_REMEMBER_TOKEN_TTL_SEC, studentId: student.id };
+}
+
+function getLehrlingeStudentPlan_(session, from, to) {
+  const student = getLehrlingStudent_(session.studentId);
+  if (!student || student.active !== "1") throw new Error("student_not_found");
+  const plan = getLehrlingePlan_(from, to);
+  const point = getPointForLehrling_(student.pointId);
+  return {
+    student: { id: student.id, name: student.name, pointId: student.pointId, address: point?.name || "", route: point?.route || "", arrivalTime: point?.arrivalTime || "" },
+    items: plan.items.filter((item) => item.student_id === student.id),
+    holidays: plan.holidays,
+  };
+}
+
+function logoutLehrling_(token) {
+  const normalized = String(token || "").trim();
+  const studentId = normalized.split(".")[0];
+  if (studentId) PropertiesService.getScriptProperties().deleteProperty(LEHRLINGE_REMEMBER_TOKEN_PREFIX + studentId);
+  cacheRemove_(LEHRLINGE_STUDENT_TOKEN_PREFIX + normalized);
+  return { ok: true };
+}
+
+function saveLehrlingeStudentPlan_(session, body) {
+  const student = getLehrlingStudent_(session.studentId);
+  if (!student || student.active !== "1") throw new Error("student_not_found");
+  const requested = JSON.parse(String(body.rows || "[]"));
+  const rows = Array.isArray(requested) ? requested : [];
+  const dates = rows.map((item) => String(item.date || "").trim()).filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date));
+  const sortedDates = dates.slice().sort();
+  const current = sortedDates.length ? getLehrlingePlan_(sortedDates[0], sortedDates[sortedDates.length - 1]) : { items: [], holidays: [] };
+  const currentByDate = {};
+  current.items.filter((item) => item.student_id === student.id).forEach((item) => { currentByDate[item.date] = item.status; });
+  const planRows = [];
+  rows.forEach((item) => {
+    const date = String(item.date || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("invalid_date");
+    const out = item.out === true || item.out === "1";
+    const back = item.back === true || item.back === "1";
+    const currentStatus = currentByDate[date] || "none";
+    const currentOut = currentStatus === "both" || currentStatus === "out";
+    const currentBack = currentStatus === "both" || currentStatus === "back";
+    if (out !== currentOut) assertLehrlingeCutoffOpen_(date, "morning");
+    if (back !== currentBack) assertLehrlingeCutoffOpen_(date, "evening");
+    planRows.push({ date: date, student_id: student.id, status: out && back ? "both" : out ? "out" : back ? "back" : "none" });
+  });
+  return saveLehrlingePlan_({ rows: JSON.stringify(planRows), holidays: JSON.stringify(current.holidays), updatedBy: student.id });
+}
+
+function getPointForLehrling_(pointId) {
+  const sh = SpreadsheetApp.getActive().getSheetByName("Points");
+  if (!sh || sh.getLastRow() < 2) return null;
+  const rows = sh.getDataRange().getValues();
+  const displayRows = sh.getDataRange().getDisplayValues();
+  for (let index = 1; index < rows.length; index += 1) {
+    if (String(rows[index][0] || "").trim() !== String(pointId || "").trim()) continue;
+    return { name: String(rows[index][1] || ""), route: String(rows[index][2] || ""), arrivalTime: String(displayRows[index]?.[7] || rows[index][7] || "") };
+  }
+  return null;
 }
 
 function requireLehrlingStudentToken_(token) {
   const normalized = String(token || "").trim();
+  const studentId = normalized.split(".")[0];
+  if (studentId && normalized.indexOf(".") > 0) {
+    const stored = PropertiesService.getScriptProperties().getProperty(LEHRLINGE_REMEMBER_TOKEN_PREFIX + studentId);
+    if (stored) {
+      const data = JSON.parse(stored);
+      if (data.expiresAt > Date.now() && data.hash === sha256Hex_(normalized)) {
+        return { role: "student", studentId: studentId };
+      }
+      if (data.expiresAt <= Date.now()) PropertiesService.getScriptProperties().deleteProperty(LEHRLINGE_REMEMBER_TOKEN_PREFIX + studentId);
+    }
+  }
   const session = cacheGet_(LEHRLINGE_STUDENT_TOKEN_PREFIX + normalized);
   if (!session || session.role !== "student" || !session.studentId) {
     throw new Error("student_auth_required");
@@ -389,12 +565,13 @@ function requireLehrlingStudentToken_(token) {
 }
 
 function getLehrlingStudent_(studentId) {
+  const normalizedId = String(studentId || "").trim().toLowerCase();
   const ss = SpreadsheetApp.getActive();
   const sh = ss.getSheetByName(LEHRLINGE_STUDENTS_SHEET);
   if (!sh || sh.getLastRow() < 2) return null;
   const values = sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_STUDENT_HEADERS.length).getValues();
   for (const row of values) {
-    if (String(row[0] || "").trim() !== String(studentId || "").trim()) continue;
+    if (String(row[0] || "").trim().toLowerCase() !== normalizedId) continue;
     return {
       id: String(row[0] || "").trim(),
       name: String(row[1] || ""),

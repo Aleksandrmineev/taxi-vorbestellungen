@@ -58,6 +58,7 @@
 /* внутренний layout «bottom» теперь в потоке */
 .bottom.as-block {
   position: static;
+  grid-column: 2;
   background: transparent;
   border: 0;
   box-shadow: none;

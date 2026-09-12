@@ -161,7 +161,6 @@
     <input class="chk" type="checkbox" data-point-id="${esc(p.id)}"${
           isChecked(p, index, allPoints) ? " checked" : ""
         }${isRequired(p, index, allPoints) ? " disabled" : ""} aria-label="Einbeziehen">
-    <div class="badge" title="Punktcode">${esc(shortCode)}</div>
     <div class="name">
       <div class="point-address">
         <span>${
@@ -170,14 +169,17 @@
             : esc(p.name)
         }</span>
       </div>
-      ${contact || p.arrival_time ? `<div class="point-contact" aria-label="Telefonkontakt">
+      ${contact ? `<div class="point-contact" aria-label="Telefonkontakt">
         ${contact ? `<svg class="point-contact__icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>${contact}` : ""}
-        ${p.arrival_time ? `<span class="point-time">${esc(p.arrival_time)}</span>` : ""}
       </div>` : ""}
     </div>
-    <div class="leg"></div>
+    <div class="leg">
+      <span class="leg-distance"></span>
+      ${p.arrival_time ? `<span class="leg-time">${esc(p.arrival_time)}</span>` : ""}
+      <span class="badge" title="Punktcode">${esc(shortCode)}</span>
+    </div>
   </div>`;
         }
       )
@@ -230,6 +232,18 @@
         true
       );
       list._persistBound = true;
+    }
+
+    if (!list._rowClickBound) {
+      list.addEventListener("click", (event) => {
+        const row = event.target.closest?.(".row");
+        if (!row || event.target.closest("a, button, input, .badge")) return;
+        const checkbox = row.querySelector(".chk");
+        if (!checkbox || checkbox.disabled) return;
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      list._rowClickBound = true;
     }
 
     // DnD как раньше... (пока выключен)
@@ -448,7 +462,7 @@
     let prevId = null;
     const rows = [...list.querySelectorAll(".row")];
     for (const row of rows) {
-      const legEl = row.querySelector(".leg");
+      const legEl = row.querySelector(".leg-distance");
       const checked = row.querySelector(".chk").checked;
       const curId = row.dataset.id;
 
@@ -513,6 +527,54 @@
     </div>
     <div class="seq">${esc(sequenceText)}</div>
   </div>`;
+  };
+
+  App.confirmBeforeSave = function (p) {
+    const box = App?.dom?.confirmBox;
+    if (!box || !p) return Promise.resolve(true);
+    const pointById = new Map((App.state.points || []).map((point) => [String(point.id), point]));
+    const ids = Array.isArray(p.sequence) ? p.sequence : String(p.sequence || "").split(">").filter(Boolean);
+    const addresses = ids.map((id) => pointById.get(String(id))?.name || id);
+    const carText = p.car_plate || p.car_id || "—";
+    const previewDate = p.reportDate
+      ? new Date(`${p.reportDate}T12:00:00`).toLocaleDateString("de-AT", { day: "2-digit", month: "short" })
+      : "—";
+
+    box.hidden = false;
+    box.innerHTML = `
+  <div class="confirm-modal__dialog card" role="dialog" aria-modal="true" aria-label="Daten prüfen">
+    <button type="button" class="confirm-modal__close" data-confirm-close aria-label="Schließen">✕</button>
+    <h3>Daten prüfen</h3>
+    <div class="kv">
+      <div><span>Fahrer:</span> <b class="confirm-value">${esc(p.driver_name || "—")}</b></div>
+      <div><span>Auto:</span> <b class="confirm-value">${esc(carText)}</b></div>
+      <div><span>Datum:</span> <b class="confirm-value">${esc(previewDate)}</b></div>
+      <div><span>Zeit:</span> <b class="confirm-value">${esc(p.shift || "—")}</b></div>
+      <div><span>Route:</span> <b class="confirm-value">${esc(p.route || "—")}</b></div>
+      <div><span>Gesamt:</span> <b class="confirm-value">${App.formatKm(p.total_km)} km</b></div>
+    </div>
+    <div class="preview-addresses">
+      <strong>Adressen</strong>
+      <ol>${addresses.map((address) => `<li>${esc(address)}</li>`).join("") || "<li>Keine Punkte ausgewählt</li>"}</ol>
+    </div>
+    <div class="confirm-modal__actions">
+      <button type="button" class="save" data-confirm-submit>Bestätigen & senden</button>
+    </div>
+  </div>`;
+
+    return new Promise((resolve) => {
+      const finish = (confirmed) => {
+        box.hidden = true;
+        box.innerHTML = "";
+        box.removeEventListener("click", onClick);
+        resolve(confirmed);
+      };
+      const onClick = (event) => {
+        if (event.target === box || event.target.closest?.("[data-confirm-close]")) finish(false);
+        if (event.target.closest?.("[data-confirm-submit]")) finish(true);
+      };
+      box.addEventListener("click", onClick);
+    });
   };
 
   // Блок недавних отправок
@@ -584,11 +646,9 @@ ${p.driver_name || "—"}, ${p.shift || "—"}, ${App.formatKm(p.total_km)} km</
     setTimeout(() => el.remove(), 6000);
   };
 
-  // Безопасный отступ под нижний блок
+  // Нижний блок находится в обычном потоке под списком.
   App.setFooterSafe = function () {
-    const footer = document.querySelector(".bottom");
-    const safe = footer ? footer.offsetHeight + 24 : 140;
-    document.documentElement.style.setProperty("--footer-safe", safe + "px");
-    document.body.style.paddingBottom = safe + "px";
+    document.documentElement.style.setProperty("--footer-safe", "0px");
+    document.body.style.removeProperty("padding-bottom");
   };
 })();
