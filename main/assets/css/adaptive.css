@@ -128,21 +128,24 @@
     padding: 6px;
   }
   .tile__icon {
-    width: 44px; /* было 68px */
-    height: 44px;
+    width: 38px;
+    height: 38px;
     border-radius: 12px; /* чуть меньше */
   }
   .tile__icon svg {
-    width: 24px; /* было 34px */
-    height: 24px;
+    width: 21px;
+    height: 21px;
   }
 
   .tile__title {
-    font-size: clamp(15px, 4.6vw, 18px); /* было до 20px */
+    font-size: clamp(14px, 4vw, 16px);
+    line-height: 1.15;
+    min-height: calc(2 * 1.15em);
   }
   .tile__desc {
-    font-size: clamp(13px, 3.8vw, 15px); /* было до 16px */
-    line-height: 1.35;
+    font-size: clamp(11px, 3.2vw, 13px);
+    line-height: 1.2;
+    min-height: calc(2 * 1.2em);
   }
 }
 
