@@ -14,11 +14,15 @@
 }
 .lehrlinge-home .page {
   min-height: 100dvh;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
 }
 .lehrlinge-home .page > .page__grid {
   flex: 1 1 auto;
+}
+.lehrlinge-home #list {
+  padding-bottom: 0;
 }
 .page__grid {
   display: grid;

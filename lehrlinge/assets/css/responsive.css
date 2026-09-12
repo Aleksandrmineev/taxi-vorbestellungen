@@ -232,7 +232,7 @@
 @media (max-width: 900px) {
   .page__grid {
     grid-template-rows: auto 1fr auto;
-    min-height: calc(100vh - 24px);
+    min-height: 0;
   }
 
   .page__grid > .aside {
