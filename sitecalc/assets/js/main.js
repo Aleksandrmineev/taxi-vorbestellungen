@@ -158,6 +158,6 @@ function goBack() {
     history.back();
   } else {
     // если открыто напрямую — переход на главную страницу проекта
-    window.location.href = "/main/index.html";
+    window.location.href = "/";
   }
 }

@@ -63,7 +63,7 @@ function mapsUrl(address) {
 function showDriverAuthMessage() {
   localStorage.removeItem("mt:driver-session");
   localStorage.removeItem("mt:driver-authenticated");
-  status.innerHTML = 'Die Fahreranmeldung ist abgelaufen oder nicht mehr gültig. Bitte zuerst auf der <a href="../main/index.html">zentralen Startseite</a> erneut anmelden.';
+    status.innerHTML = 'Die Fahreranmeldung ist abgelaufen oder nicht mehr gültig. Bitte zuerst auf der <a href="../">zentralen Startseite</a> erneut anmelden.';
 }
 
 async function loadSchedule() {
