@@ -28,6 +28,21 @@
 
 /* The compact header uses the logo as the home button. Page titles belong to the content. */
 .header .brand__title { display: none; }
+.main-home .header .brand__title {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: 0;
+  text-transform: none;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  color: var(--text);
+}
 .header > .pill {
   flex: 0 0 42px;
   width: 42px;
