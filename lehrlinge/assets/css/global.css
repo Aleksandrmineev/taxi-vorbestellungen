@@ -18,6 +18,14 @@ body {
   overflow-x: hidden;
 }
 
+.lehrlinge-brandbar { display: flex; align-items: center; gap: 10px; min-width: 0; margin-bottom: 14px; }
+.lehrlinge-brandbar__logo { display: inline-grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px; border-radius: 50%; overflow: hidden; background: transparent; box-shadow: 0 1px 4px rgba(0, 0, 0, .08); }
+.lehrlinge-brandbar__logo img { width: 100%; height: 100%; object-fit: contain; }
+.lehrlinge-brandbar__title { min-width: 0; color: var(--text); font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lehrlinge-brandbar__back { margin-left: auto; }
+.lehrlinge-brandbar + .back-btn--desktop { display: none; }
+.lehrlinge-brandbar ~ .page__grid .back-btn--mobile { display: none; }
+
 body {
   margin: 0;
   background: var(--bg);

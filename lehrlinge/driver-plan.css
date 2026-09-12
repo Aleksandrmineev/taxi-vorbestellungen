@@ -3,6 +3,8 @@
 body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 Inter, system-ui, sans-serif; }
 button, input, select { font: inherit; }
 .plan-shell { width: min(1100px, calc(100% - 28px)); margin: 0 auto; padding: 28px 0 50px; }
+.plan-logo { display: inline-grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px; border-radius: 50%; overflow: hidden; background: transparent; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.plan-logo img { width: 100%; height: 100%; object-fit: contain; }
 .back-btn { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--accent); text-decoration: none; }
 .back-btn:hover { background: #e5f1ee; }
 .back-btn svg { width: 18px; height: 18px; }
