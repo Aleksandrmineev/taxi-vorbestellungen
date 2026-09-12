@@ -53,6 +53,9 @@
   align-items: flex-start;
 }
 
+.admin-logo { display: inline-grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px; border-radius: 50%; overflow: hidden; background: transparent; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.admin-logo img { width: 100%; height: 100%; object-fit: contain; }
+
 .admin-top__actions {
   margin-left: auto;
 }
