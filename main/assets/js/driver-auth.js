@@ -140,7 +140,8 @@
   }
 
   function continueWithoutLogin() {
-    localStorage.setItem(GUEST_KEY, "1");
+    sessionStorage.setItem(GUEST_KEY, "1");
+    localStorage.removeItem(GUEST_KEY);
     document.body.classList.remove("driver-auth-locked");
     driverAuth.hidden = true;
     appGrid.hidden = false;
@@ -156,6 +157,7 @@
   function logout() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(GUEST_KEY);
+    sessionStorage.removeItem(GUEST_KEY);
     localStorage.removeItem(AUTH_KEY);
     localStorage.removeItem("mt:lastDriver");
     localStorage.removeItem("taxi-current-driver");
@@ -163,13 +165,7 @@
   }
 
   function hasGuestAccess() {
-    if (localStorage.getItem(GUEST_KEY) === "1") return true;
-    // Совместимость со старой версией, где пропуск хранился только в вкладке.
-    if (sessionStorage.getItem(GUEST_KEY) === "1") {
-      localStorage.setItem(GUEST_KEY, "1");
-      return true;
-    }
-    return false;
+    return sessionStorage.getItem(GUEST_KEY) === "1";
   }
 
   function hasAppAccess() {
