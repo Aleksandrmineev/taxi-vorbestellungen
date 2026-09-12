@@ -143,7 +143,7 @@ function getLehrlingePlan_(from, to) {
   const end = String(to || "").trim();
   const itemsByKey = {};
   const holidays = new Set();
-  if (!sh || sh.getLastRow() < 2) return { items: items, holidays: [] };
+  if (!sh || sh.getLastRow() < 2) return { items: [], holidays: [] };
 
   sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_PLAN_HEADERS.length).getValues().forEach((row) => {
     const date = lehrlingePlanDate_(row[0]);
@@ -155,6 +155,9 @@ function getLehrlingePlan_(from, to) {
       date: date,
       student_id: studentId,
       status: morning && evening ? "both" : morning ? "out" : evening ? "back" : "none",
+      note: String(row[6] || "").trim(),
+      updated_by: String(row[7] || "").trim(),
+      updated_at: row[8] instanceof Date ? row[8].toISOString() : String(row[8] || ""),
     };
     if (String(row[6] || "").trim() === "holiday") holidays.add(date);
   });
@@ -197,6 +200,7 @@ function getLehrlingeDriverSchedule_(from, to, route, direction) {
 
     selectedDirections.forEach((selectedDirection) => {
       const studentsByDate = {};
+      const cancellationsByDate = {};
       (plan.items || []).forEach((item) => {
         const students = studentsByPoint[pointId].filter((student) => {
           const status = statusByKey[item.date + "|" + student.id];
@@ -205,24 +209,54 @@ function getLehrlingeDriverSchedule_(from, to, route, direction) {
             : status === "both" || status === "back";
         });
         if (students.length) studentsByDate[item.date] = students;
+
+        const cancelled = studentsByPoint[pointId].filter((student) => {
+          const status = statusByKey[item.date + "|" + student.id];
+          const rides = selectedDirection === "morning"
+            ? status === "both" || status === "out"
+            : status === "both" || status === "back";
+          const changed = item.student_id === student.id && item.updated_by && item.updated_by !== "pdf_seed";
+          return !rides && changed;
+        });
+        if (cancelled.length) cancellationsByDate[item.date] = cancelled.map((student) => {
+          const itemData = plan.items.find((entry) => entry.date === item.date && entry.student_id === student.id);
+          return {
+            id: student.id,
+            name: student.name,
+            address: String(point.name || "").trim(),
+            updatedBy: itemData?.updated_by || "",
+            updatedAt: itemData?.updated_at || "",
+            note: itemData?.note || "",
+          };
+        });
       });
 
-      Object.keys(studentsByDate).forEach((date) => {
+      [...new Set([...Object.keys(studentsByDate), ...Object.keys(cancellationsByDate)])].forEach((date) => {
         if (!daysByDate[date]) daysByDate[date] = {};
         const routeKey = pointRoute + "|" + selectedDirection;
         if (!daysByDate[date][routeKey]) daysByDate[date][routeKey] = {
           route: pointRoute,
           direction: selectedDirection,
           points: [],
+          cancellations: [],
         };
-        daysByDate[date][routeKey].points.push({
+        if (studentsByDate[date]) daysByDate[date][routeKey].points.push({
           pointId: pointId,
           address: String(point.name || "").trim(),
           url: String(point.url || "").trim(),
           phone: String(point.phone || "").trim(),
           order: pointIndex,
-          students: studentsByDate[date],
+          students: studentsByDate[date].map((student) => {
+            const item = plan.items.find((entry) => entry.date === date && entry.student_id === student.id);
+            return Object.assign({}, student, {
+              status: statusByKey[date + "|" + student.id] || "none",
+              updatedBy: item?.updated_by || "",
+              updatedAt: item?.updated_at || "",
+              note: item?.note || "",
+            });
+          }),
         });
+        if (cancellationsByDate[date]) daysByDate[date][routeKey].cancellations.push(...cancellationsByDate[date]);
       });
     });
   });
@@ -244,6 +278,69 @@ function getLehrlingeDriverSchedule_(from, to, route, direction) {
   }));
 
   return { from: start, to: end, direction: direction === "all" ? "all" : selectedDirections[0], days: days };
+}
+
+function getLehrlingeDriverStudentPlan_(studentId, from, to, driver) {
+  const wanted = String(studentId || "").trim().toLowerCase();
+  const students = getLehrlingeDriverStudents_();
+  const student = students.find((item) => item.id === wanted);
+  if (!student) throw new Error("student_not_found");
+  const plan = getLehrlingePlan_(from, to);
+  return {
+    driver: { id: driver.id, name: driver.name, surname: driver.surname, taxiNumber: driver.taxiNumber },
+    student: student,
+    items: plan.items.filter((item) => item.student_id === wanted),
+    holidays: plan.holidays,
+  };
+}
+
+function getLehrlingeDriverStudents_() {
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName(LEHRLINGE_STUDENTS_SHEET);
+  if (!sh || sh.getLastRow() < 2) return [];
+  const points = {};
+  const pointSheet = ss.getSheetByName("Points");
+  if (pointSheet && pointSheet.getLastRow() >= 2) {
+    pointSheet.getDataRange().getValues().slice(1).forEach((row) => {
+      points[String(row[0] || "").trim()] = { address: String(row[1] || ""), route: String(row[2] || ""), time: pointTimeValue_(row[7]) };
+    });
+  }
+  return sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_STUDENT_HEADERS.length).getValues()
+    .filter((row) => String(row[0] || "").trim() && String(row[3] || "") === "1")
+    .map((row) => Object.assign({ id: String(row[0]).trim(), name: String(row[1] || "").trim(), pointId: String(row[2] || "").trim() }, points[String(row[2] || "").trim()] || {}));
+}
+
+function saveLehrlingeDriverPlan_(body, driver) {
+  let requested;
+  try {
+    requested = JSON.parse(String(body.rows || "[]"));
+  } catch (_) {
+    throw new Error("invalid_plan_rows");
+  }
+  const rows = Array.isArray(requested) ? requested : [];
+  if (!rows.length) return { ok: true, saved: 0 };
+
+  const activeStudents = new Set(getLehrlingeDriverStudents_().map((student) => student.id));
+  const normalized = rows.map((item) => {
+    const date = String(item?.date || "").trim();
+    const studentId = String(item?.student_id || "").trim().toLowerCase();
+    const status = String(item?.status || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("invalid_date");
+    if (!activeStudents.has(studentId)) throw new Error("student_not_found");
+    if (!["both", "out", "back", "none"].includes(status)) throw new Error("invalid_status");
+    return {
+      date: date,
+      student_id: studentId,
+      status: status,
+      note: String(item?.note || "").trim(),
+    };
+  });
+
+  return saveLehrlingePlan_({
+    rows: JSON.stringify(normalized),
+    holidays: String(body.holidays || "[]"),
+    updatedBy: "driver:" + String(driver.taxiNumber || driver.id || "unknown"),
+  });
 }
 
 function saveLehrlingePlan_(body) {
@@ -275,7 +372,12 @@ function saveLehrlingePlan_(body) {
     const key = date + "|" + studentId;
     const existingIndex = rowByKey[key];
     const existing = existingIndex == null ? null : existingRows[existingIndex];
-    const values = [[date, studentId, existing?.[2] ?? morning, existing?.[3] ?? evening, morning, evening, holidays.has(date) ? "holiday" : "", String(body.updatedBy || "admin"), now]];
+    const note = holidays.has(date)
+      ? "holiday"
+      : item.note === undefined
+        ? String(existing?.[6] || "")
+        : String(item.note || "").trim();
+    const values = [[date, studentId, existing?.[2] ?? morning, existing?.[3] ?? evening, morning, evening, note, String(body.updatedBy || "admin"), now]];
     if (existingIndex == null) {
       newRows.push(values[0]);
       rowByKey[key] = existingRows.length + newRows.length - 1;

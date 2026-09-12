@@ -7,6 +7,16 @@ button, input, select { font: inherit; }
 .back-btn:hover { background: #e5f1ee; }
 .back-btn svg { width: 18px; height: 18px; }
 .plan-header { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+.edit-plan { margin-left: auto; }
+.picker { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 18px; background: rgba(24,34,45,.35); }
+.picker[hidden] { display: none; }
+.picker-card { position: relative; width: min(100%, 420px); padding: 22px; border-radius: 16px; background: var(--card); box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+.picker-card h2 { margin: 0 0 5px; }
+.picker-card p { margin: 0 0 18px; color: var(--muted); }
+.picker-card label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.picker-card select { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfd; }
+.picker-card .primary { width: 100%; margin-top: 16px; }
+.picker-close { position: absolute; top: 8px; right: 10px; border: 0; background: transparent; color: var(--muted); font-size: 25px; }
 .filters-details { margin-bottom: 4px; }
 .filters-details summary { display: inline-block; cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 750; }
 .filters-details summary::before { content: "▸"; display: inline-block; width: 16px; color: var(--accent); }
@@ -29,11 +39,18 @@ button { border: 0; border-radius: 10px; padding: 10px 15px; cursor: pointer; fo
 .route-title::before { content: "＋"; display: inline-block; width: 19px; color: var(--muted); }
 .route-block[open] .route-title::before { content: "−"; }
 .route-points { display: grid; }
+.cancellations { margin: 5px 9px 8px; border: 1px solid #f0caca; border-radius: 8px; background: #fff7f7; color: #9f3f3f; }
+.cancellations-title { padding: 5px 8px 3px; font-size: 11px; font-weight: 850; text-transform: uppercase; letter-spacing: .04em; }
+.cancelled { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 5px 8px; border-top: 1px solid #f3dddd; font-size: 12px; }
+.cancelled strong { display: inline-block; margin-right: 7px; }
+.cancelled span { color: #7f6666; }
+.cancelled small { flex: 0 0 auto; color: #a56767; font-size: 10px; text-align: right; }
 .stop { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(110px, .8fr); gap: 6px; align-items: center; padding: 5px 9px; border-top: 1px solid var(--line); }
 .stop-address { font-size: 13px; font-weight: 650; line-height: 1.2; }
 .stop-address a { color: inherit; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 2px; }
 .stop-students { display: flex; align-items: center; justify-content: flex-end; gap: 5px; min-width: 0; color: var(--muted); }
 .student { display: block; font-size: 12px; line-height: 1.2; }
+.student small { display: block; color: var(--accent); font-size: 10px; line-height: 1.2; }
 .call-link { display: inline-flex; align-items: center; justify-content: center; width: 21px; height: 21px; flex: 0 0 auto; border-radius: 50%; background: #dff5ed; color: #0b806d; font-size: 12px; text-decoration: none; }
 .empty { padding: 28px 14px; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); text-align: center; }
 @media (max-width: 640px) {
@@ -44,4 +61,6 @@ button { border: 0; border-radius: 10px; padding: 10px 15px; cursor: pointer; fo
   .controls button { grid-column: 1 / -1; }
   .stop { grid-template-columns: minmax(0, 1.6fr) minmax(100px, .9fr); gap: 5px; padding: 5px 8px; }
   .stop-students { grid-column: auto; }
+  .cancelled { display: block; }
+  .cancelled small { display: block; margin-top: 2px; text-align: left; }
 }

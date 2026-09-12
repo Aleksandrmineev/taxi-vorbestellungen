@@ -135,7 +135,13 @@ function doGet(e) {
     }
 
     if (fn === "driver_schedule") {
-      return json({ ok: true, ...getLehrlingeDriverSchedule_(e.parameter.from, e.parameter.to, e.parameter.route, e.parameter.direction) });
+      const driver = requireDriverToken_(e.parameter.driverToken || "");
+      return json({ ok: true, driver: driver, students: getLehrlingeDriverStudents_(), ...getLehrlingeDriverSchedule_(e.parameter.from, e.parameter.to, e.parameter.route, e.parameter.direction) });
+    }
+
+    if (fn === "driver_student_plan") {
+      const driver = requireDriverToken_(e.parameter.driverToken || "");
+      return json({ ok: true, ...getLehrlingeDriverStudentPlan_(e.parameter.studentId, e.parameter.from, e.parameter.to, driver) });
     }
 
     if (fn === "student_plan") {
@@ -227,6 +233,25 @@ function doPost(e) {
     if (action === "student_login") {
       const session = loginLehrling_(body.studentId, body.pin);
       return json({ ok: true, ...session });
+    }
+
+    // Общий вход водителя для стартового экрана и внутренних разделов.
+    if (action === "driver_login") {
+      const session = loginDriver_(body.taxiNumber, body.pin);
+      return json({ ok: true, ...session });
+    }
+
+    if (action === "driver_register") {
+      const session = registerDriver_(body.taxiNumber, body.name, body.surname, body.pin);
+      cacheRemove_("admin_data");
+      cacheRemove_("getdata:1");
+      cacheRemove_("getdata:2");
+      return json({ ok: true, ...session });
+    }
+
+    if (action === "driver_plan_save") {
+      const driver = requireDriverToken_(body.driverToken || "");
+      return json({ ok: true, saved: saveLehrlingeDriverPlan_(body, driver) });
     }
 
     if (action === "student_plan_save") {

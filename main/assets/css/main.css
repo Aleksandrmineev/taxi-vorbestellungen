@@ -94,12 +94,182 @@
   margin: 0;
 }
 
+.driver-welcome {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 520px);
+  gap: 24px;
+  align-items: end;
+  padding: 18px 20px;
+  border: 1px solid var(--tile-border);
+  border-radius: var(--radius);
+  background: var(--tile-bg);
+  box-shadow: var(--tile-shadow);
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+@media (min-width: 768px) {
+  .driver-welcome {
+    grid-template-columns: 1fr;
+    width: min(100%, 620px);
+    margin-inline: auto;
+    padding: 28px 32px;
+  }
+  .driver-auth__copy { text-align: center; }
+  .driver-auth__actions { justify-content: center; }
+  .driver-auth__form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 540px;
+    width: 100%;
+    margin-inline: auto;
+  }
+  .driver-auth__form .primary { grid-column: 1; }
+  .driver-auth__form .driver-auth__back { grid-column: 2; }
+}
+.driver-auth-locked .hero {
+  align-content: center;
+  justify-items: center;
+  min-height: 100vh;
+  padding-block: 24px;
+}
+.driver-auth-locked .driver-welcome {
+  width: min(100%, 620px);
+}
+.driver-auth__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.driver-auth__copy,
+.driver-auth__actions,
+.driver-auth__form,
+.driver-support { min-width: 0; max-width: 100%; }
+.driver-auth__actions > button:not(.driver-skip) { flex: 1 1 0; }
+.driver-auth__actions button,
+.driver-auth__form .primary {
+  min-width: 130px;
+  min-height: 54px;
+  padding: 14px 20px;
+  border-color: color-mix(in oklab, var(--accent) 72%, var(--button-border));
+  background: var(--accent);
+  color: var(--primary-contrast);
+  box-shadow: 0 5px 16px color-mix(in oklab, var(--accent) 24%, transparent);
+}
+.driver-auth__actions .btn-base {
+  background: transparent;
+  color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 48%, var(--button-border));
+  box-shadow: none;
+}
+.driver-auth__actions .btn-base:hover {
+  background: color-mix(in oklab, var(--accent) 9%, transparent);
+  border-color: var(--accent);
+  box-shadow: none;
+}
+.driver-auth__actions .driver-skip {
+  flex-basis: 100%;
+  min-width: 0;
+  min-height: auto !important;
+  padding: 5px 8px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--muted);
+  box-shadow: none !important;
+  font-size: .86rem;
+  font-weight: 500;
+}
+.driver-auth__actions .driver-skip:hover {
+  color: var(--text);
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.driver-auth__actions button:hover,
+.driver-auth__form .primary:hover {
+  background: color-mix(in oklab, var(--accent) 86%, white);
+  border-color: var(--accent);
+}
+.driver-auth__back { grid-column: 1 / -1; }
+.driver-support {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  justify-self: center;
+  margin-top: 2px;
+  color: #25d366;
+  font-size: .86rem;
+  text-decoration: none;
+}
+.driver-support svg { width: 18px; height: 18px; fill: currentColor; }
+.driver-support:hover { text-decoration: underline; }
+.driver-logout {
+  flex: 1 1 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 88px;
+  min-width: 88px;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  box-shadow: none;
+  font-size: 11px;
+  line-height: 1.15;
+}
+.driver-logout svg {
+  width: 38px;
+  height: 38px;
+  padding: 10px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  display: block;
+  background: color-mix(in oklab, var(--button-bg) 88%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 14%, var(--button-border));
+  fill: currentColor;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.driver-logout:hover {
+  color: var(--accent);
+  background: transparent;
+}
+.driver-logout:hover svg {
+  background: var(--accent);
+  color: var(--primary-contrast);
+  border-color: color-mix(in oklab, var(--accent) 70%, transparent);
+}
+.hero h1 { max-width: 100%; overflow-wrap: anywhere; text-wrap: balance; }
+.driver-auth__eyebrow { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.driver-auth h2 { margin: 4px 0 6px; font-size: 1.35rem; }
+.driver-auth p { margin: 0; color: var(--muted); }
+.driver-auth__copy p { overflow-wrap: anywhere; }
+.driver-auth__form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+.driver-auth__form label { display: grid; gap: 6px; color: var(--muted); font-size: .86rem; font-weight: 600; }
+.driver-auth__form label[hidden] { display: none; }
+.driver-auth__form input {
+  min-width: 0;
+  width: min(100%, 520px);
+  min-height: 48px;
+  padding: 11px 13px;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 500;
+}
+.driver-auth__form input::placeholder { color: var(--muted); opacity: .72; }
+.driver-auth__form button { min-height: 54px; padding-inline: 18px; font-size: 16px; }
+.driver-auth__form[hidden], .driver-auth__actions[hidden] { display: none; }
+.driver-auth__error { grid-column: 1 / -1; color: var(--red) !important; font-size: .85rem; }
+.driver-auth.is-authenticated { border-color: color-mix(in oklab, var(--green) 45%, var(--tile-border)); }
+
 /* grid (одна версия, без дублей) */
 .grid {
   display: grid;
   gap: var(--tile-gap);
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+#appGrid[hidden] { display: none; }
+.driver-welcome[hidden] { display: none; }
 
 /* tiles */
 .tile {
@@ -271,9 +441,11 @@ footer .muted {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 24px;
-  flex-wrap: wrap;
+  gap: 12px;
+  flex-wrap: nowrap;
   width: 100%;
+  max-width: 100%;
+  overflow: hidden;
   box-sizing: border-box;
   padding: 10px clamp(20px, 3vw, 36px) 10px;
   border-top: 1px solid var(--header-border);

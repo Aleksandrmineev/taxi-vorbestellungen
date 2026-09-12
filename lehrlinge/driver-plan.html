@@ -21,6 +21,7 @@
           <div class="eyebrow">MurtalTaxi · Lehrlinge</div>
           <h1>Fahrtenplan</h1>
         </div>
+        <button id="editPlan" class="primary edit-plan" type="button">Plan ändern</button>
       </header>
 
       <details class="filters-details">
@@ -49,6 +50,15 @@
       <div id="status" class="status" role="status" aria-live="polite"></div>
       <section id="schedule" class="schedule" aria-live="polite"></section>
     </main>
+    <div id="studentPicker" class="picker" hidden>
+      <div class="picker-card" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+        <button id="closePicker" class="picker-close" type="button" aria-label="Schließen">×</button>
+        <h2 id="pickerTitle">Lehrling auswählen</h2>
+        <p>Danach öffnet sich die persönliche Fahrtenansicht.</p>
+        <label>Lehrling<select id="studentSelect"></select></label>
+        <button id="openStudentPlan" class="primary" type="button">Fahrten öffnen</button>
+      </div>
+    </div>
     <script src="./driver-plan.js"></script>
   </body>
 </html>

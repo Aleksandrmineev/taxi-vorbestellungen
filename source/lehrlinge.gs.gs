@@ -1,5 +1,7 @@
 const LEHRLINGE_SNAPSHOT_SHEET = "_AppCache";
 const LEHRLINGE_SNAPSHOT_KEY = "lehrlinge_snapshot_v1";
+const DRIVER_REMEMBER_TOKEN_PREFIX = "driver_remember_token:";
+const DRIVER_REMEMBER_TOKEN_TTL_SEC = 365 * 24 * 60 * 60;
 
 function getData(route) {
   const snapshot = getLehrlingeSnapshot_();
@@ -15,7 +17,12 @@ function getData(route) {
     dist: routeData.dist || {},
     drivers: (snapshot.drivers || [])
       .filter((r) => String(r.active || "") === "1")
-      .map((r) => ({ id: String(r.id || ""), name: String(r.name || "") })),
+      .map((r) => ({
+        id: String(r.id || ""),
+        name: String(r.name || ""),
+        surname: String(r.surname || ""),
+        taxi_number: String(r.taxi_number || ""),
+      })),
     pointNameById: pointNameById,
     cars: (snapshot.cars || []).map((r) => ({
       id: String(r.id || ""),
@@ -210,6 +217,7 @@ function getRecentSubmissions(route, limit) {
 }
 
 function getAdminData_() {
+  ensureDriversSchema_(SpreadsheetApp.getActive());
   const snapshot = getLehrlingeSnapshot_();
   const studentsByPoint = getLehrlingeByPointId_();
   return {
@@ -230,6 +238,7 @@ function saveAdminData_(body) {
   validateAdminPayload_(payload);
 
   const ss = SpreadsheetApp.getActive();
+  ensureDriversSchema_(ss);
   writeSheetRows_(
     ss,
     "Points",
@@ -252,12 +261,7 @@ function saveAdminData_(body) {
       .getRange(2, 8, pointsSheet.getLastRow() - 1, 1)
       .setNumberFormat("HH:mm");
   }
-  writeSheetRows_(
-    ss,
-    "Drivers",
-    ["id", "name", "active"],
-    payload.drivers.map((d) => [d.id, d.name, d.active])
-  );
+  saveDriversSheet_(ss, payload.drivers);
   writeSheetRows_(
     ss,
     "Cars",
@@ -324,18 +328,7 @@ function buildLehrlingeSnapshotFromSheets_() {
         .filter((item) => item.id !== "")
     : [];
 
-  const drivers = shD
-    ? shD
-        .getDataRange()
-        .getValues()
-        .slice(1)
-        .filter((r) => String(r[0] || "").trim() !== "")
-        .map((r) => ({
-          id: String(r[0] || "").trim(),
-          name: String(r[1] || ""),
-          active: String(r[2] || "") === "1" ? "1" : "0",
-        }))
-    : [];
+  const drivers = shD ? readDriversSheet_(shD) : [];
 
   const cars = shC
     ? shC
@@ -540,8 +533,288 @@ function normalizeDrivers_(list) {
   return (Array.isArray(list) ? list : []).map((item) => ({
     id: String(item?.id || "").trim(),
     name: String(item?.name || "").trim(),
+    surname: String(item?.surname || "").trim(),
+    taxi_number: String(item?.taxi_number || "").trim(),
+    pin: String(item?.pin || "").replace(/\D/g, "").slice(0, 4),
     active: String(item?.active || "") === "1" ? "1" : "0",
   }));
+}
+
+function readDriversSheet_(sh) {
+  const values = sh.getDataRange().getValues();
+  if (!values.length) return [];
+  const headers = values[0].map((value) => String(value || "").trim().toLowerCase());
+  const indexOf = (name, fallback) => {
+    const index = headers.indexOf(name);
+    return index >= 0 ? index : fallback;
+  };
+  const idIndex = indexOf("id", 0);
+  const nameIndex = indexOf("name", 1);
+  const surnameIndex = headers.indexOf("surname");
+  const taxiIndex = headers.indexOf("taxi_number");
+  const activeIndex = indexOf("active", 2);
+
+  return values.slice(1)
+    .filter((row) => String(row[idIndex] || "").trim() !== "")
+    .map((row) => ({
+      id: String(row[idIndex] || "").trim(),
+      name: String(row[nameIndex] || ""),
+      surname: surnameIndex >= 0 ? String(row[surnameIndex] || "") : "",
+      taxi_number: taxiIndex >= 0 ? String(row[taxiIndex] || "").trim() : "",
+      active: String(row[activeIndex] || "") === "1" ? "1" : "0",
+    }));
+}
+
+function getDriverAuthRecord_(taxiNumber) {
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName("Drivers");
+  if (!sh || sh.getLastRow() < 2) return null;
+  const values = sh.getDataRange().getValues();
+  const headers = values[0].map((value) => String(value || "").trim().toLowerCase());
+  const indexOf = (name, fallback) => {
+    const index = headers.indexOf(name);
+    return index >= 0 ? index : fallback;
+  };
+  const taxiIndex = headers.indexOf("taxi_number");
+  const pinIndex = headers.indexOf("pin_hash");
+  if (taxiIndex < 0 || pinIndex < 0) return null;
+  const idIndex = indexOf("id", 0);
+  const nameIndex = indexOf("name", 1);
+  const surnameIndex = headers.indexOf("surname");
+  const activeIndex = indexOf("active", 2);
+  const wanted = String(taxiNumber || "").trim();
+  for (let i = 1; i < values.length; i += 1) {
+    const row = values[i];
+    if (String(row[taxiIndex] || "").trim() !== wanted) continue;
+    return {
+      id: String(row[idIndex] || "").trim(),
+      name: String(row[nameIndex] || "").trim(),
+      surname: surnameIndex >= 0 ? String(row[surnameIndex] || "").trim() : "",
+      taxiNumber: wanted,
+      active: String(row[activeIndex] || "") === "1" ? "1" : "0",
+      pinHash: String(row[pinIndex] || "").trim().toLowerCase(),
+    };
+  }
+  return null;
+}
+
+function loginDriver_(taxiNumber, pin) {
+  const taxi = String(taxiNumber || "").trim();
+  const normalizedPin = String(pin || "").replace(/\D/g, "");
+  if (!/^\d{2,3}$/.test(taxi) || !/^\d{4}$/.test(normalizedPin)) {
+    throw new Error("invalid_credentials");
+  }
+  const driver = getDriverAuthRecord_(taxi);
+  if (!driver || driver.active !== "1" || !driver.pinHash || sha256Hex_(normalizedPin) !== driver.pinHash) {
+    throw new Error("invalid_credentials");
+  }
+  return createDriverSession_(driver);
+}
+
+function createDriverSession_(driver) {
+  const token = driver.id + "." + Utilities.getUuid() + Utilities.getUuid();
+  PropertiesService.getScriptProperties().setProperty(
+    DRIVER_REMEMBER_TOKEN_PREFIX + driver.id,
+    JSON.stringify({ hash: sha256Hex_(token), expiresAt: Date.now() + DRIVER_REMEMBER_TOKEN_TTL_SEC * 1000 })
+  );
+  return {
+    token: token,
+    expiresInSec: DRIVER_REMEMBER_TOKEN_TTL_SEC,
+    driver: { id: driver.id, name: driver.name, surname: driver.surname, taxiNumber: driver.taxiNumber },
+  };
+}
+
+function requireDriverToken_(token) {
+  const normalized = String(token || "").trim();
+  const driverId = normalized.split(".")[0];
+  if (!normalized || !driverId) throw new Error("driver_auth_required");
+  const raw = PropertiesService.getScriptProperties().getProperty(DRIVER_REMEMBER_TOKEN_PREFIX + driverId);
+  if (!raw) throw new Error("driver_auth_required");
+  let session;
+  try { session = JSON.parse(raw); } catch (_) { throw new Error("driver_auth_required"); }
+  if (!session || session.expiresAt <= Date.now() || sha256Hex_(normalized) !== session.hash) {
+    throw new Error("driver_auth_required");
+  }
+  const driver = getDriverAuthRecordById_(driverId);
+  if (!driver || driver.active !== "1") throw new Error("driver_auth_required");
+  return driver;
+}
+
+function getDriverAuthRecordById_(driverId) {
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName("Drivers");
+  if (!sh || sh.getLastRow() < 2) return null;
+  const values = sh.getDataRange().getValues();
+  const headers = values[0].map((value) => String(value || "").trim().toLowerCase());
+  const indexOf = (name, fallback) => {
+    const index = headers.indexOf(name);
+    return index >= 0 ? index : fallback;
+  };
+  const idIndex = indexOf("id", 0);
+  const nameIndex = indexOf("name", 1);
+  const surnameIndex = headers.indexOf("surname");
+  const taxiIndex = headers.indexOf("taxi_number");
+  const activeIndex = indexOf("active", 2);
+  const wanted = String(driverId || "").trim();
+  const row = values.slice(1).find((item) => String(item[idIndex] || "").trim() === wanted);
+  if (!row) return null;
+  return {
+    id: wanted,
+    name: String(row[nameIndex] || "").trim(),
+    surname: surnameIndex >= 0 ? String(row[surnameIndex] || "").trim() : "",
+    taxiNumber: taxiIndex >= 0 ? String(row[taxiIndex] || "").trim() : "",
+    active: String(row[activeIndex] || "") === "1" ? "1" : "0",
+  };
+}
+
+function registerDriver_(taxiNumber, name, surname, pin) {
+  const taxi = String(taxiNumber || "").trim();
+  const firstName = String(name || "").trim();
+  const lastName = String(surname || "").trim();
+  const normalizedPin = String(pin || "").replace(/\D/g, "");
+  if (!/^\d{2,3}$/.test(taxi) || !firstName || !lastName || !/^\d{4}$/.test(normalizedPin)) {
+    throw new Error("invalid_registration");
+  }
+
+  const ss = SpreadsheetApp.getActive();
+  ensureDriversSchema_(ss);
+  const sh = ss.getSheetByName("Drivers") || ss.insertSheet("Drivers");
+  let values = sh.getDataRange().getValues();
+  let headers = values.length ? values[0].map((v) => String(v || "").trim()) : [];
+  ["surname", "taxi_number", "pin_hash"].forEach((header) => {
+    if (headers.map((value) => value.toLowerCase()).indexOf(header) < 0) {
+      sh.getRange(1, sh.getLastColumn() + 1).setValue(header);
+    }
+  });
+  values = sh.getDataRange().getValues();
+  headers = values.length ? values[0].map((v) => String(v || "").trim()) : [];
+  const indexOf = (name, fallback) => {
+    const index = headers.findIndex((h) => h.toLowerCase() === name);
+    return index >= 0 ? index : fallback;
+  };
+  const taxiIndex = headers.findIndex((h) => h.toLowerCase() === "taxi_number");
+  const pinIndex = headers.findIndex((h) => h.toLowerCase() === "pin_hash");
+  const idIndex = indexOf("id", 0);
+  const nameIndex = indexOf("name", 1);
+  const surnameIndex = indexOf("surname", 2);
+  const activeIndex = indexOf("active", 3);
+  for (let i = 1; i < values.length; i += 1) {
+    const row = values[i];
+    if (String(row[taxiIndex] || "").trim() !== taxi) continue;
+    if (String(row[activeIndex] || "") !== "1") throw new Error("driver_inactive");
+    if (String(row[pinIndex] || "").trim()) throw new Error("driver_already_registered");
+    sh.getRange(i + 1, nameIndex + 1).setValue(firstName);
+    sh.getRange(i + 1, surnameIndex + 1).setValue(lastName);
+    sh.getRange(i + 1, pinIndex + 1).setValue(sha256Hex_(normalizedPin));
+    return createDriverSession_({
+      id: String(row[idIndex] || "").trim(),
+      name: firstName,
+      surname: lastName,
+      taxiNumber: taxi,
+    });
+  }
+
+  const headersForNew = ["id", "name", "surname", "taxi_number", "active", "pin_hash"];
+  const row = headersForNew.map((header) => {
+    if (header === "id") return "DRV-" + Utilities.getUuid().slice(0, 8);
+    if (header === "name") return firstName;
+    if (header === "surname") return lastName;
+    if (header === "taxi_number") return taxi;
+    if (header === "active") return "1";
+    return sha256Hex_(normalizedPin);
+  });
+  if (!values.length || !headers.length) {
+    sh.getRange(1, 1, 1, headersForNew.length).setValues([headersForNew]);
+  } else {
+    headersForNew.forEach((header) => {
+      if (headers.map((h) => h.toLowerCase()).indexOf(header) < 0) {
+        sh.getRange(1, sh.getLastColumn() + 1).setValue(header);
+      }
+    });
+  }
+  // Re-read the header order after adding missing columns.
+  const finalHeaders = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  const finalRow = finalHeaders.map((header) => {
+    const key = header.toLowerCase();
+    if (key === "id") return row[0];
+    if (key === "name") return firstName;
+    if (key === "surname") return lastName;
+    if (key === "taxi_number") return taxi;
+    if (key === "active") return "1";
+    if (key === "pin_hash") return sha256Hex_(normalizedPin);
+    return "";
+  });
+  sh.getRange(sh.getLastRow() + 1, 1, 1, finalRow.length).setValues([finalRow]);
+  return createDriverSession_({
+    id: row[0],
+    name: firstName,
+    surname: lastName,
+    taxiNumber: taxi,
+  });
+}
+
+function ensureDriversSchema_(ss) {
+  const sh = ss.getSheetByName("Drivers") || ss.insertSheet("Drivers");
+  if (sh.getLastRow() === 0 || sh.getLastColumn() === 0) {
+    sh.getRange(1, 1, 1, 6).setValues([["id", "name", "surname", "taxi_number", "active", "pin_hash"]]);
+    return sh;
+  }
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map((v) => String(v || "").trim().toLowerCase());
+  ["surname", "taxi_number", "pin_hash"].forEach((header) => {
+    if (headers.indexOf(header) < 0) {
+      sh.getRange(1, sh.getLastColumn() + 1).setValue(header);
+      headers.push(header);
+    }
+  });
+  return sh;
+}
+
+function saveDriversSheet_(ss, drivers) {
+  const sh = ss.getSheetByName("Drivers") || ss.insertSheet("Drivers");
+  const oldValues = sh.getDataRange().getValues();
+  const oldHeaders = oldValues.length
+    ? oldValues[0].map((value) => String(value || "").trim())
+    : [];
+  const oldIdIndex = oldHeaders.findIndex((header) => header.toLowerCase() === "id");
+  const preservedById = {};
+  if (oldIdIndex >= 0) {
+    oldValues.slice(1).forEach((row) => {
+      const id = String(row[oldIdIndex] || "").trim();
+      if (id) preservedById[id] = row;
+    });
+  }
+
+  // Keep future auth columns (phone, pin_hash, etc.) intact when the admin saves.
+  const headers = ["id", "name", "surname", "taxi_number", "active", "pin_hash"];
+  oldHeaders.forEach((header) => {
+    if (header && headers.indexOf(header) === -1) headers.push(header);
+  });
+  const oldIndexByHeader = {};
+  oldHeaders.forEach((header, index) => {
+    if (header) oldIndexByHeader[header] = index;
+  });
+
+  const rows = drivers.map((driver) => {
+    const previous = preservedById[driver.id] || [];
+    return headers.map((header) => {
+      if (header === "id") return driver.id;
+      if (header === "name") return driver.name;
+      if (header === "surname") return driver.surname;
+      if (header === "taxi_number") return driver.taxi_number;
+      if (header === "active") return driver.active;
+      if (header === "pin_hash") {
+        return driver.pin && /^\d{4}$/.test(driver.pin)
+          ? sha256Hex_(driver.pin)
+          : (oldIndexByHeader[header] == null ? "" : previous[oldIndexByHeader[header]] || "");
+      }
+      const oldIndex = oldIndexByHeader[header];
+      return oldIndex == null ? "" : previous[oldIndex] || "";
+    });
+  });
+
+  sh.clearContents();
+  sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+  if (rows.length) sh.getRange(2, 1, rows.length, headers.length).setValues(rows);
 }
 
 function normalizeCars_(list) {
@@ -581,11 +854,22 @@ function validateAdminPayload_(payload) {
   });
 
   const driverIds = {};
+  const taxiNumbers = {};
   payload.drivers.forEach((d) => {
     if (!d.id) throw new Error("Driver id is required");
     if (!d.name) throw new Error("Driver name is required for " + d.id);
     if (driverIds[d.id]) throw new Error("Duplicate driver id: " + d.id);
     driverIds[d.id] = true;
+    if (d.taxi_number && !/^\d{2,3}$/.test(d.taxi_number)) {
+      throw new Error("Taxi number must contain 2 or 3 digits for " + d.name);
+    }
+    if (d.taxi_number && taxiNumbers[d.taxi_number]) {
+      throw new Error("Duplicate taxi number: " + d.taxi_number);
+    }
+    if (d.taxi_number) taxiNumbers[d.taxi_number] = true;
+    if (d.pin && !/^\d{4}$/.test(d.pin)) {
+      throw new Error("PIN must contain exactly 4 digits for " + d.name);
+    }
   });
 
   const carIds = {};

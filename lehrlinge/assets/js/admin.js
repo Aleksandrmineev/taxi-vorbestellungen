@@ -122,6 +122,9 @@ document.addEventListener("DOMContentLoaded", () => {
       ? raw.drivers.map((d) => ({
           id: String(d?.id || "").trim(),
           name: String(d?.name || ""),
+          surname: String(d?.surname || ""),
+          taxi_number: String(d?.taxi_number || "").trim(),
+          pin: "",
           active: String(d?.active || "") === "1" ? "1" : "0",
         }))
       : [];
@@ -555,6 +558,9 @@ document.addEventListener("DOMContentLoaded", () => {
               <tr>
                 <th>ID</th>
                 <th>Name</th>
+                <th>Nachname</th>
+                <th>Taxi-Nr.</th>
+                <th>PIN setzen</th>
                 <th>Aktiv</th>
                 <th>Aktionen</th>
               </tr>
@@ -568,6 +574,9 @@ document.addEventListener("DOMContentLoaded", () => {
                           <tr data-driver-index="${index}">
                             <td><input class="is-id" type="text" data-field="id" value="${esc(d.id)}" /></td>
                             <td><input class="is-name" type="text" data-field="name" value="${esc(d.name)}" /></td>
+                            <td><input type="text" data-field="surname" value="${esc(d.surname)}" /></td>
+                            <td><input type="text" inputmode="numeric" maxlength="3" data-field="taxi_number" value="${esc(d.taxi_number)}" placeholder="z. B. 12" /></td>
+                            <td><input type="password" inputmode="numeric" maxlength="4" data-field="pin" value="" placeholder="optional" autocomplete="new-password" /></td>
                             <td>
                               <select data-field="active">
                                 <option value="1"${d.active === "1" ? " selected" : ""}>Ja</option>
@@ -583,7 +592,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         `
                       )
                       .join("")
-                  : `<tr><td colspan="4" class="admin-empty">Keine Fahrer vorhanden.</td></tr>`
+                  : `<tr><td colspan="7" class="admin-empty">Keine Fahrer vorhanden.</td></tr>`
               }
             </tbody>
           </table>
@@ -592,7 +601,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     document.getElementById("addDriverBtn")?.addEventListener("click", () => {
-      state.data.drivers.push({ id: "", name: "", active: "1" });
+      state.data.drivers.push({ id: "", name: "", surname: "", taxi_number: "", pin: "", active: "1" });
       setDirty();
       renderDrivers();
     });

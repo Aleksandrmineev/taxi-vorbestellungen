@@ -321,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function goHome() {
-  location.href = "../index.html?v=20251114a"; // поменяй суффикс при каждом деплое
+  location.href = "../main/index.html?v=20260912";
 }
 
 // ===== Сохранение выбора водителя в localStorage и синхронизация между селектами =====

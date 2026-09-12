@@ -347,7 +347,13 @@
     const optionsHtml =
       '<option value="">—</option>' +
       drivers
-        .map((d) => `<option value="${String(d.id)}">${d.name}</option>`)
+        .map((d) => {
+          const fullName = [d.name, d.surname].filter(Boolean).join(" ");
+          const label = d.taxi_number
+            ? `${fullName || d.name} · Taxi ${d.taxi_number}`
+            : (fullName || d.name);
+          return `<option value="${String(d.id)}">${label}</option>`;
+        })
         .join("");
 
     selects.forEach((sel) => {
