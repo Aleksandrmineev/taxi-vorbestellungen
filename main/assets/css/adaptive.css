@@ -94,7 +94,8 @@
   }
 
   .hero {
-    padding: clamp(16px, 6vw, 28px);
+    gap: 10px;
+    padding: 12px 16px 8px;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: baseline;
   }
@@ -123,7 +124,7 @@
 
   /* компактные плитки */
   .tile {
-    min-height: 120px; /* было 160px */
+    min-height: clamp(96px, 15dvh, 120px);
     padding: 6px;
   }
   .tile__icon {

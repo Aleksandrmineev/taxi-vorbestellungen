@@ -363,6 +363,7 @@
 .grid {
   display: grid;
   gap: var(--tile-gap);
+  align-content: start;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 #appGrid[hidden] { display: none; }
