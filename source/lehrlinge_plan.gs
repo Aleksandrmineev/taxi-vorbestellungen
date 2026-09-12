@@ -607,6 +607,29 @@ function requestLehrlingPinReset_(studentId) {
   return { sent: true, expiresInSec: LEHRLINGE_PIN_RESET_TTL_SEC, maskedPhone: maskPhoneLastTwo_(storedPhone) };
 }
 
+function requestLehrlingIdRecovery_(phone) {
+  const requestedPhone = normalizeDriverPhone_(phone);
+  if (requestedPhone.replace(/\D/g, "").length < 8) throw new Error("invalid_reset_data");
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName(LEHRLINGE_STUDENTS_SHEET);
+  if (!sh || sh.getLastRow() < 2) throw new Error("phone_not_registered");
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map((value) => String(value || "").trim().toLowerCase());
+  const phoneIndex = headers.indexOf("phone");
+  if (phoneIndex < 0) throw new Error("phone_not_registered");
+  const matches = sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues()
+    .filter((row) => String(row[3] || "") === "1" && row[phoneIndex] && normalizeDriverPhone_(row[phoneIndex]) === requestedPhone)
+    .map((row) => String(row[0] || "").trim().toLowerCase())
+    .filter(Boolean);
+  if (!matches.length) throw new Error("phone_not_registered");
+  if (matches.length > 1) throw new Error("phone_not_unique");
+  const studentId = matches[0];
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  PropertiesService.getScriptProperties().setProperty(LEHRLINGE_PIN_RESET_PREFIX + studentId, JSON.stringify({ hash: sha256Hex_(code), phone: requestedPhone, expiresAt: Date.now() + LEHRLINGE_PIN_RESET_TTL_SEC * 1000, attempts: 0 }));
+  const sms = sendZadarmaSms_(requestedPhone, "MurtalTaxi: Deine Lehrling-ID ist " + studentId + ". SMS-Code: " + code + ". Gültig 10 Minuten.");
+  if (sms && sms.skipped) throw new Error("sms_not_configured");
+  return { sent: true, expiresInSec: LEHRLINGE_PIN_RESET_TTL_SEC, maskedPhone: maskPhoneLastTwo_(requestedPhone) };
+}
+
 function resetLehrlingPin_(studentId, phone, code, pin) {
   const id = String(studentId || "").trim().toLowerCase();
   const normalizedPin = String(pin || "").replace(/\D/g, "");

@@ -239,6 +239,10 @@ function doPost(e) {
       return json({ ok: true, ...requestLehrlingPinReset_(body.studentId, body.phone) });
     }
 
+    if (action === "student_id_request") {
+      return json({ ok: true, ...requestLehrlingIdRecovery_(body.phone) });
+    }
+
     if (action === "student_pin_reset") {
       const session = resetLehrlingPin_(body.studentId, body.phone, body.code, body.pin);
       return json({ ok: true, ...session });
