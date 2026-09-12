@@ -37,23 +37,22 @@
     <link rel="stylesheet" href="assets/css/main.css" />
     <link rel="stylesheet" href="assets/css/adaptive.css" />
     <link rel="stylesheet" href="assets/css/hilfe.css" />
+    <link rel="stylesheet" href="../assets/css/app-shell.css?v=20260912-2" />
   </head>
   <body>
     <!-- Header -->
-    <header class="header">
-      <a class="app-back" href="index.html" aria-label="Zurück zur Startseite">
+    <header class="app-header">
+      <a class="app-header__back" href="index.html" aria-label="Zurück zur Startseite">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
       </a>
-      <a class="brand" href="index.html" aria-label="MurtalTaxi Start">
-        <div class="brand__logo" aria-hidden="true">
-          <img src="./assets/img/logo1.png" alt="Logo Murtal Taxi" />
-        </div>
-        <span class="brand__title">Murtal&nbsp;TAXI</span>
+      <a class="app-header__logo" href="index.html" aria-label="MurtalTaxi Start">
+        <img src="./assets/img/logo1.png" alt="Logo Murtal Taxi" />
       </a>
-      <div class="spacer"></div>
+      <span class="app-header__title app-header__title--always">Hilfe</span>
+      <span class="app-header__spacer" aria-hidden="true"></span>
 
       <a
-        class="pill"
+        class="app-header__call"
         href="tel:+436601018101"
         aria-label="Jetzt anrufen: +43 660 1018101"
       >
@@ -67,170 +66,99 @@
 
     </header>
 
-    <!-- Content -->
     <main class="hilfe">
       <div class="backline">
-        <a href="index.html" class="pill" aria-label="Zurück zur Startseite">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M10.828 12l4.95-4.95-1.414-1.414L8 12l6.364 6.364 1.414-1.414z"
-            />
-          </svg>
-          Zur Startseite
-        </a>
+        <a href="index.html" class="pill" aria-label="Zurück zur Startseite">← Zur Startseite</a>
         <p class="lead">
-          Kurzbeschreibung der aktuellen Funktionen von
-          <strong>TaxiApp</strong> und Roadmap der geplanten Erweiterungen.
+          Die wichtigsten Bereiche der zentralen Startseite von MurtalTaxi auf einen Blick.
         </p>
       </div>
 
       <section class="hilfe__section">
         <div class="headline">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M5 3h14a2 2 0 012 2v11.5A3.5 3.5 0 0117.5 20H8A5 5 0 013 15V5a2 2 0 012-2z"
-            />
-          </svg>
-          <h2>Bereits verfügbar</h2>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 012 2v11.5A3.5 3.5 0 0117.5 20H8A5 5 0 013 15V5a2 2 0 012-2z" /></svg>
+          <h2>Was finde ich auf der Startseite?</h2>
         </div>
         <ul class="checklist">
           <li class="checkitem is-done">
-            <strong>PreisRechner</strong> — Live-Berechnung der Taxi-Tarife
-            (Tag/Nacht/Feiertag) nach aktueller Tarifordnung.
+            <a href="../sitecalc/index.html"><strong>Fahrpreisrechner</strong></a> — Strecke in Kilometern eingeben und den voraussichtlichen Tages- oder Nachtpreis berechnen.
           </li>
           <li class="checkitem is-done">
-            <strong>MiniCRM</strong> — Schnellsuche nach Bestellungen/Kontakten,
-            Übersicht der letzten Fahrten.
+            <a href="../minicrm/index.html"><strong>Telefonnummernsuche</strong></a> — nach Telefonnummern, Kundinnen und Kunden oder bestehenden Bestellungen suchen.
           </li>
           <li class="checkitem is-done">
-            <strong>SchulTransport</strong> — Routen & Berichte für
-            Schüler-/Lehrlingsfahrten.
+            <a href="../vorbestellungen.html"><strong>Vorbestellungen</strong></a> — geplante Aufträge öffnen, prüfen und bearbeiten.
           </li>
           <li class="checkitem is-done">
-            <strong>Design & Themen</strong> — Hell/Dunkel mit Speicherung,
-            modernes Premium-UI.
+            <a href="../abrechnung/index.html"><strong>Schichtabrechnung</strong></a> — Schichtdaten und Tagesberichte als Fahrer erfassen.
+          </li>
+          <li class="checkitem is-done">
+            <a href="../lehrlinge/index.html"><strong>Zellstoff Pöls Lehrlinge</strong></a> — Lehrlingsfahrten, Fahrtenplan und Berichte verwalten.
           </li>
         </ul>
       </section>
 
       <section class="hilfe__section">
         <div class="headline">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M12 2l7 4v8c0 4.418-3.582 8-8 8S3 18.418 3 14V6l9-4zM5 8.236V14a7 7 0 0014 0V8.236l-7-4-7 4z"
-            />
-          </svg>
-          <h2>Roadmap</h2>
-        </div>
-        <ul class="checklist">
-          <li class="checkitem">
-            <strong>Online-Zahlung per QR-Code</strong>
-            <span class="badge badge--progress">In Arbeit</span>
-            <div class="hilfe__text">
-              Schnelle Rechnungserstellung und direkte Bezahlung durch
-              Kund:innen via QR.
-            </div>
-          </li>
-          <li class="checkitem">
-            <strong>Sofortbestellung (Ein-Klick)</strong>
-            <span class="badge badge--planned">Geplant</span>
-            <div class="hilfe__text">
-              Taxi sofort mit nur einer Taste anfordern.
-            </div>
-          </li>
-          <li class="checkitem">
-            <strong>MiniCRM 2.0</strong> — erweiterte DB-Funktionen
-            <span class="badge badge--planned">Geplant</span>
-            <div class="hilfe__text">
-              Verlauf, Status, Filter, bessere Datenpflege und Auswertungen.
-            </div>
-          </li>
-          <li class="checkitem">
-            <strong>Service „Alle Vorbestellungen“</strong>
-            <span class="badge badge--planned">Geplant</span>
-            <div class="hilfe__text">
-              Schnelles Anlegen regelmäßiger & vorläufiger Fahrten in den
-              <em>Fahrten-Kalender</em>, inkl. Bestätigung & Erinnerungen, auch
-              für <strong>Krankentransport</strong>.
-            </div>
-          </li>
-          <li class="checkitem">
-            <strong>Mehrsprachigkeit</strong>
-            <span class="badge badge--new">Neu</span>
-            <div class="hilfe__text">
-              Geplante Sprachen: Deutsch (Basis), Englisch, Italienisch,
-              Spanisch, Französisch, Ukrainisch, Russisch, Türkisch,
-              Kroatisch/Serbisch/Bosnisch (BKS), Ungarisch, Slowenisch,
-              Rumänisch.
-            </div>
-          </li>
-        </ul>
-      </section>
-
-      <section class="hilfe__section">
-        <div class="headline">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M20 4h-3.17A3 3 0 0014 2H10a3 3 0 00-2.83 2H4a2 2 0 00-2 2v11a3 3 0 003 3h14a3 3 0 003-3V6a2 2 0 00-2-2zM10 4h4a1 1 0 011 1v1H9V5a1 1 0 011-1z"
-            />
-          </svg>
-          <h2>Entwicklung & Kontakt</h2>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 4v8c0 4.418-3.582 8-8 8S3 18.418 3 14V6l9-4zM5 8.236V14a7 7 0 0014 0V8.236l-7-4-7 4z" /></svg>
+          <h2>Fahrerbereich</h2>
         </div>
         <div class="hilfe__meta">
-          <div>Entwickler: <strong>Aleksandr Mineev</strong></div>
-          <div>
-            Telegram:
-            <a
-              class="footer__link"
-              href="https://t.me/aamineev"
-              target="_blank"
-              rel="noopener"
-              >@aamineev</a
-            >
-          </div>
+          <div>Der Fahrerbereich wird über die zentrale Startseite geöffnet. Nach der Anmeldung bleiben Fahrer-Nr. und Zugang im Browser gespeichert.</div>
+          <div>Über <strong>Fahrtenplan</strong> können Fahrer die geplanten Lehrlingsfahrten nach Zeitraum, Route und Fahrt anzeigen und bei Bedarf Änderungen für einen Lehrling vormerken.</div>
+          <div>Die Schichtabrechnung ist für angemeldete Fahrer vorgesehen. Bei Problemen bitte den Support kontaktieren.</div>
         </div>
       </section>
 
-      <div class="backline">
-        <a href="index.html" class="pill" aria-label="Zurück zur Startseite">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M10.828 12l4.95-4.95-1.414-1.414L8 12l6.364 6.364 1.414-1.414z"
-            />
-          </svg>
-          Zur Startseite
-        </a>
-        <p class="lead">
-          Kurzbeschreibung der aktuellen Funktionen von
-          <strong>TaxiApp</strong> und Roadmap der geplanten Erweiterungen.
-        </p>
-      </div>
+      <section class="hilfe__section">
+        <div class="headline">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4h-3.17A3 3 0 0014 2H10a3 3 0 00-2.83 2H4a2 2 0 00-2 2v11a3 3 0 003 3h14a3 3 0 003-3V6a2 2 0 00-2-2zM10 4h4a1 1 0 011 1v1H9V5a1 1 0 011-1z" /></svg>
+          <h2>Lehrlingsportal</h2>
+        </div>
+        <div class="hilfe__meta">
+          <div>Lehrlinge melden sich mit ihrer Lehrling-ID und PIN im separaten Portal an.</div>
+          <div>Für jeden Werktag gilt zunächst: Fahrt <strong>hin und zurück</strong>. Im gewählten Zeitraum können Hin- und Rückfahrt einzeln abgewählt und gesammelt gespeichert werden.</div>
+          <div>Vergangene Fahrten sind geschützt. Änderungen für die Hinfahrt sind bis 03:00 Uhr, für die Rückfahrt bis 12:00 Uhr möglich.</div>
+        </div>
+      </section>
+
+      <section class="hilfe__section">
+        <div class="headline">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm2.1-7.2-.9.9c-.7.7-1.2 1.3-1.2 2.8h-2c0-1.9.7-2.9 1.7-3.9l1.1-1.1a1.8 1.8 0 10-3.1-1.3H8.7a3.8 3.8 0 117.4 2.6z" /></svg>
+          <h2>Wenn etwas nicht funktioniert</h2>
+        </div>
+        <div class="hilfe__meta">
+          <div>Seite neu laden und kurz prüfen, ob die Internetverbindung funktioniert.</div>
+          <div>Bei einer abgelaufenen Anmeldung erneut einloggen. PINs können über die Funktion <strong>PIN vergessen?</strong> per SMS zurückgesetzt werden.</div>
+          <div>Wenn das Problem bleibt, über <a href="https://wa.me/4368181289405" target="_blank" rel="noopener"><strong>WhatsApp Support</strong></a> melden. Bitte möglichst Seite, Uhrzeit und Fehlermeldung mitschicken.</div>
+        </div>
+      </section>
     </main>
 
     <!-- Footer -->
     <footer>
       <div class="footer__dev">
-        <!-- Entwicklung -->
+        <!-- Support -->
         <a
-          href="https://t.me/aamineev"
+          href="https://wa.me/4368181289405"
           target="_blank"
           rel="noopener"
-          aria-label="Schreiben in Telegram @aamineev"
+          aria-label="WhatsApp Support öffnen"
           class="footer__link"
         >
           <svg
-            class="tg-icon"
+            class="whatsapp-icon"
             width="18"
             height="18"
             viewBox="0 0 24 24"
             aria-hidden="true"
           >
             <path
-              d="M9.7 14.7l-.3 4.6c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.7.4 1.2.2 1.4-.6l2.6-12.2c.2-.9-.3-1.3-1-1.1L4 10.3c-.8.2-.8.7-.1.9l4.3 1.3 10-6.3c.5-.3.9-.1.5.2l-9 8.3z"
+              d="M20.5 3.5A11.8 11.8 0 0 0 12.1 0C5.6 0 .3 5.3.3 11.8c0 2.1.6 4.1 1.6 5.9L.2 24l6.5-1.7a11.8 11.8 0 0 0 5.4 1.3h.1c6.5 0 11.8-5.3 11.8-11.8 0-3.1-1.3-6.1-3.5-8.3ZM12.2 21.6c-1.7 0-3.4-.5-4.9-1.3l-.4-.2-3.8 1 1-3.7-.2-.4a9.8 9.8 0 1 1 8.3 4.6Zm5.4-7.3c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.5-.7-2.5-1.2-3.5-2.8-.3-.5.3-.5.8-1.6.1-.2.1-.4 0-.6-.1-.2-.7-1.7-.9-2.3-.2-.6-.5-.5-.7-.5h-.6c-.3 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.1 1.4 3.3c.2.2 2.3 3.5 5.6 4.9 2.1.9 2.1.6 2.5.6.4 0 1.8-.7 2.1-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.3-.6-.4Z"
               fill="currentColor"
             />
           </svg>
-          Entwicklung
+          Support
         </a>
 
         <!-- Hilfe (diese Seite) -->

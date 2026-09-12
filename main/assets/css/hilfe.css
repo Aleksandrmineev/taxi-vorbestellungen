@@ -1,8 +1,19 @@
 /* Typografie & Layout für Hilfeseite */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.app-header {
+  flex: 0 0 auto;
+}
+
 .hilfe {
   max-width: 980px;
   width: 100%;
   margin-inline: auto;
+  flex: 1 0 auto;
   padding: clamp(18px, 5vw, 34px);
   display: grid;
   gap: 18px;
