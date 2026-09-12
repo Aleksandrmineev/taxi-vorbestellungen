@@ -17,6 +17,13 @@
   backdrop-filter: var(--backdrop-strong);
 }
 
+@media (min-width: 768px) {
+  .main-home .app-header {
+    height: auto;
+    padding: 16px clamp(20px, 3vw, 36px);
+  }
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -282,7 +289,7 @@
   stroke-linejoin: round;
 }
 .driver-logout {
-  flex: 1 1 0;
+  flex: 0 0 88px;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -533,8 +540,9 @@ footer .muted {
   justify-content: center;
   gap: 12px;
   flex-wrap: nowrap;
-  width: 100%;
+  width: fit-content;
   max-width: 100%;
+  margin-inline: auto;
   overflow: hidden;
   box-sizing: border-box;
   padding: 10px clamp(20px, 3vw, 36px) 10px;
