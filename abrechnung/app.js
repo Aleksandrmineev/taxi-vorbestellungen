@@ -103,7 +103,14 @@ async function migrateLegacyProfile(driver) {
 }
 
 function isRecognizedDriver() {
-  return Boolean(currentDriver && localStorage.getItem(`taxi-recognized-${currentDriver}`));
+  const profile = activeProfile();
+  return Boolean(
+    currentDriver && (
+      localStorage.getItem(`taxi-recognized-${currentDriver}`) ||
+      profile?.reports?.length ||
+      Math.abs(Number(profile?.carryoverBalance) || 0) > 0.005
+    )
+  );
 }
 
 function localDateTime(date = new Date()) {
@@ -178,6 +185,12 @@ function updatePrivateVisibility() {
 }
 
 async function showApp() {
+  const rememberedDriver = currentDriver;
+  if (rememberedDriver) {
+    $("#loginDriver").value = rememberedDriver;
+    const rememberedProfile = db.profiles[rememberedDriver];
+    if (rememberedProfile?.name) $("#loginName").value = rememberedProfile.name;
+  }
   if (currentDriver && !db.profiles[currentDriver]) {
     try {
       const profile = await fetchProfile(currentDriver);
@@ -188,7 +201,9 @@ async function showApp() {
   }
   $("#loadingView").hidden = true;
   if (!currentDriver || !db.profiles[currentDriver]) {
+    const driverToKeep = currentDriver || rememberedDriver;
     currentDriver = null;
+    $("#loginDriver").value = driverToKeep || "";
     $("#authView").hidden = false;
     $("#reportView").hidden = true;
     return;
