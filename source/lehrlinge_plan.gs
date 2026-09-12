@@ -167,6 +167,21 @@ function getLehrlingePlan_(from, to) {
   return { items: Object.keys(itemsByKey).sort().map((key) => itemsByKey[key]), holidays: Array.from(holidays).sort() };
 }
 
+function lehrlingePlanWeekdays_(from, to) {
+  const start = String(from || "").trim();
+  const end = String(to || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end) || start > end) return [];
+  const result = [];
+  const cursor = new Date(`${start}T12:00:00`);
+  const last = new Date(`${end}T12:00:00`);
+  while (cursor <= last) {
+    const weekday = cursor.getDay();
+    if (weekday !== 0 && weekday !== 6) result.push(Utilities.formatDate(cursor, "Europe/Vienna", "yyyy-MM-dd"));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return result;
+}
+
 function getLehrlingeDriverSchedule_(from, to, route, direction) {
   const start = String(from || "").trim();
   const end = String(to || "").trim();
@@ -193,6 +208,11 @@ function getLehrlingeDriverSchedule_(from, to, route, direction) {
   (plan.items || []).forEach((item) => {
     statusByKey[item.date + "|" + item.student_id] = item.status;
   });
+  const itemByKey = {};
+  (plan.items || []).forEach((item) => {
+    itemByKey[item.date + "|" + item.student_id] = item;
+  });
+  const scheduleDates = lehrlingePlanWeekdays_(start, end);
 
   const daysByDate = {};
   (snapshot.points || []).forEach((point, pointIndex) => {
@@ -204,25 +224,28 @@ function getLehrlingeDriverSchedule_(from, to, route, direction) {
     selectedDirections.forEach((selectedDirection) => {
       const studentsByDate = {};
       const cancellationsByDate = {};
-      (plan.items || []).forEach((item) => {
+      scheduleDates.forEach((date) => {
         const students = studentsByPoint[pointId].filter((student) => {
-          const status = statusByKey[item.date + "|" + student.id];
+          const status = statusByKey[date + "|" + student.id] || "both";
+          if (plan.holidays.includes(date) && !statusByKey[date + "|" + student.id]) return false;
           return selectedDirection === "morning"
             ? status === "both" || status === "out"
             : status === "both" || status === "back";
         });
-        if (students.length) studentsByDate[item.date] = students;
+        if (students.length) studentsByDate[date] = students;
 
         const cancelled = studentsByPoint[pointId].filter((student) => {
-          const status = statusByKey[item.date + "|" + student.id];
+          const key = date + "|" + student.id;
+          const status = statusByKey[key];
+          const item = itemByKey[key];
           const rides = selectedDirection === "morning"
             ? status === "both" || status === "out"
             : status === "both" || status === "back";
-          const changed = item.student_id === student.id && item.updated_by && item.updated_by !== "pdf_seed";
+          const changed = item && item.updated_by && item.updated_by !== "pdf_seed";
           return !rides && changed;
         });
-        if (cancelled.length) cancellationsByDate[item.date] = cancelled.map((student) => {
-          const itemData = plan.items.find((entry) => entry.date === item.date && entry.student_id === student.id);
+        if (cancelled.length) cancellationsByDate[date] = cancelled.map((student) => {
+          const itemData = itemByKey[date + "|" + student.id];
           return {
             id: student.id,
             name: student.name,
@@ -252,7 +275,7 @@ function getLehrlingeDriverSchedule_(from, to, route, direction) {
           students: studentsByDate[date].map((student) => {
             const item = plan.items.find((entry) => entry.date === date && entry.student_id === student.id);
             return Object.assign({}, student, {
-              status: statusByKey[date + "|" + student.id] || "none",
+              status: statusByKey[date + "|" + student.id] || (plan.holidays.includes(date) ? "none" : "both"),
               updatedBy: item?.updated_by || "",
               updatedAt: item?.updated_at || "",
               note: item?.note || "",

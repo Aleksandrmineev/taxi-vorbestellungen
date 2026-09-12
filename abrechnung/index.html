@@ -14,17 +14,18 @@
     <link rel="stylesheet" href="../main/assets/css/theme.css" />
     <link rel="stylesheet" href="../main/assets/css/global.css" />
     <link rel="stylesheet" href="styles.css?v=20260828d" />
+    <link rel="stylesheet" href="../assets/css/app-shell.css?v=20260912-2" />
   </head>
   <body>
-    <header class="module-header">
-      <a class="module-brand" href="../main/index.html" aria-label="Zur zentralen Startseite">
-        <span class="module-logo"><img src="../main/assets/img/logo1.png" alt="MurtalTaxi Logo" /></span>
-        <span class="module-brand-title">Murtal&nbsp;TAXI</span>
-      </a>
-      <a class="home-button" href="../main/index.html" aria-label="Zurück zur Startseite">
+    <header class="app-header">
+      <a class="app-header__back" href="../main/index.html" aria-label="Zurück zur zentralen Startseite">
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-        <span>Startseite</span>
       </a>
+      <a class="app-header__logo" href="../main/index.html" aria-label="Zur zentralen Startseite">
+        <img src="../main/assets/img/logo1.png" alt="MurtalTaxi" />
+      </a>
+      <span class="app-header__title app-header__title--always">Schichtabrechnung</span>
+      <span class="app-header__spacer" aria-hidden="true"></span>
     </header>
     <main class="app-shell">
       <section id="loadingView" class="loading-view" role="status" aria-live="polite">

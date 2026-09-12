@@ -8,21 +8,20 @@
     <link rel="icon" href="./assets/favicon/favicon.ico" sizes="any" />
     <link rel="stylesheet" href="./assets/css/theme.css" />
     <link rel="stylesheet" href="./driver-plan.css" />
+    <link rel="stylesheet" href="../assets/css/app-shell.css?v=20260912-2" />
   </head>
   <body>
     <main class="plan-shell">
-      <header class="plan-header">
-        <a class="plan-logo" href="../main/index.html" aria-label="Zur zentralen Startseite"><img src="../main/assets/img/logo1.png" alt="MurtalTaxi" /></a>
-        <a class="back-btn" href="./index.html" aria-label="Zurück">
+      <header class="plan-header app-header">
+        <a class="app-header__back" href="./index.html" aria-label="Zurück zu Lehrlinge">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </a>
-        <div>
-          <div class="eyebrow">MurtalTaxi · Lehrlinge</div>
-          <h1>Fahrtenplan</h1>
-        </div>
-        <button id="editPlan" class="primary edit-plan" type="button">Plan ändern</button>
+        <a class="app-header__logo" href="../main/index.html" aria-label="Zur zentralen Startseite"><img src="../main/assets/img/logo1.png" alt="MurtalTaxi" /></a>
+        <span class="app-header__title app-header__title--always">Fahrtenplan</span>
+        <span class="app-header__spacer"></span>
+        <button id="editPlan" class="app-header__edit" type="button" aria-label="Plan ändern" title="Plan ändern"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16.8-.7 3.9 3.9-.7L18.8 8.4l-3.2-3.2L4 16.8Zm12.7-10.7 1.2-1.2a1.7 1.7 0 0 1 2.4 2.4l-1.2 1.2-2.4-2.4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
       </header>
 
       <details class="filters-details">
