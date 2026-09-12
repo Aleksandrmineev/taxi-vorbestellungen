@@ -303,11 +303,11 @@
 
     <!-- JS -->
     <script type="module" defer src="./assets/js/theme.js"></script>
-    <script src="./assets/js/driver-auth.js?v=20260912-16" defer></script>
+    <script src="./assets/js/driver-auth.js?v=20260912-17" defer></script>
     <script src="./assets/js/main.js?v=20260114a" defer></script>
     <script>
       if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("/main/sw.js", { scope: "/main/" });
+        navigator.serviceWorker.register("/main/sw.js", { scope: "/main/" }).then((registration) => registration.update());
       }
     </script>
   </body>

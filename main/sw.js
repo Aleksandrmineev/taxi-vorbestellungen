@@ -1,4 +1,4 @@
-const CACHE = "mt-main-v22";
+const CACHE = "mt-main-v23";
 
 const ASSETS = [
   // Страницы
@@ -17,7 +17,7 @@ const ASSETS = [
   // JS
   "/main/assets/js/theme.js",
   "/main/assets/js/main.js",
-  "/main/assets/js/driver-auth.js?v=20260912-16",
+  "/main/assets/js/driver-auth.js?v=20260912-17",
 
   // Медиа/иконки
   "/main/assets/img/logo1.png",
@@ -65,6 +65,22 @@ self.addEventListener("fetch", (event) => {
   if (!isHttp || !isSameOrigin) {
     // для сторонних/расширений — просто проксируем сеть
     event.respondWith(fetch(event.request));
+    return;
+  }
+
+  const isAppAsset = url.pathname.startsWith("/main/") && (/\.(html|css|js)$/.test(url.pathname) || url.pathname === "/main/");
+  if (isAppAsset) {
+    event.respondWith(
+      (async () => {
+        try {
+          const net = await fetch(event.request, { cache: "no-store" });
+          if (net.ok && net.type === "basic") caches.open(CACHE).then((cache) => cache.put(event.request, net.clone()));
+          return net;
+        } catch (_) {
+          return caches.match(event.request) || caches.match("/main/index.html");
+        }
+      })()
+    );
     return;
   }
 
