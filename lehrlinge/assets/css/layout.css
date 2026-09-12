@@ -8,6 +8,18 @@
 .page {
   padding-block: clamp(12px, 3vw, 20px);
 }
+.lehrlinge-home {
+  min-height: 100dvh;
+  padding-bottom: 0;
+}
+.lehrlinge-home .page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.lehrlinge-home .page > .page__grid {
+  flex: 1 1 auto;
+}
 .page__grid {
   display: grid;
   gap: clamp(16px, 2vw, 24px);
