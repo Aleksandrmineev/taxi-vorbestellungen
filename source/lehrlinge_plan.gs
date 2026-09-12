@@ -12,6 +12,8 @@ const LEHRLINGE_STUDENT_TOKEN_PREFIX = "lehrlinge_student_token:";
 const LEHRLINGE_STUDENT_TOKEN_TTL_SEC = 12 * 60 * 60;
 const LEHRLINGE_REMEMBER_TOKEN_PREFIX = "lehrlinge_remember_token:";
 const LEHRLINGE_REMEMBER_TOKEN_TTL_SEC = 365 * 24 * 60 * 60;
+const LEHRLINGE_PIN_RESET_PREFIX = "lehrlinge_pin_reset:";
+const LEHRLINGE_PIN_RESET_TTL_SEC = 10 * 60;
 
 const LEHRLINGE_STUDENT_HEADERS = [
   "student_id",
@@ -20,6 +22,7 @@ const LEHRLINGE_STUDENT_HEADERS = [
   "active",
   "pin_hash",
   "updated_at",
+  "phone",
 ];
 
 const LEHRLINGE_PLAN_HEADERS = [
@@ -531,6 +534,8 @@ function getLehrlingeByPointId_() {
 function syncLehrlingeRosterFromPoints_(points) {
   const ss = SpreadsheetApp.getActive();
   const sh = ensureLehrlingeSheet_(ss, LEHRLINGE_STUDENTS_SHEET, LEHRLINGE_STUDENT_HEADERS);
+  const sheetHeaders = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map((value) => String(value || "").trim().toLowerCase());
+  const phoneIndex = sheetHeaders.indexOf("phone");
   const rows = sh.getLastRow() >= 2
     ? sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_STUDENT_HEADERS.length).getValues()
     : [];
@@ -561,6 +566,7 @@ function syncLehrlingeRosterFromPoints_(points) {
       String(point.active || "1") === "0" ? "0" : "1",
       pinHash,
       new Date(),
+      phoneIndex >= 0 ? String(existing?.[phoneIndex] || "") : "",
     ]];
     if (rowNumber) sh.getRange(rowNumber, 1, 1, LEHRLINGE_STUDENT_HEADERS.length).setValues(values);
     else sh.appendRow(values[0]);
@@ -586,6 +592,44 @@ function loginLehrling_(studentId, pin) {
     JSON.stringify({ hash: sha256Hex_(token), expiresAt: Date.now() + LEHRLINGE_REMEMBER_TOKEN_TTL_SEC * 1000 })
   );
   return { token: token, expiresInSec: LEHRLINGE_REMEMBER_TOKEN_TTL_SEC, studentId: student.id };
+}
+
+function requestLehrlingPinReset_(studentId) {
+  const id = String(studentId || "").trim().toLowerCase();
+  if (!id) throw new Error("invalid_reset_data");
+  const student = getLehrlingStudent_(id);
+  if (!student || student.active !== "1" || !student.phone) throw new Error("phone_not_registered");
+  const storedPhone = normalizeDriverPhone_(student.phone);
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  PropertiesService.getScriptProperties().setProperty(LEHRLINGE_PIN_RESET_PREFIX + id, JSON.stringify({ hash: sha256Hex_(code), phone: storedPhone, expiresAt: Date.now() + LEHRLINGE_PIN_RESET_TTL_SEC * 1000, attempts: 0 }));
+  const sms = sendZadarmaSms_(storedPhone, "MurtalTaxi: Dein PIN-Code zum Zurücksetzen lautet " + code + ". Gültig 10 Minuten.");
+  if (sms && sms.skipped) throw new Error("sms_not_configured");
+  return { sent: true, expiresInSec: LEHRLINGE_PIN_RESET_TTL_SEC, maskedPhone: maskPhoneLastTwo_(storedPhone) };
+}
+
+function resetLehrlingPin_(studentId, phone, code, pin) {
+  const id = String(studentId || "").trim().toLowerCase();
+  const normalizedPin = String(pin || "").replace(/\D/g, "");
+  if (!id || !/^\d{6}$/.test(String(code || "").trim()) || !/^\d{4}$/.test(normalizedPin)) throw new Error("invalid_reset_data");
+  const student = getLehrlingStudent_(id);
+  if (!student || student.active !== "1" || !student.phone) throw new Error("phone_not_registered");
+  const props = PropertiesService.getScriptProperties();
+  const key = LEHRLINGE_PIN_RESET_PREFIX + id;
+  let saved;
+  try { saved = JSON.parse(props.getProperty(key) || "null"); } catch (_) { saved = null; }
+  if (!saved || saved.expiresAt <= Date.now()) throw new Error("reset_code_expired");
+  if (Number(saved.attempts || 0) >= 5) { props.deleteProperty(key); throw new Error("reset_code_locked"); }
+  if (sha256Hex_(String(code || "").trim()) !== saved.hash) {
+    saved.attempts = Number(saved.attempts || 0) + 1;
+    props.setProperty(key, JSON.stringify(saved));
+    throw new Error("invalid_reset_code");
+  }
+  const sh = ensureLehrlingeSheet_(SpreadsheetApp.getActive(), LEHRLINGE_STUDENTS_SHEET, LEHRLINGE_STUDENT_HEADERS);
+  const row = findLehrlingStudentRow_(sh, id);
+  if (!row) throw new Error("student_not_found");
+  sh.getRange(row, 5, 1, 2).setValues([[sha256Hex_(normalizedPin), new Date()]]);
+  props.deleteProperty(key);
+  return loginLehrling_(id, normalizedPin);
 }
 
 function getLehrlingeStudentPlan_(session, from, to) {
@@ -671,7 +715,9 @@ function getLehrlingStudent_(studentId) {
   const ss = SpreadsheetApp.getActive();
   const sh = ss.getSheetByName(LEHRLINGE_STUDENTS_SHEET);
   if (!sh || sh.getLastRow() < 2) return null;
-  const values = sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_STUDENT_HEADERS.length).getValues();
+  const sheetHeaders = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map((value) => String(value || "").trim().toLowerCase());
+  const phoneIndex = sheetHeaders.indexOf("phone");
+  const values = sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues();
   for (const row of values) {
     if (String(row[0] || "").trim().toLowerCase() !== normalizedId) continue;
     return {
@@ -680,6 +726,7 @@ function getLehrlingStudent_(studentId) {
       pointId: String(row[2] || "").trim(),
       active: String(row[3] || "") === "1" ? "1" : "0",
       pinHash: String(row[4] || "").trim().toLowerCase(),
+      phone: phoneIndex >= 0 ? String(row[phoneIndex] || "").trim() : "",
     };
   }
   return null;

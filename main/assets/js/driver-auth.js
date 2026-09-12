@@ -28,9 +28,37 @@
   const logoutButton = document.getElementById("driverLogoutButton");
   const showLogin = document.getElementById("showLoginButton");
   const showRegister = document.getElementById("showRegisterButton");
+  const showReset = document.getElementById("showResetButton");
   const back = document.getElementById("driverAuthBack");
   const skip = document.getElementById("skipDriverAuthButton");
+  const resetForm = document.getElementById("driverPinResetForm");
+  const resetBack = document.getElementById("resetAuthBack");
+  const resetButton = document.getElementById("resetPinButton");
+  const resetError = document.getElementById("resetError");
+  const resetHint = document.getElementById("resetHint");
+  const resetTaxi = document.getElementById("resetTaxiNumber");
+  const resetCode = document.getElementById("resetCode");
+  const resetPin = document.getElementById("resetPin");
+  const resetCodeField = document.getElementById("resetCodeField");
+  const resetPinField = document.getElementById("resetPinField");
+  const resetTaxiField = document.getElementById("resetTaxiField");
+  const driverPhoneField = document.getElementById("driverPhoneField");
+  const driverPhone = document.getElementById("driverPhone");
   let mode = "login";
+  let popupTimer;
+
+  const popup = document.createElement("div");
+  popup.className = "driver-auth-popup";
+  popup.setAttribute("role", "status");
+  popup.setAttribute("aria-live", "polite");
+  document.body.appendChild(popup);
+
+  function showPopup(text, type) {
+    clearTimeout(popupTimer);
+    popup.textContent = text;
+    popup.className = `driver-auth-popup is-visible is-${type}`;
+    popupTimer = setTimeout(() => { popup.className = "driver-auth-popup"; }, 3200);
+  }
 
   function readSession() {
     try {
@@ -55,6 +83,7 @@
     mainSubtitle.textContent = "Deine zentrale Startseite";
     logoutButton.hidden = false;
     form.hidden = true;
+    resetForm.hidden = true;
     actions.hidden = true;
     driverAuth.hidden = true;
     appGrid.hidden = false;
@@ -71,21 +100,43 @@
     form.hidden = false;
     nameField.hidden = mode !== "register";
     surnameField.hidden = mode !== "register";
+    driverPhoneField.hidden = mode !== "register";
     nameInput.required = mode === "register";
     surnameInput.required = mode === "register";
+    driverPhone.required = mode === "register";
     button.textContent = mode === "register" ? "Registrieren" : "Anmelden";
     taxiInput.value = localStorage.getItem(LAST_TAXI_KEY) || taxiInput.value;
     pinInput.autocomplete = mode === "register" ? "new-password" : "current-password";
-    message.textContent = mode === "register" ? "Taxi-Nr., Name und PIN eingeben. Bereits registrierte Fahrer werden nicht doppelt angelegt." : "Taxi-Nr. und PIN eingeben.";
+    message.textContent = mode === "register" ? "Taxi-Nr., Name, Telefon und PIN eingeben. Bereits registrierte Fahrer werden nicht doppelt angelegt." : "Taxi-Nr. und PIN eingeben.";
     error.hidden = true;
     taxiInput.focus();
   }
 
   function closeForm() {
     form.hidden = true;
+    resetForm.hidden = true;
     actions.hidden = false;
     error.hidden = true;
     message.textContent = "Bitte anmelden oder als neuer Fahrer registrieren.";
+  }
+
+  function openResetForm() {
+    actions.hidden = true;
+    form.hidden = true;
+    resetForm.hidden = false;
+    resetTaxi.value = localStorage.getItem(LAST_TAXI_KEY) || "";
+    resetCode.value = "";
+    resetPin.value = "";
+    resetCode.disabled = true;
+    resetPin.disabled = true;
+    resetCodeField.hidden = true;
+    resetPinField.hidden = true;
+    resetTaxiField.hidden = false;
+    resetButton.textContent = "SMS-Code anfordern";
+    resetHint.textContent = "Zuerst SMS-Code anfordern. Danach Code und neuen PIN eingeben.";
+    resetError.hidden = true;
+    message.textContent = "PIN per SMS zurücksetzen";
+    resetTaxi.focus();
   }
 
   function continueWithoutLogin() {
@@ -141,7 +192,9 @@
 
   showLogin.addEventListener("click", () => openForm("login"));
   showRegister.addEventListener("click", () => openForm("register"));
+  showReset.addEventListener("click", openResetForm);
   back.addEventListener("click", closeForm);
+  resetBack.addEventListener("click", closeForm);
   skip.addEventListener("click", continueWithoutLogin);
   logoutButton.addEventListener("click", logout);
 
@@ -156,7 +209,7 @@
       const response = await fetch(GAS_PROXY, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: mode === "register" ? "driver_register" : "driver_login", secret: API_SECRET, taxiNumber: taxiInput.value.trim(), name: nameInput.value.trim(), surname: surnameInput.value.trim(), pin: pinInput.value }),
+        body: JSON.stringify({ action: mode === "register" ? "driver_register" : "driver_login", secret: API_SECRET, taxiNumber: taxiInput.value.trim(), name: nameInput.value.trim(), surname: surnameInput.value.trim(), phone: driverPhone.value.trim(), pin: pinInput.value }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.ok === false || !data.token) throw new Error(data.error || "invalid_credentials");
@@ -164,7 +217,8 @@
     } catch (err) {
       const errorCode = String(err.message || "").replace(/^Error:\s*/i, "");
       const errors = {
-        invalid_registration: "Bitte Taxi-Nr. (2–3 Ziffern), Vorname, Nachname und eine PIN mit genau 4 Ziffern prüfen.",
+        invalid_registration: "Bitte Taxi-Nr., Vorname, Nachname, Telefonnummer und PIN mit genau 4 Ziffern prüfen.",
+        invalid_reset_data: "Bitte Taxi-Nr., Telefonnummer und PIN prüfen.",
         driver_already_registered: "Diese Taxi-Nr. ist bereits registriert. Bitte anmelden.",
         driver_inactive: "Diese Taxi-Nr. ist derzeit deaktiviert. Bitte Support kontaktieren.",
         drivers_schema_not_ready: "Die Fahrer-Tabelle ist noch nicht für die Registrierung vorbereitet. Bitte Support kontaktieren.",
@@ -175,6 +229,54 @@
       error.hidden = false;
       button.disabled = false;
       button.textContent = mode === "register" ? "Registrieren" : "Anmelden";
+    }
+  });
+
+  resetForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!resetForm.reportValidity()) return;
+    resetError.hidden = true;
+    resetButton.disabled = true;
+    resetButton.classList.add("is-loading");
+    try {
+      const action = resetCode.disabled ? "driver_pin_request" : "driver_pin_reset";
+      const payload = { action, secret: API_SECRET, taxiNumber: resetTaxi.value.trim() };
+      if (!resetCode.disabled) payload.code = resetCode.value.trim();
+      if (!resetPin.disabled) payload.pin = resetPin.value;
+      const response = await fetch(GAS_PROXY, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.error || "reset_failed");
+      if (action === "driver_pin_request") {
+        resetCode.disabled = false;
+        resetPin.disabled = false;
+        resetCodeField.hidden = false;
+        resetPinField.hidden = false;
+        resetTaxiField.hidden = true;
+        resetButton.textContent = "PIN ersetzen";
+        resetHint.textContent = "SMS-Code eingeben und neuen PIN festlegen.";
+        showPopup(`SMS-Code wurde an ${data.maskedPhone || "die hinterlegte Nummer"} gesendet.`, "success");
+        resetCode.focus();
+      } else {
+        setLoggedIn(data);
+        showPopup("PIN wurde erfolgreich ersetzt.", "success");
+      }
+    } catch (err) {
+      const errors = {
+        invalid_reset_data: "Bitte Taxi-Nr., Telefonnummer und PIN prüfen.",
+        phone_not_registered: "Diese Telefonnummer ist für die Taxi-Nr. nicht hinterlegt.",
+        sms_not_configured: "SMS-Versand ist noch nicht eingerichtet. Bitte Support kontaktieren.",
+        invalid_reset_code: "Der SMS-Code ist nicht korrekt.",
+        reset_code_expired: "Der SMS-Code ist abgelaufen. Bitte einen neuen Code anfordern.",
+        reset_code_locked: "Zu viele falsche Versuche. Bitte einen neuen Code anfordern.",
+      };
+      const errorCode = String(err.message || "").replace(/^Error:\s*/i, "");
+      const message = errors[errorCode] || `Wiederherstellung nicht möglich: ${errorCode}`;
+      resetError.textContent = message;
+      resetError.hidden = true;
+      showPopup(message, "error");
+    } finally {
+      resetButton.disabled = false;
+      resetButton.classList.remove("is-loading");
     }
   });
 })();

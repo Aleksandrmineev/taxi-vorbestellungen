@@ -235,14 +235,32 @@ function doPost(e) {
       return json({ ok: true, ...session });
     }
 
+    if (action === "student_pin_request") {
+      return json({ ok: true, ...requestLehrlingPinReset_(body.studentId, body.phone) });
+    }
+
+    if (action === "student_pin_reset") {
+      const session = resetLehrlingPin_(body.studentId, body.phone, body.code, body.pin);
+      return json({ ok: true, ...session });
+    }
+
     // Общий вход водителя для стартового экрана и внутренних разделов.
     if (action === "driver_login") {
       const session = loginDriver_(body.taxiNumber, body.pin);
       return json({ ok: true, ...session });
     }
 
+    if (action === "driver_pin_request") {
+      return json({ ok: true, ...requestDriverPinReset_(body.taxiNumber, body.phone) });
+    }
+
+    if (action === "driver_pin_reset") {
+      const session = resetDriverPin_(body.taxiNumber, body.phone, body.code, body.pin);
+      return json({ ok: true, ...session });
+    }
+
     if (action === "driver_register") {
-      const session = registerDriver_(body.taxiNumber, body.name, body.surname, body.pin);
+      const session = registerDriver_(body.taxiNumber, body.name, body.surname, body.pin, body.phone);
       cacheRemove_("admin_data");
       cacheRemove_("getdata:1");
       cacheRemove_("getdata:2");

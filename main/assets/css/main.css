@@ -260,6 +260,14 @@
 .driver-auth__form button { min-height: 54px; padding-inline: 18px; font-size: 16px; }
 .driver-auth__form[hidden], .driver-auth__actions[hidden] { display: none; }
 .driver-auth__error { grid-column: 1 / -1; color: var(--red) !important; font-size: .85rem; }
+.driver-auth__hint { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; }
+.driver-auth__form button.is-loading { position: relative; padding-left: 42px; cursor: wait; opacity: .78; }
+.driver-auth__form button.is-loading::before { content: ""; position: absolute; left: 17px; top: 50%; width: 14px; height: 14px; margin-top: -8px; border: 2px solid #ffffff66; border-top-color: currentColor; border-radius: 50%; animation: driver-auth-spin .75s linear infinite; }
+@keyframes driver-auth-spin { to { transform: rotate(360deg); } }
+.driver-auth-popup { position: fixed; z-index: 50; left: 50%; top: 50%; width: min(390px, calc(100% - 32px)); padding: 20px 22px; transform: translate(-50%, -50%) scale(.96); border: 1px solid var(--tile-border); border-radius: 16px; background: var(--surface); box-shadow: 0 20px 60px rgba(0,0,0,.2); text-align: center; font-weight: 700; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+.driver-auth-popup.is-visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.driver-auth-popup.is-success { color: var(--green); }
+.driver-auth-popup.is-error { color: var(--red); }
 .driver-auth.is-authenticated { border-color: color-mix(in oklab, var(--green) 45%, var(--tile-border)); }
 
 /* grid (одна версия, без дублей) */
