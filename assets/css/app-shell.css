@@ -30,6 +30,10 @@
 .app-header__logo img, .app-header > .lehrlinge-brandbar__logo img { width: 100%; height: 100%; object-fit: contain; }
 .app-header__title, .app-header > .lehrlinge-brandbar__title { min-width: 0; overflow: hidden; color: var(--text); font-size: 15px; font-weight: 750; line-height: 1.1; white-space: nowrap; text-overflow: ellipsis; }
 .app-header__spacer, .app-header > .lehrlinge-brandbar__spacer { flex: 1 1 auto; min-width: 0; }
-.app-header__call, .app-header > .lehrlinge-brandbar__call { border: 1px solid var(--gold-border, var(--link-chip-border)); background: var(--gold-bg, var(--link-chip-bg)); color: var(--gold-ink, var(--text)); box-shadow: var(--shadow, 0 1px 4px rgba(0, 0, 0, .08)); text-decoration: none; }
+.app-header__call, .app-header > .lehrlinge-brandbar__call { border: 1px solid var(--button-border, var(--link-chip-border)); background: var(--button-bg, var(--link-chip-bg)); color: var(--button-text, var(--text)); box-shadow: var(--button-shadow, 0 1px 4px rgba(0, 0, 0, .08)); text-decoration: none; }
+.app-header__call strong, .app-header > .lehrlinge-brandbar__call strong { display: none; }
 .app-header__back svg, .app-header__call svg, .app-header > .lehrlinge-brandbar__call svg { width: 18px; height: 18px; display: block; }
-@media (max-width: 600px) { .app-header__title { display: none; } }
+@media (max-width: 600px) {
+  .app-header { margin-bottom: 5px; }
+  .app-header__title { display: none; }
+}
