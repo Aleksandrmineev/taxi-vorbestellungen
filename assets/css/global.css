@@ -1,5 +1,8 @@
 @import url("./theme-tokens.css");
 
+html,
+body { overflow-x: hidden; }
+
 :root {
   --container-max: 880px;
   --gap: 16px;

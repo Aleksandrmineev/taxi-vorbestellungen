@@ -15,6 +15,7 @@ html {
 }
 body {
   line-height: 1.45;
+  overflow-x: hidden;
 }
 
 body {
@@ -271,7 +272,11 @@ body {
 .back-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
   gap: 6px;
+  padding: 0;
   background: var(--link-chip-bg);
   border: 1px solid var(--link-chip-border);
   border-radius: 999px;
@@ -283,6 +288,8 @@ body {
   margin-bottom: 12px;
   transition: background 0.2s, border-color 0.2s;
 }
+
+.back-btn:not(.plan-link) span { display: none; }
 
 .back-btn:hover {
   background: var(--link-chip-hover-bg);
