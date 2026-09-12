@@ -50,6 +50,11 @@
   .footer__link { min-width: 0; }
   .footer__link svg,
   .footer__theme .theme-toggle-shell { width: 34px; height: 34px; }
+  .footer__link.install-app-button .install-icon {
+    flex-basis: 34px;
+    width: 34px;
+    height: 34px;
+  }
   .driver-logout {
     width: auto;
     min-width: 0;
