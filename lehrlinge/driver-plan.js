@@ -60,12 +60,18 @@ function mapsUrl(address) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address || "")}`;
 }
 
+function showDriverAuthMessage() {
+  localStorage.removeItem("mt:driver-session");
+  localStorage.removeItem("mt:driver-authenticated");
+  status.innerHTML = 'Die Fahreranmeldung ist abgelaufen oder nicht mehr gültig. Bitte zuerst auf der <a href="../main/index.html">zentralen Startseite</a> erneut anmelden.';
+}
+
 async function loadSchedule() {
   loadButton.disabled = true;
   status.textContent = "Daten werden geladen…";
   schedule.innerHTML = "";
   const url = new URL(GAS_URL);
-  if (!driverSession?.token) { status.textContent = "Bitte zuerst als Fahrer anmelden."; loadButton.disabled = false; return; }
+  if (!driverSession?.token) { showDriverAuthMessage(); loadButton.disabled = false; return; }
   Object.entries({ fn: "driver_schedule", driverToken: driverSession.token, from: fromInput.value, to: toInput.value, route: routeInput.value, direction: directionInput.value, secret: API_SECRET, _ts: Date.now() }).forEach(([key, value]) => url.searchParams.set(key, value));
   try {
     const response = await fetch(url, { cache: "no-store" });
@@ -75,7 +81,8 @@ async function loadSchedule() {
     populateStudents(result.students || [], result.days || []);
     status.textContent = visibleDays ? "" : "Für diesen Zeitraum sind keine zukünftigen Fahrten geplant.";
   } catch (error) {
-    status.textContent = `Fehler beim Laden: ${error.message}`;
+    if (String(error.message || "").includes("driver_auth_required")) showDriverAuthMessage();
+    else status.textContent = `Fehler beim Laden: ${error.message}`;
   } finally {
     loadButton.disabled = false;
   }

@@ -54,6 +54,7 @@ function cutoffOpen(date, direction) {
 
 function friendlyError(error) {
   const message = String(error?.message || error || "Unbekannter Fehler");
+  if (message.includes("driver_auth_required")) return "Die Fahreranmeldung ist abgelaufen. Bitte auf der zentralen Startseite erneut anmelden.";
   if (message.includes("morning_cutoff_passed")) return "Die Hinfahrt kann nicht mehr geändert werden (Frist: 03:00).";
   if (message.includes("evening_cutoff_passed")) return "Die Rückfahrt kann nicht mehr geändert werden (Frist: 12:00).";
   return message;
@@ -89,7 +90,7 @@ function render() {
 
 async function loadPlan() {
   if (!session?.token) {
-    status.textContent = "Bitte zuerst als Fahrer anmelden.";
+    status.textContent = "Die Fahreranmeldung fehlt oder ist abgelaufen. Bitte auf der zentralen Startseite erneut anmelden.";
     return;
   }
   load.disabled = true;
@@ -106,7 +107,7 @@ async function loadPlan() {
     render();
     status.textContent = "";
   } catch (error) {
-    status.textContent = `Fehler: ${error.message}`;
+    status.textContent = `Fehler: ${friendlyError(error)}`;
   } finally {
     load.disabled = false;
   }
