@@ -548,7 +548,7 @@ function sendOrderSms_(item, reminder) {
 }
 
 function formEncode_(value) {
-  return encodeURIComponent(String(value == null ? "" : value)).replace(/%20/g, "+");
+  return encodeURIComponent(String(value == null ? "" : value)).replace(/[!'()*~]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase()).replace(/%20/g, "+");
 }
 
 function maskPhone_(value) {

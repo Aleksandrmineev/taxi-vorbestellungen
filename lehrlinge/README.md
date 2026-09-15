@@ -3,6 +3,8 @@
 Ein leichtgewichtiges Web-Interface zur Erfassung von täglichen **Lehrlings-Fahrten**.  
 Die Anwendung kommuniziert direkt mit einem **Google Apps Script-Backend**, das die Daten zentral speichert und verarbeitet.
 
+Optionales SMS-Modul: [Einrichtung, Test und Ausschalten / настройка и выключение](SMS-REMINDERS.md).
+
 ---
 
 ## 🔧 Funktionsweise
