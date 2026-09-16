@@ -1,5 +1,6 @@
 # Local credentials and service configuration
 source/zadarma.txt
+source/ssh_mineev.at.txt
 *.secrets
 *.secret
 .env
