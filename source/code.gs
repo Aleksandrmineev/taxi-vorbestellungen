@@ -24,6 +24,10 @@ const ORDER_NOTIFICATION_PROPERTIES_ = {
   SMS_NOTIFICATION_PHONE_NIGHT_2: "SMS_NOTIFICATION_PHONE_NIGHT_2",
   PUBLIC_BASE_URL: "PUBLIC_BASE_URL",
 };
+const MINEEV_BOT_PROPERTIES_ = {
+  URL: "MINEEV_BOT_URL",
+  TOKEN: "MINEEV_BOT_TOKEN",
+};
 
 /** Утилита ответа JSON */
 function json(obj, code) {
@@ -679,6 +683,43 @@ function sendZadarmaSms_(number, message, skipBalanceCheck) {
   if (status < 200 || status >= 300) throw new Error("zadarma_http_" + status + ":" + redactLogText_(data.message, 160));
   if (data.status !== "success") throw new Error("zadarma_error:" + redactLogText_(data.message || "unknown", 160));
   if (!skipBalanceCheck) checkZadarmaBalance_();
+  return data;
+}
+
+function mineevBotConfig_() {
+  const props = orderNotificationProperties_();
+  return {
+    url: String(props.getProperty(MINEEV_BOT_PROPERTIES_.URL) || "").trim().replace(/\/$/, ""),
+    token: String(props.getProperty(MINEEV_BOT_PROPERTIES_.TOKEN) || "").trim(),
+  };
+}
+
+function sendWhatsAppMessage_(to, message) {
+  const cfg = mineevBotConfig_();
+  safeNotificationLog_("whatsapp_attempt", { to: redactLogText_(to, 40), message_length: String(message || "").length });
+  if (!cfg.url || !cfg.token || !to) {
+    safeNotificationLog_("whatsapp_skipped", {
+      reason: !to ? "recipient_missing" : "credentials_missing",
+    });
+    return { ok: false, skipped: true };
+  }
+  const response = UrlFetchApp.fetch(cfg.url + "/notify", {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({ to: to, message: String(message || "") }),
+    headers: { Authorization: "Bearer " + cfg.token },
+    muteHttpExceptions: true,
+  });
+  const status = response.getResponseCode();
+  let data = {};
+  try {
+    data = JSON.parse(response.getContentText() || "{}");
+  } catch (err) {
+    safeNotificationLog_("whatsapp_response_error", { http_code: status, message: "invalid_json" });
+    throw new Error("whatsapp_invalid_json");
+  }
+  safeNotificationLog_("whatsapp_response", { http_code: status, ok: !!data.ok, error: data.error });
+  if (status < 200 || status >= 300 || !data.ok) throw new Error("whatsapp_http_" + status + ":" + String(data.error || "unknown"));
   return data;
 }
 

@@ -7,8 +7,10 @@ const source = readFileSync(new URL('../source/lehrlinge_reminders.gs', import.m
 function fixture() {
   const props = new Map();
   const calls = [];
+  const waCalls = [];
   let rows = [];
   let fail = false;
+  let waFail = false;
   let now = '2026-09-16T07:01:00Z';
   class Clock extends Date { constructor(...args) { super(...(args.length ? args : [now])); } }
   const ctx = vm.createContext({ Date: Clock, console,
@@ -21,9 +23,10 @@ function fixture() {
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
     orderNotificationConfig_: () => ({ key: 'mock', secret: 'mock', notifyPhoneDay: '+431234' }),
     sendZadarmaSms_: (...args) => { calls.push(args); if (fail) throw Error('timeout'); return { status: 'success' }; },
+    sendWhatsAppMessage_: (...args) => { waCalls.push(args); if (waFail) throw Error('wa-timeout'); return { ok: true }; },
   });
   vm.runInContext(source, ctx);
-  return { ctx, props, calls, setRows: r => { rows = r; }, setNow: n => { now = n; }, fail: () => { fail = true; } };
+  return { ctx, props, calls, waCalls, setRows: r => { rows = r; }, setNow: n => { now = n; }, fail: () => { fail = true; }, failWa: () => { waFail = true; } };
 }
 test('national holidays, weekends, Easter and valid dates', () => {
   const {ctx:c} = fixture();
@@ -105,4 +108,21 @@ test('automatic rollout on date, two recipients, removable copy and deduplicatio
   assert.doesNotMatch(f.calls[1][1], /\[TEST\]/);
   f.props.delete('LEHRLINGE_REMINDERS_COPY_PHONE');
   f.setNow('2026-09-23T15:01:00Z'); f.ctx.processLehrlingeReminders(); assert.equal(f.calls.length,4);
+});
+test('WhatsApp duplicate sent once per slot with the same text, deduplicated like SMS', () => {
+  const f=fixture(); f.props.set('LEHRLINGE_REMINDERS_ENABLED','true');
+  f.ctx.processLehrlingeReminders(); f.ctx.processLehrlingeReminders();
+  assert.equal(f.waCalls.length,1);
+  assert.equal(f.waCalls[0][0],'4368181289405');
+  assert.equal(f.waCalls[0][1],f.calls[0][1]);
+  f.setNow('2026-09-16T15:01:00Z'); f.ctx.processLehrlingeReminders();
+  assert.equal(f.waCalls.length,2);
+});
+test('WhatsApp failure is recorded and surfaced, independent of SMS status', () => {
+  const f=fixture(); f.props.set('LEHRLINGE_REMINDERS_ENABLED','true'); f.failWa();
+  assert.throws(() => f.ctx.processLehrlingeReminders(), /wa-timeout/);
+  assert.equal(f.calls.length,1);
+  assert.match(f.props.get('LEHRLINGE_REMINDERS_LAST_WA_09'), /failed_or_unknown/);
+  f.ctx.processLehrlingeReminders();
+  assert.equal(f.waCalls.length,1);
 });
