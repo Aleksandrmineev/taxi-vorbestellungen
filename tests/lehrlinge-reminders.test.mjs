@@ -118,6 +118,12 @@ test('WhatsApp duplicate sent once per slot with the same text, deduplicated lik
   f.setNow('2026-09-16T15:01:00Z'); f.ctx.processLehrlingeReminders();
   assert.equal(f.waCalls.length,2);
 });
+test('WhatsApp switches to the group JID once in live mode', () => {
+  const f=fixture(); f.props.set('LEHRLINGE_REMINDERS_ENABLED','true'); f.props.set('LEHRLINGE_REMINDERS_MODE','live');
+  f.ctx.processLehrlingeReminders();
+  assert.equal(f.waCalls.length,1);
+  assert.equal(f.waCalls[0][0],'436506367662-1552028657@g.us');
+});
 test('WhatsApp failure is recorded and surfaced, independent of SMS status', () => {
   const f=fixture(); f.props.set('LEHRLINGE_REMINDERS_ENABLED','true'); f.failWa();
   assert.throws(() => f.ctx.processLehrlingeReminders(), /wa-timeout/);

@@ -40,7 +40,7 @@ function sendLehrlingeTestNow() {
 // Manual test only: checks the mineev-bot WhatsApp wiring directly, independent
 // of any missing-report state or the 09:00/17:00 schedule.
 function sendWhatsAppTestNow() {
-  const result = sendWhatsAppMessage_(LR_WHATSAPP_TARGET_, '[TEST] mineev-bot WhatsApp integration check');
+  const result = sendWhatsAppMessage_(LR_WHATSAPP_TEST_TARGET_, '[TEST] mineev-bot WhatsApp integration check');
   console.log(JSON.stringify(result));
   return result;
 }

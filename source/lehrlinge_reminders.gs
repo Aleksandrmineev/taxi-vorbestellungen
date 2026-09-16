@@ -2,9 +2,12 @@
 // Disabled until setupLehrlingeReminderTest() is run explicitly.
 const LR_PREFIX_ = 'LEHRLINGE_REMINDERS_';
 const LR_ZONE_ = 'Europe/Vienna';
-// TODO: switch to the "Pöls Lehrlinge-wer fährt?" WhatsApp group (436506367662-1552028657@g.us)
-// once duplication has been verified going to a personal number.
-const LR_WHATSAPP_TARGET_ = '4368181289405';
+const LR_WHATSAPP_TEST_TARGET_ = '4368181289405';
+const LR_WHATSAPP_GROUP_JID_ = '436506367662-1552028657@g.us'; // Pöls Lehrlinge-wer fährt?
+
+function lrWhatsAppTarget_(mode) {
+  return mode === 'test' ? LR_WHATSAPP_TEST_TARGET_ : LR_WHATSAPP_GROUP_JID_;
+}
 
 function lrDate_(value) {
   if (value instanceof Date && !isNaN(value)) return Utilities.formatDate(value, LR_ZONE_, 'yyyy-MM-dd');
@@ -151,14 +154,15 @@ function processLehrlingeReminders() {
       errors.push(String(err.message || err));
     }
     }
-    if (LR_WHATSAPP_TARGET_) {
+    const waTarget = lrWhatsAppTarget_(result.mode);
+    if (waTarget) {
       const waKey = LR_PREFIX_ + 'LAST_WA_' + slot;
       const waToken = result.today + ':' + result.mode;
       const waPrevious = JSON.parse(props.getProperty(waKey) || '{}');
       if (waPrevious.token !== waToken) {
         props.setProperty(waKey, JSON.stringify({ token: waToken, status: 'attempting' }));
         try {
-          sendWhatsAppMessage_(LR_WHATSAPP_TARGET_, result.message);
+          sendWhatsAppMessage_(waTarget, result.message);
           props.setProperty(waKey, JSON.stringify({ token: waToken, status: 'sent' }));
         } catch (err) {
           props.setProperty(waKey, JSON.stringify({ token: waToken, status: 'failed_or_unknown' }));
