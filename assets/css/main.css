@@ -370,6 +370,14 @@ form {
   white-space: nowrap;
   font-size: 14px;
 }
+.order-row__message {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-size: 14px;
+  font-weight: 600;
+}
 .order-row__date {
   flex: 0 0 auto;
   margin-left: auto;

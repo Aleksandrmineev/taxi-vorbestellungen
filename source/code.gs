@@ -683,13 +683,14 @@ function sendZadarmaSms_(number, message, skipBalanceCheck) {
 }
 
 function orderSmsText_(item, reminder) {
-  const phone = String(item.phone || item.phone_norm || "").trim();
-  const name = String(item.message || "").trim().replace(/\s+/g, " ").slice(0, 220);
+  const phone = String(item.phone || item.phone_raw || item.phone_norm || "").trim();
+  const message = String(item.message || "").trim().replace(/\s+/g, " ").slice(0, 220);
   return [
     String(item.time || "—"),
-    phone || "Keine Telefonnummer",
-    (name || "Keine Angabe") + " · #" + String(item.id || "—"),
-  ].join("\n");
+    message,
+    phone ? "Tel: " + phone : "",
+    "#" + String(item.id || "—"),
+  ].filter(Boolean).join("\n");
 }
 
 function setOrderNotification_(orderId, field, value) {

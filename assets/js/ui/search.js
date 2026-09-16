@@ -4,6 +4,7 @@ import { pad2, formatDateFromISO } from "../utils/time.js";
 import { telHref } from "../utils/phone.js";
 
 export function initSearch({ fillForm }) {
+  const esc = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
   const input = document.getElementById("q");
   const list = document.getElementById("searchList");
   if (!input || !list) return {};
@@ -82,11 +83,11 @@ export function initSearch({ fillForm }) {
               <div class="order-row__info">
                 <div class="order-row__primary">
                   <strong class="order-row__time">${time || "—"}</strong>
-                  <span class="order-row__phone">${phoneHtml || "Ohne Telefonnummer"}</span>
+                  ${it.message ? `<span class="order-row__message">${esc(it.message)}</span>` : ""}
                   <span class="order-row__date">${dateHuman}</span>
                 </div>
                 <div class="order-row__secondary">
-                  ${(it.message || "Keine Adresse / Notiz")} · ${it.type || "Bestellung"} · #${it.id || it.order_id || "—"}
+                  ${phoneHtml ? `${phoneHtml} · ` : ""}${it.type || "Bestellung"} · #${it.id || it.order_id || "—"}
                 </div>
               </div>
               <div class="order-row__actions">
