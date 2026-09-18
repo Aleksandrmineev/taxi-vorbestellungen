@@ -87,6 +87,24 @@
         margin: 0 0 6px;
         font: 600 16px/1.35 var(--font-family, "Montserrat", system-ui);
       }
+      .card.is-duplicate { border: 2px solid #c56b16; }
+      .duplicate-label { display: inline-block; margin: 0 0 8px; color: #9a4d00; font-weight: 700; font-size: 13px; }
+      .report-edited { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; padding: 5px 7px; border-left: 3px solid var(--accent); border-radius: 4px; background: var(--accent-weak); color: var(--text); font-size: 12px; }
+      .report-edited svg { flex: 0 0 14px; width: 14px; height: 14px; color: var(--accent); }
+      .report-edited__text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .report-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+      .report-actions .btn { display: inline-grid; flex: 0 0 38px; place-items: center; width: 38px; height: 38px; padding: 0; }
+      .report-actions svg { width: 20px; height: 20px; }
+      .report-delete { color: #b42318; }
+      .report-status { margin: 0 0 10px; }
+      .report-dialog { color: var(--text); }
+      .report-dialog::backdrop { background: color-mix(in oklab, var(--bg) 60%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+      .report-dialog h2 { margin: 0 35px 12px 0; font-size: 19px; }
+      .report-dialog p { margin: 0 0 16px; line-height: 1.5; }
+      .report-dialog .confirm-modal__actions .btn { flex: 0 0 auto; min-width: 120px; }
+      .report-dialog__confirm { background: #b42318; color: #fff; border-color: #b42318; }
+      .report-dialog__field { display: grid; gap: 5px; margin: 0 0 12px; }
+      .report-dialog__field input, .report-dialog__field select { width: 100%; box-sizing: border-box; }
       .meta {
         color: var(--clr-text-light, #6b7280);
         font-size: 13px;
@@ -190,15 +208,6 @@
                   <option value="Nachmittag">Nachmittag</option>
                 </select>
               </div>
-              <div class="ctrl">
-                <label for="f_limit">Anzahl</label>
-                <select id="f_limit">
-                  <option selected>20</option>
-                  <option>50</option>
-                  <option>100</option>
-                  <option>130</option>
-                </select>
-              </div>
               <div class="ctrl" style="align-self: end">
                 <button class="btn" id="apply">Anwenden</button>
               </div>
@@ -222,6 +231,7 @@
         </aside>
 
         <section>
+          <div id="reportStatus" class="meta report-status" role="status" aria-live="polite"></div>
           <div class="toolbar">
             <!-- <div class="meta" id="summary">Lade Daten…</div> -->
             <div class="pager" id="pager" hidden>
@@ -236,6 +246,27 @@
         </section>
       </div>
     </main>
+
+    <dialog id="deleteReportDialog" class="confirm-modal__dialog card report-dialog" aria-labelledby="deleteReportTitle" aria-describedby="deleteReportText">
+      <button id="deleteReportClose" class="confirm-modal__close" type="button" aria-label="Schließen">✕</button>
+      <h2 id="deleteReportTitle">Bericht ausblenden?</h2>
+      <p id="deleteReportText"></p>
+      <p id="deleteReportError" class="meta" role="alert" hidden></p>
+      <div class="confirm-modal__actions">
+        <button id="deleteReportConfirm" class="btn report-dialog__confirm" type="button">Ja, markieren</button>
+      </div>
+    </dialog>
+    <dialog id="editReportDialog" class="confirm-modal__dialog card report-dialog" aria-labelledby="editReportTitle">
+      <button id="editReportClose" class="confirm-modal__close" type="button" aria-label="Schließen">✕</button>
+      <h2 id="editReportTitle">Bericht bearbeiten</h2>
+      <form id="editReportForm">
+        <label class="report-dialog__field">Datum <input id="editReportDate" type="date" required /></label>
+        <label class="report-dialog__field">Zeit <select id="editReportShift" required><option value="Früh">Früh</option><option value="Nachmittag">Nachmittag</option></select></label>
+        <label class="report-dialog__field">Route <select id="editReportRoute" required><option value="1">Route 1</option><option value="2">Route 2</option></select></label>
+        <p id="editReportError" class="meta" role="alert" hidden></p>
+        <div class="confirm-modal__actions"><button id="editReportSave" class="btn" type="submit">Speichern</button></div>
+      </form>
+    </dialog>
 
     <script type="module" src="./assets/js/theme.js" defer></script>
     <script src="./assets/js/api.js" defer></script>

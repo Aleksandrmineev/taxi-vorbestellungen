@@ -59,6 +59,21 @@ function submit(
   carId,
   carPlate
 ) {
+  const requestedSequence = Array.isArray(sequence)
+    ? sequence.filter((id) => String(id || "").trim())
+    : String(sequence || "").split(">").filter((id) => id.trim());
+  const reportDateText = String(reportDate || "").trim();
+  if ((String(route) !== "1" && String(route) !== "2") ||
+      (shift !== "Früh" && shift !== "Nachmittag") ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(reportDateText) ||
+      !requestedSequence.length || !String(driverId || "").trim() || !String(carId || "").trim()) {
+    throw new Error("invalid_submission");
+  }
+  const dateParts = reportDateText.split("-").map(Number);
+  const checkedDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+  if (Utilities.formatDate(checkedDate, Session.getScriptTimeZone(), "yyyy-MM-dd") !== reportDateText) {
+    throw new Error("invalid_submission_date");
+  }
   const ss = SpreadsheetApp.getActive();
   const sh = ss.getSheetByName("Submissions") || ss.insertSheet("Submissions");
 
@@ -93,11 +108,7 @@ function submit(
   }
 
   // 2) Подготовим данные
-  const seq = Array.isArray(sequence)
-    ? sequence
-    : String(sequence || "")
-        .split(">")
-        .filter(Boolean);
+  const seq = requestedSequence;
 
   const nameById = getPointNameMap_();
 
@@ -151,7 +162,133 @@ function submit(
   });
 
   sh.appendRow(row);
+  syncSubmissionDuplicates_(sh);
   return payload;
+}
+
+function submissionKey_(row, head) {
+  const value = (name) => row[head.indexOf(name)];
+  const date = value("report_date");
+  const day = date instanceof Date
+    ? Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd")
+    : String(date || "").trim().slice(0, 10);
+  const shift = String(value("shift") || "").trim().toLowerCase();
+  const route = String(value("route") || "").trim();
+  return day && shift && route ? [day, shift, route].join("|") : "";
+}
+
+function submissionMarkedForDeletion_(row, head) {
+  const index = head.indexOf("deletion_status");
+  return index >= 0 && String(row[index] || "").trim().toUpperCase() === "DELETE";
+}
+
+function syncSubmissionDuplicates_(sh) {
+  if (!sh || sh.getLastRow() < 2) return {};
+  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, head.length).getValues();
+  const counts = {};
+  rows.forEach((row) => {
+    if (submissionMarkedForDeletion_(row, head)) return;
+    const key = submissionKey_(row, head);
+    if (key) counts[key] = (counts[key] || 0) + 1;
+  });
+  let statusCol = head.indexOf("duplicate_status") + 1;
+  if (!statusCol) {
+    statusCol = head.length + 1;
+    sh.getRange(1, statusCol).setValue("duplicate_status");
+  }
+  const statuses = rows.map((row) => [!submissionMarkedForDeletion_(row, head) && counts[submissionKey_(row, head)] > 1 ? "DUPLIKAT – prüfen/löschen" : ""]);
+  const current = sh.getRange(2, statusCol, statuses.length, 1).getValues();
+  if (statuses.some((entry, i) => entry[0] !== current[i][0])) {
+    sh.getRange(2, statusCol, statuses.length, 1).setValues(statuses);
+  }
+  return counts;
+}
+
+function deleteDuplicateSubmission_(rowNum, timestamp, driver) {
+  const lock = LockService.getDocumentLock();
+  lock.waitLock(10000);
+  try {
+    const sh = SpreadsheetApp.getActive().getSheetByName("Submissions");
+    const row = Number(rowNum);
+    if (!sh || !Number.isInteger(row) || row < 2 || row > sh.getLastRow()) throw new Error("report_not_found");
+    const values = sh.getDataRange().getValues();
+    const head = values[0].map(String);
+    const target = values[row - 1];
+    const actualTimestamp = target[head.indexOf("timestamp")];
+    if (new Date(actualTimestamp).getTime() !== Number(timestamp)) throw new Error("report_changed_reload");
+    if (submissionMarkedForDeletion_(target, head)) throw new Error("report_already_marked");
+    const key = submissionKey_(target, head);
+    const count = values.slice(1).filter((entry) => !submissionMarkedForDeletion_(entry, head) && submissionKey_(entry, head) === key).length;
+    if (!key || count < 2) throw new Error("not_a_duplicate");
+    const markers = {
+      deletion_status: "DELETE",
+      deletion_requested_at: new Date(),
+      deletion_requested_by_driver_id: String(driver.id || ""),
+      deletion_requested_by_driver_name: [driver.name, driver.surname].filter(Boolean).join(" "),
+      deletion_requested_by_taxi_number: String(driver.taxiNumber || ""),
+    };
+    Object.keys(markers).forEach((name) => {
+      let column = head.indexOf(name) + 1;
+      if (!column) {
+        column = head.length + 1;
+        sh.getRange(1, column).setValue(name);
+        head.push(name);
+      }
+      sh.getRange(row, column).setValue(markers[name]);
+    });
+    syncSubmissionDuplicates_(sh);
+    return { row_num: row, marked: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function editSubmission_(body, driver) {
+  const dateText = String(body.reportDate || "").trim();
+  const shift = String(body.shift || "").trim();
+  const route = String(body.route || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateText) || (shift !== "Früh" && shift !== "Nachmittag") || (route !== "1" && route !== "2")) {
+    throw new Error("invalid_report_fields");
+  }
+  const parts = dateText.split("-").map(Number);
+  const date = new Date(parts[0], parts[1] - 1, parts[2]);
+  if (Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd") !== dateText) throw new Error("invalid_report_date");
+
+  const lock = LockService.getDocumentLock();
+  lock.waitLock(10000);
+  try {
+    const sh = SpreadsheetApp.getActive().getSheetByName("Submissions");
+    const row = Number(body.rowNum);
+    if (!sh || !Number.isInteger(row) || row < 2 || row > sh.getLastRow()) throw new Error("report_not_found");
+    const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+    const target = sh.getRange(row, 1, 1, head.length).getValues()[0];
+    if (submissionMarkedForDeletion_(target, head)) throw new Error("report_marked_for_deletion");
+    if (new Date(target[head.indexOf("timestamp")]).getTime() !== Number(body.timestamp)) throw new Error("report_changed_reload");
+    if (submissionKey_(target, head) !== String(body.expectedKey || "")) throw new Error("report_changed_reload");
+    const changes = {
+      report_date: date,
+      shift: shift,
+      route: Number(route),
+      edited_at: new Date(),
+      edited_by_driver_id: String(driver.id || ""),
+      edited_by_driver_name: [driver.name, driver.surname].filter(Boolean).join(" "),
+      edited_by_taxi_number: String(driver.taxiNumber || ""),
+    };
+    Object.keys(changes).forEach((name) => {
+      let column = head.indexOf(name) + 1;
+      if (!column) {
+        column = head.length + 1;
+        sh.getRange(1, column).setValue(name);
+        head.push(name);
+      }
+      sh.getRange(row, column).setValue(changes[name]);
+    });
+    syncSubmissionDuplicates_(sh);
+    return { row_num: row };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // Хелпер: карта id точки -> имя (для sequence_names)
@@ -195,6 +332,7 @@ function getRecentSubmissions(route, limit) {
   const ss = SpreadsheetApp.getActive();
   const sh = ss.getSheetByName("Submissions");
   if (!sh) return [];
+  const duplicateCounts = syncSubmissionDuplicates_(sh);
   const values = sh.getDataRange().getValues();
   const head = values[0];
   const idx = {
@@ -209,8 +347,11 @@ function getRecentSubmissions(route, limit) {
     sequence: head.indexOf("sequence"),
     sequence_names: head.indexOf("sequence_names"),
     total_km: head.indexOf("total_km"),
+    edited_at: head.indexOf("edited_at"),
+    edited_by_driver_name: head.indexOf("edited_by_driver_name"),
+    edited_by_taxi_number: head.indexOf("edited_by_taxi_number"),
   };
-  const rows = values.slice(1).map((r, i) => ({
+  const rows = values.slice(1).map((r, i) => submissionMarkedForDeletion_(r, head) ? null : ({
     row_num: i + 2,
     timestamp: r[idx.timestamp],
     route: r[idx.route],
@@ -223,7 +364,12 @@ function getRecentSubmissions(route, limit) {
     sequence: r[idx.sequence],
     sequence_names: r[idx.sequence_names],
     total_km: r[idx.total_km],
-  }));
+    edited_at: r[idx.edited_at],
+    edited_by_driver_name: r[idx.edited_by_driver_name],
+    edited_by_taxi_number: r[idx.edited_by_taxi_number],
+    duplicate: duplicateCounts[submissionKey_(r, head)] > 1,
+    duplicate_count: duplicateCounts[submissionKey_(r, head)] || 1,
+  })).filter(Boolean);
 
   const filtered = route
     ? rows.filter((x) => String(x.route) === String(route))

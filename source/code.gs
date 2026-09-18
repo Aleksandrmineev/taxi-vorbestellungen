@@ -85,13 +85,12 @@ function doGet(e) {
     if (fn === "recent") {
       const route = e.parameter.route || "";
       const limit = Number(e.parameter.limit || 4);
-      const cacheKey = "recent:" + route + ":" + limit;
-      const cached = cacheGet_(cacheKey);
-      if (cached) return json({ ok: true, items: cached });
-
       const out = getRecentSubmissions(route, limit); // из lehrlinge.gs
-      cachePut_(cacheKey, out, 15); // 15 секунд
       return json({ ok: true, items: out });
+    }
+
+    if (fn === "report_management_capabilities") {
+      return json({ ok: true, edit: true, deleteDuplicate: true, deleteMode: "mark" });
     }
 
     // ---- Vorbestellungen ----
@@ -295,6 +294,16 @@ function doPost(e) {
       return json({ ok: true, saved });
     }
 
+    if (action === "report_delete_duplicate") {
+      const driver = requireDriverToken_(String(body.driverToken || ""));
+      return json({ ok: true, marked: deleteDuplicateSubmission_(body.rowNum, body.timestamp, driver) });
+    }
+
+    if (action === "report_edit") {
+      const driver = requireDriverToken_(String(body.driverToken || ""));
+      return json({ ok: true, saved: editSubmission_(body, driver) });
+    }
+
     if (action === "lehrlinge_plan_save") {
       requireAdminToken_(String(body.adminToken || ""));
       return json({ ok: true, saved: saveLehrlingePlan_(body) });
@@ -368,6 +377,8 @@ function doPost(e) {
       clearShiftReports_(body.driverNumber, body.keepBalance === true);
       return json({ ok: true });
     }
+
+    if (action) return json({ ok: false, error: "unknown_action" }, 400);
 
     // ===== ВЕТКА ДЛЯ LEHRLINGE / SUBMIT =====
     const route = body.route;

@@ -414,6 +414,62 @@ function logoutAdmin() {
   setAdminToken("");
 }
 
+function getDriverSession() {
+  try {
+    const session = JSON.parse(localStorage.getItem("mt:driver-session") || "null");
+    return session?.token && Number(session.expiresAt) > Date.now() ? session : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getReportManagementCapabilities() {
+  return apiGet(
+    { fn: "report_management_capabilities" },
+    { retries: 0, timeoutMs: 10000, bustCache: true }
+  );
+}
+
+async function requireReportManagementCapability(name) {
+  try {
+    const capabilities = await getReportManagementCapabilities();
+    if (capabilities?.[name] === true && (name !== "deleteDuplicate" || capabilities.deleteMode === "mark")) return;
+  } catch {}
+  throw new Error("report_management_unavailable");
+}
+
+async function deleteDuplicateReport(rowNum, timestamp) {
+  const session = getDriverSession();
+  if (!session) throw new Error("driver_auth_required");
+  await requireReportManagementCapability("deleteDuplicate");
+  const res = await proxyPost({
+    action: "report_delete_duplicate",
+    driverToken: session.token,
+    rowNum: String(rowNum),
+    timestamp: String(timestamp),
+  }, { retries: 0, timeoutMs: 20000 });
+  cacheInvalidate("fn=recent&");
+  return res.marked;
+}
+
+async function editReport(rowNum, timestamp, expectedKey, fields) {
+  const session = getDriverSession();
+  if (!session) throw new Error("driver_auth_required");
+  await requireReportManagementCapability("edit");
+  const res = await proxyPost({
+    action: "report_edit",
+    driverToken: session.token,
+    rowNum: String(rowNum),
+    timestamp: String(timestamp),
+    expectedKey: String(expectedKey),
+    reportDate: String(fields.reportDate),
+    shift: String(fields.shift),
+    route: String(fields.route),
+  }, { retries: 0, timeoutMs: 20000 });
+  cacheInvalidate("fn=recent&");
+  return res.saved;
+}
+
 async function saveAdminData(payload, sections = []) {
   const res = await proxyPost(
     {
@@ -472,6 +528,10 @@ window.saveAdminData = saveAdminData;
 window.saveLehrlingePlan = saveLehrlingePlan;
 window.loginAdmin = loginAdmin;
 window.logoutAdmin = logoutAdmin;
+window.deleteDuplicateReport = deleteDuplicateReport;
+window.editReport = editReport;
+window.getDriverSession = getDriverSession;
+window.getReportManagementCapabilities = getReportManagementCapabilities;
 window.getAdminToken = getAdminToken;
 
 window.api = {

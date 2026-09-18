@@ -4,10 +4,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const nowEl = document.getElementById("now");
   const fFrom = document.getElementById("f_from");
   const fTo = document.getElementById("f_to");
-  const fLimit = document.getElementById("f_limit");
   const fRoute = document.getElementById("f_route"); // фильтр по маршруту
   const fShift = document.getElementById("f_shift"); // фильтр по времени (Früh/Nachmittag)
   const apply = document.getElementById("apply");
+  const statusEl = document.getElementById("reportStatus");
+  const deleteDialog = document.getElementById("deleteReportDialog");
+  const deleteText = document.getElementById("deleteReportText");
+  const deleteError = document.getElementById("deleteReportError");
+  const deleteClose = document.getElementById("deleteReportClose");
+  const deleteConfirm = document.getElementById("deleteReportConfirm");
+  const editDialog = document.getElementById("editReportDialog");
+  const editForm = document.getElementById("editReportForm");
+  const editDate = document.getElementById("editReportDate");
+  const editShift = document.getElementById("editReportShift");
+  const editRoute = document.getElementById("editReportRoute");
+  const editError = document.getElementById("editReportError");
+  const editClose = document.getElementById("editReportClose");
+  const editSave = document.getElementById("editReportSave");
+  let pendingDeletion = null;
+  let pendingEdit = null;
+  let canManageReports = false;
+  let loadVersion = 0;
+  const unavailableMessage = "Bearbeiten und Löschen sind erst nach Aktualisierung des GAS-Web-Apps verfügbar.";
+  if (!getDriverSession()) {
+    statusEl.innerHTML = 'Zum Löschen von Duplikaten bitte zuerst auf der <a href="../main/index.html">Startseite</a> als Fahrer anmelden.';
+  }
 
   /* ===== часы ===== */
   const fmtNow = () =>
@@ -90,26 +111,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ===== загрузка и рендер ===== */
   async function loadAndRender() {
+    const version = ++loadVersion;
     listEl.innerHTML = '<p class="meta">Lade…</p>';
     try {
       const from = fFrom.value || "";
       const to = fTo.value || "";
-      const limit = Number(fLimit.value) || 50;
       const routeValue = fRoute?.value || ""; // "","1","2",…
       const shiftValue = fShift?.value || ""; // "","Früh","Nachmittag"
 
-      const items = await API.getRecentSubmissions({
-        from,
-        to,
-        limit,
-        route: routeValue || "",
-      });
+      const [items, capabilities] = await Promise.all([
+        API.getRecentSubmissions({
+          from,
+          to,
+          limit: 10000,
+          route: routeValue || "",
+        }),
+        getReportManagementCapabilities().catch(() => null),
+      ]);
+      if (version !== loadVersion) return;
+      canManageReports = capabilities?.edit === true && capabilities?.deleteDuplicate === true && capabilities?.deleteMode === "mark";
+      if (getDriverSession() && !canManageReports) {
+        statusEl.textContent = unavailableMessage;
+      } else if (statusEl.textContent === unavailableMessage) {
+        statusEl.textContent = "";
+      }
 
       const fromD = from ? startOfDay(asDate(from)) : null;
       const toD = to ? endOfDay(asDate(to)) : null;
       const dateOf = (r) => asDate(r.report_date) || asDate(r.timestamp);
 
-      const rows = (Array.isArray(items) ? items : [])
+      const filteredRows = (Array.isArray(items) ? items : [])
         .filter((r) => {
           const d = dateOf(r);
           if (!d) return false;
@@ -129,8 +160,9 @@ document.addEventListener("DOMContentLoaded", () => {
           const ra = Number(a.route) || 9999,
             rb = Number(b.route) || 9999;
           return ra - rb; // Route (возр.)
-        })
-        .slice(0, limit);
+        });
+
+      const rows = filteredRows;
 
       if (!rows.length) {
         listEl.innerHTML = '<p style="opacity:.7">Keine Einträge</p>';
@@ -157,12 +189,22 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const carText = r.car_plate || r.car_id || "—";
+            const editTime = asDate(r.edited_at);
+            const editDay = editTime?.toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit" }).replace(/\.$/, "");
+            const editHour = editTime?.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
+            const editLabel = `${r.edited_by_driver_name || ""}${editTime ? ` · ${editDay} · ${editHour}` : ""}`;
+            const editFullLabel = `Bearbeitet von ${r.edited_by_driver_name || ""}${editTime ? ` am ${editTime.toLocaleDateString("de-AT")} um ${editHour}` : ""}`;
+            const editNote = r.edited_by_driver_name
+              ? `<div class="report-edited" aria-label="${esc(editFullLabel)}" title="${esc(editFullLabel)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z"/><path d="m14.5 7.5 3 3"/></svg><span class="report-edited__text">${esc(editLabel)}</span></div>`
+              : "";
+            const reportKey = [toISO(repDate), shiftTxt.toLowerCase(), routeTxt].join("|");
 
             return `
-              <article class="card" role="listitem" aria-label="Report">
+              <article class="card${r.duplicate ? " is-duplicate" : ""}" role="listitem" aria-label="Bericht">
                 <h3>${esc(dateStr)} • ${esc(shiftTxt || "—")} • Route ${esc(
               routeTxt
             )}</h3>
+                ${r.duplicate ? `<span class="duplicate-label">Duplikat (${esc(r.duplicate_count)} Berichte) · bitte prüfen</span>` : ""}
             
                 <div class="meta" style="border-bottom:1px solid rgba(0,0,0,0.15);padding-bottom:4px;margin-bottom:8px;">
                   № ${esc(r.row_num)}
@@ -170,8 +212,10 @@ document.addEventListener("DOMContentLoaded", () => {
                   • Auto: ${esc(carText)}
                   • ${esc(km)} km
                 </div>
+                ${editNote}
             
                 ${seqBlock}
+                ${canManageReports && getDriverSession() ? `<div class="report-actions"><button class="btn report-edit" type="button" data-row="${esc(r.row_num)}" data-timestamp="${esc(asDate(r.timestamp)?.getTime() ?? "")}" data-key="${esc(reportKey)}" data-date="${esc(toISO(repDate))}" data-shift="${esc(shiftTxt)}" data-route="${esc(routeTxt)}" aria-label="Bericht Nr. ${esc(r.row_num)} bearbeiten" title="Bericht bearbeiten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z"/><path d="m14.5 7.5 3 3"/></svg></button>${r.duplicate ? `<button class="btn report-delete" type="button" data-row="${esc(r.row_num)}" data-timestamp="${esc(asDate(r.timestamp)?.getTime() ?? "")}" aria-label="Bericht Nr. ${esc(r.row_num)} zur Löschung markieren" title="Zur Löschung markieren"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6m5 4v7m4-7v7"/></svg></button>` : ""}</div>` : ""}
               </article>
             `;
           } catch (err) {
@@ -181,11 +225,102 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .join("");
     } catch (e) {
+      if (version !== loadVersion) return;
       console.error("recent error:", e);
       listEl.innerHTML = '<p style="color:#b00">Fehler beim Laden</p>';
     }
   }
 
   apply.addEventListener("click", loadAndRender);
+  listEl.addEventListener("click", (event) => {
+    const editButton = event.target.closest(".report-edit");
+    if (editButton) {
+      pendingEdit = { row: editButton.dataset.row, timestamp: editButton.dataset.timestamp, expectedKey: editButton.dataset.key };
+      editDate.value = editButton.dataset.date;
+      editShift.value = editButton.dataset.shift;
+      editRoute.value = editButton.dataset.route;
+      editError.hidden = true;
+      editError.textContent = "";
+      editDialog.showModal();
+      return;
+    }
+    const button = event.target.closest(".report-delete");
+    if (!button) return;
+    const card = button.closest(".card");
+    const title = card?.querySelector("h3")?.textContent || "diesen Bericht";
+    pendingDeletion = { row: button.dataset.row, timestamp: button.dataset.timestamp, button };
+    deleteText.textContent = `Bericht ${title} (Nr. ${button.dataset.row}) zur Löschung markieren und aus den Berichten ausblenden? Die Markierung kann in der Tabelle entfernt werden.`;
+    deleteError.hidden = true;
+    deleteError.textContent = "";
+    deleteDialog.showModal();
+  });
+  deleteClose.addEventListener("click", () => deleteDialog.close());
+  deleteDialog.addEventListener("cancel", (event) => {
+    if (deleteConfirm.disabled) event.preventDefault();
+  });
+  deleteDialog.addEventListener("close", () => { pendingDeletion = null; });
+  deleteConfirm.addEventListener("click", async () => {
+    if (!pendingDeletion) return;
+    const { row, timestamp, button } = pendingDeletion;
+    deleteConfirm.disabled = true;
+    deleteClose.disabled = true;
+    deleteConfirm.textContent = "Wird markiert…";
+    try {
+      await deleteDuplicateReport(row, timestamp);
+      deleteDialog.close();
+      statusEl.textContent = "Bericht zur Löschung markiert und ausgeblendet.";
+      await loadAndRender();
+    } catch (error) {
+      deleteError.textContent = "Löschen fehlgeschlagen: " + (error.message || error);
+      deleteError.hidden = false;
+      if (String(error.message || error).includes("driver_auth_required")) {
+        localStorage.removeItem("mt:driver-session");
+        deleteDialog.close();
+        statusEl.innerHTML = 'Die Fahreranmeldung ist abgelaufen. Bitte auf der <a href="../main/index.html">Startseite</a> erneut anmelden.';
+        await loadAndRender();
+      }
+      button.disabled = false;
+    } finally {
+      deleteConfirm.disabled = false;
+      deleteClose.disabled = false;
+      deleteConfirm.textContent = "Ja, markieren";
+    }
+  });
+  editClose.addEventListener("click", () => editDialog.close());
+  editDialog.addEventListener("cancel", (event) => {
+    if (editSave.disabled) event.preventDefault();
+  });
+  editDialog.addEventListener("close", () => { pendingEdit = null; });
+  editForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!pendingEdit) return;
+    const { row, timestamp, expectedKey } = pendingEdit;
+    editSave.disabled = true;
+    editClose.disabled = true;
+    editSave.textContent = "Speichert…";
+    try {
+      await editReport(row, timestamp, expectedKey, {
+        reportDate: editDate.value,
+        shift: editShift.value,
+        route: editRoute.value,
+      });
+      editDialog.close();
+      statusEl.textContent = "Bericht gespeichert.";
+      await loadAndRender();
+    } catch (error) {
+      editError.textContent = "Speichern fehlgeschlagen: " + (error.message || error);
+      editError.hidden = false;
+      if (String(error.message || error).includes("driver_auth_required")) {
+        localStorage.removeItem("mt:driver-session");
+        editDialog.close();
+        statusEl.innerHTML = 'Die Fahreranmeldung ist abgelaufen. Bitte auf der <a href="../main/index.html">Startseite</a> erneut anmelden.';
+        await loadAndRender();
+      }
+    } finally {
+      editSave.disabled = false;
+      editClose.disabled = false;
+      editSave.textContent = "Speichern";
+    }
+  });
   loadAndRender();
 });
