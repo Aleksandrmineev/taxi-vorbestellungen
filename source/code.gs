@@ -275,13 +275,23 @@ function doPost(e) {
     }
 
     if (action === "driver_plan_save") {
-      const driver = requireDriverToken_(body.driverToken || "");
-      return json({ ok: true, saved: saveLehrlingeDriverPlan_(body, driver) });
+      // Запрос от Vercel (serverKey = SYNC_SECRET) или напрямую от водителя с токеном GAS.
+      const driver = body.serverKey ? requireTrustedDriver_(body) : requireDriverToken_(body.driverToken || "");
+      const saved = saveLehrlingeDriverPlan_(body, driver);
+      // При вызове с Vercel копию в Redis обновляет сам Vercel; при прямом вызове — обновим снапшот.
+      if (!body.serverKey) pushLehrlingeSnapshotSafe_();
+      return json({ ok: true, saved: saved });
+    }
+
+    if (action === "driver_whoami") {
+      return json({ ok: true, driver: driverWhoAmI_(body) });
     }
 
     if (action === "student_plan_save") {
       const session = requireLehrlingStudentToken_(body.studentToken || "");
-      return json({ ok: true, saved: saveLehrlingeStudentPlan_(session, body) });
+      const saved = saveLehrlingeStudentPlan_(session, body);
+      pushLehrlingeSnapshotSafe_();
+      return json({ ok: true, saved: saved });
     }
 
     // ===== ВЕТКА АДМИНКИ LEHRLINGE =====
@@ -291,6 +301,7 @@ function doPost(e) {
       cacheRemove_("admin_data");
       cacheRemove_("getdata:1");
       cacheRemove_("getdata:2");
+      pushLehrlingeSnapshotSafe_();
       return json({ ok: true, saved });
     }
 
@@ -306,7 +317,9 @@ function doPost(e) {
 
     if (action === "lehrlinge_plan_save") {
       requireAdminToken_(String(body.adminToken || ""));
-      return json({ ok: true, saved: saveLehrlingePlan_(body) });
+      const savedPlan = saveLehrlingePlan_(body);
+      pushLehrlingeSnapshotSafe_();
+      return json({ ok: true, saved: savedPlan });
     }
 
     if (action === "order_admin_settings_save") {
