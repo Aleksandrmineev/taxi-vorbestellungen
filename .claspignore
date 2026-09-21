@@ -1,0 +1,10 @@
+# Nie zu Google Apps Script pushen / никогда не отправлять в GAS (clasp push).
+# Секреты и служебные файлы, лежащие в source/ (rootDir):
+**/*.txt
+**/*.zip
+**/*.pdf
+**/*.secret
+**/*.secrets
+**/.env*
+source/ssh_mineev.at.txt
+ssh_mineev.at.txt
