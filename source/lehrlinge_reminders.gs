@@ -5,6 +5,16 @@ const LR_ZONE_ = 'Europe/Vienna';
 const LR_WHATSAPP_TEST_TARGET_ = '4368181289405';
 const LR_WHATSAPP_GROUP_JID_ = '436506367662-1552028657@g.us'; // Pöls Lehrlinge-wer fährt?
 
+const LR_WA_MAX_ATTEMPTS_ = 3;
+
+// Kanäle: Script Property LEHRLINGE_REMINDERS_CHANNELS = "sms,whatsapp" (Standard) | "whatsapp" | "sms".
+function lrChannels_(props) {
+  const list = String(props.getProperty(LR_PREFIX_ + 'CHANNELS') || 'sms,whatsapp').toLowerCase()
+    .split(',').map(s => s.trim()).filter(Boolean);
+  if (!list.length || list.some(c => !['sms', 'whatsapp'].includes(c))) throw new Error('Invalid LEHRLINGE_REMINDERS_CHANNELS');
+  return { sms: list.includes('sms'), whatsapp: list.includes('whatsapp') };
+}
+
 function lrWhatsAppTarget_(mode) {
   return mode === 'test' ? LR_WHATSAPP_TEST_TARGET_ : LR_WHATSAPP_GROUP_JID_;
 }
@@ -111,10 +121,13 @@ function lrPreview_(now, slot) {
   if (liveFrom && !lrDate_(liveFrom)) throw new Error('Invalid Lehrlinge LIVE_FROM date');
   const mode = liveFrom && today >= liveFrom ? 'live' : (props.getProperty(LR_PREFIX_ + 'MODE') || 'test');
   if (!['test', 'live'].includes(mode)) throw new Error('Invalid Lehrlinge reminder mode');
+  const channels = lrChannels_(props);
   const copyPhone = String(props.getProperty(LR_PREFIX_ + 'COPY_PHONE') || '').trim();
-  const phones = mode === 'test' ? ['+4368181289405'] : [...new Set([orderNotificationConfig_().notifyPhoneDay, copyPhone].filter(Boolean))];
-  if (mode === 'live' && !orderNotificationConfig_().notifyPhoneDay) throw new Error('Day phone missing');
-  return { today: today, slot: slot, mode: mode, phones: phones, targets: targets, issues: issues,
+  // Ohne SMS-Kanal werden weder Empfänger noch Tagesnummer gebraucht.
+  const phones = !channels.sms ? [] : mode === 'test' ? ['+4368181289405'] : [...new Set([orderNotificationConfig_().notifyPhoneDay, copyPhone].filter(Boolean))];
+  if (mode === 'live' && channels.sms && !orderNotificationConfig_().notifyPhoneDay) throw new Error('Day phone missing');
+  return { today: today, slot: slot, mode: mode, channels: channels, phones: phones,
+    whatsappTarget: channels.whatsapp ? lrWhatsAppTarget_(mode) : null, targets: targets, issues: issues,
     message: issues.length ? (mode === 'test' ? '[TEST] ' : '') + 'Lehrlinge:\n' + issues.join('\n') + '\nBitte Berichte ergänzen/korrigieren.' : '' };
 }
 
@@ -154,19 +167,31 @@ function processLehrlingeReminders() {
       errors.push(String(err.message || err));
     }
     }
-    const waTarget = lrWhatsAppTarget_(result.mode);
-    if (waTarget) {
+    if (result.channels.whatsapp) {
+      const waTarget = lrWhatsAppTarget_(result.mode);
       const waKey = LR_PREFIX_ + 'LAST_WA_' + slot;
       const waToken = result.today + ':' + result.mode;
       const waPrevious = JSON.parse(props.getProperty(waKey) || '{}');
-      if (waPrevious.token !== waToken) {
-        props.setProperty(waKey, JSON.stringify({ token: waToken, status: 'attempting' }));
+      const attempts = waPrevious.token === waToken ? Number(waPrevious.attempts || 0) : 0;
+      // Nur eine bestätigte Nichtzustellung ("failed") wird wiederholt (max. LR_WA_MAX_ATTEMPTS_ je Prüfzeit);
+      // bei unklarem Ergebnis ("attempting"/"failed_or_unknown") keine automatische Wiederholung, sonst Doppelmeldungen.
+      const blocked = waPrevious.token === waToken && (waPrevious.status !== 'failed' || attempts >= LR_WA_MAX_ATTEMPTS_);
+      if (waTarget && !blocked) {
+        props.setProperty(waKey, JSON.stringify({ token: waToken, status: 'attempting', attempts: attempts + 1 }));
         try {
-          sendWhatsAppMessage_(waTarget, result.message);
-          props.setProperty(waKey, JSON.stringify({ token: waToken, status: 'sent' }));
+          const sent = sendWhatsAppMessage_(waTarget, result.message);
+          // sendWhatsAppMessage_ meldet fehlende Zugangsdaten als {ok:false, skipped:true}: das ist nicht gesendet.
+          if (!sent || sent.skipped || sent.ok === false) {
+            const notSent = new Error('whatsapp_not_sent');
+            notSent.confirmed = true;
+            throw notSent;
+          }
+          props.setProperty(waKey, JSON.stringify({ token: waToken, status: 'sent', attempts: attempts + 1 }));
         } catch (err) {
-          props.setProperty(waKey, JSON.stringify({ token: waToken, status: 'failed_or_unknown' }));
-          errors.push('whatsapp:' + String(err.message || err));
+          const message = String(err.message || err);
+          const confirmed = err.confirmed === true || /^whatsapp_http_/.test(message);
+          props.setProperty(waKey, JSON.stringify({ token: waToken, status: confirmed ? 'failed' : 'failed_or_unknown', attempts: attempts + 1 }));
+          errors.push('whatsapp:' + message);
         }
       }
     }
@@ -181,6 +206,24 @@ function setupLehrlingeReminderTest() {
   props.deleteProperty(LR_PREFIX_ + 'LIVE_FROM');
   ScriptApp.newTrigger('processLehrlingeReminders').timeBased().everyMinutes(5).create();
   props.setProperty(LR_PREFIX_ + 'ENABLED', 'true');
+}
+
+// WhatsApp-Gruppe statt SMS, sofort im Echtbetrieb (ohne [TEST]-Präfix).
+// Rückweg: restoreLehrlingeSmsChannel() (SMS + WhatsApp) oder setupLehrlingeReminderTest() (Testmodus).
+function setupLehrlingeWhatsAppLive() {
+  const bot = mineevBotConfig_();
+  if (!bot.url || !bot.token) throw new Error('mineev-bot not configured; WhatsApp channel unavailable');
+  const props = PropertiesService.getScriptProperties();
+  setupLehrlingeReminderTest(); // ein einziger Trigger, Modul eingeschaltet
+  props.setProperty(LR_PREFIX_ + 'MODE', 'live');
+  props.deleteProperty(LR_PREFIX_ + 'LIVE_FROM');
+  props.setProperty(LR_PREFIX_ + 'CHANNELS', 'whatsapp');
+  console.log('Lehrlinge: live, WhatsApp group only (no SMS, no [TEST])');
+}
+
+function restoreLehrlingeSmsChannel() {
+  PropertiesService.getScriptProperties().setProperty(LR_PREFIX_ + 'CHANNELS', 'sms,whatsapp');
+  console.log('Lehrlinge: channels = sms,whatsapp');
 }
 
 function setupLehrlingeWeekTrial() {

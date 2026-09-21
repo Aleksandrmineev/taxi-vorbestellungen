@@ -60,6 +60,28 @@
    Получатель — первый дневной номер `SMS_NOTIFICATION_PHONE_DAY` из существующих настроек.
    Отсутствующий дневной номер вызывает ошибку; подстановка ночного номера не выполняется.
 
+## Каналы: WhatsApp-группа вместо SMS
+
+Script Property **`LEHRLINGE_REMINDERS_CHANNELS`**: `sms,whatsapp` (по умолчанию, как раньше),
+`whatsapp` (только WhatsApp) или `sms`. Неверное значение останавливает отправку с ошибкой.
+
+- **Режим** задаёт получателя WhatsApp и префикс: `test` → ваш номер +43 681 81289405 и `[TEST]`;
+  `live` → группа «Pöls Lehrlinge-wer fährt?» и текст без `[TEST]`.
+- **Переключить сразу:** запустить в GAS **`setupLehrlingeWhatsAppLive`**. Функция включает `live`,
+  убирает `LIVE_FROM`, ставит `CHANNELS=whatsapp`, оставляет один триггер и не запускается,
+  если бот WhatsApp (`MINEEV_BOT_URL`/`MINEEV_BOT_TOKEN`) не настроен.
+  Перед этим проверить текст: `previewLehrlingeMorning` / `previewLehrlingeAfternoon`
+  (в ответе видны `mode`, `channels`, `whatsappTarget`, ничего не отправляется).
+- **Вернуть SMS:** `restoreLehrlingeSmsChannel` (`CHANNELS=sms,whatsapp`).
+  **Вернуться в тест:** `setupLehrlingeReminderTest` (режим `test`, `CHANNELS` остаётся, значит тест придёт в WhatsApp на ваш номер).
+  **Выключить всё:** `disableLehrlingeReminders`.
+- Без SMS-канала не нужен дневной номер и не тратятся SMS.
+- **Повторы WhatsApp:** сообщение не считается отправленным, если бот вернул `skipped` (нет доступа) или ошибку HTTP.
+  Такая подтверждённая неудача повторяется в тот же срок проверки (каждые 5 минут, не более 3 попыток).
+  При неясном результате (таймаут, некорректный ответ) автоповтора нет, чтобы не задвоить сообщение в группе.
+  Статус: Script Property `LEHRLINGE_REMINDERS_LAST_WA_09` / `_17` (`sent`, `failed`, `failed_or_unknown`, `attempts`).
+- Автопереход по `LIVE_FROM` по-прежнему работает (при `CHANNELS` по умолчанию `live` включает SMS и WhatsApp в группу).
+
 ## Ручной тест в любое время
 
 Дополнительный файл `source/lehrlinge_reminders_test.gs`: `previewLehrlingeTestNow`

@@ -11,6 +11,9 @@ function fixture() {
   let rows = [];
   let fail = false;
   let waFail = false;
+  let waImpl = null;
+  const triggers = [];
+  let botConfigured = true;
   let now = '2026-09-16T07:01:00Z';
   class Clock extends Date { constructor(...args) { super(...(args.length ? args : [now])); } }
   const ctx = vm.createContext({ Date: Clock, console,
@@ -23,10 +26,16 @@ function fixture() {
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
     orderNotificationConfig_: () => ({ key: 'mock', secret: 'mock', notifyPhoneDay: '+431234' }),
     sendZadarmaSms_: (...args) => { calls.push(args); if (fail) throw Error('timeout'); return { status: 'success' }; },
-    sendWhatsAppMessage_: (...args) => { waCalls.push(args); if (waFail) throw Error('wa-timeout'); return { ok: true }; },
+    sendWhatsAppMessage_: (...args) => { waCalls.push(args); if (waImpl) return waImpl(...args); if (waFail) throw Error('wa-timeout'); return { ok: true }; },
+    mineevBotConfig_: () => (botConfigured ? { url: 'https://bot.test', token: 't' } : { url: '', token: '' }),
+    ScriptApp: {
+      getProjectTriggers: () => triggers.slice(),
+      deleteTrigger: t => { triggers.splice(triggers.indexOf(t), 1); },
+      newTrigger: fn => ({ timeBased: () => ({ everyMinutes: () => ({ create: () => triggers.push({ getHandlerFunction: () => fn }) }) }) }),
+    },
   });
   vm.runInContext(source, ctx);
-  return { ctx, props, calls, waCalls, setRows: r => { rows = r; }, setNow: n => { now = n; }, fail: () => { fail = true; }, failWa: () => { waFail = true; } };
+  return { ctx, props, calls, waCalls, setRows: r => { rows = r; }, setNow: n => { now = n; }, fail: () => { fail = true; }, failWa: () => { waFail = true; }, setWa: fn => { waImpl = fn; }, triggers, noBot: () => { botConfigured = false; } };
 }
 test('national holidays, weekends, Easter and valid dates', () => {
   const {ctx:c} = fixture();
@@ -131,4 +140,115 @@ test('WhatsApp failure is recorded and surfaced, independent of SMS status', () 
   assert.match(f.props.get('LEHRLINGE_REMINDERS_LAST_WA_09'), /failed_or_unknown/);
   f.ctx.processLehrlingeReminders();
   assert.equal(f.waCalls.length,1);
+});
+
+const enable = (f, extra = {}) => {
+  f.props.set('LEHRLINGE_REMINDERS_ENABLED', 'true');
+  Object.entries(extra).forEach(([k, v]) => f.props.set('LEHRLINGE_REMINDERS_' + k, v));
+};
+const GROUP = '436506367662-1552028657@g.us';
+
+test('default channels unchanged: SMS and WhatsApp both', () => {
+  const f = fixture(); enable(f);
+  const preview = f.ctx.previewLehrlingeMorning();
+  assert.deepEqual({ ...preview.channels }, { sms: true, whatsapp: true });
+  f.ctx.processLehrlingeReminders();
+  assert.equal(f.calls.length, 1); assert.equal(f.waCalls.length, 1);
+});
+
+test('channels=whatsapp in live mode: group only, no SMS, no [TEST] prefix', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  const preview = f.ctx.previewLehrlingeMorning();
+  assert.deepEqual([...preview.phones], []);
+  assert.equal(preview.whatsappTarget, GROUP);
+  f.ctx.processLehrlingeReminders(); f.ctx.processLehrlingeReminders();
+  assert.equal(f.calls.length, 0);
+  assert.equal(f.waCalls.length, 1);
+  assert.equal(f.waCalls[0][0], GROUP);
+  assert.doesNotMatch(f.waCalls[0][1], /\[TEST\]/);
+  assert.match(f.waCalls[0][1], /^Lehrlinge:/);
+});
+
+test('channels=whatsapp in test mode: test number with [TEST], no SMS', () => {
+  const f = fixture(); enable(f, { CHANNELS: 'whatsapp' });
+  f.ctx.processLehrlingeReminders();
+  assert.equal(f.calls.length, 0);
+  assert.equal(f.waCalls[0][0], '4368181289405');
+  assert.match(f.waCalls[0][1], /^\[TEST\]/);
+});
+
+test('channels=whatsapp does not need the SMS day phone', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  f.ctx.orderNotificationConfig_ = () => ({ key: 'mock', secret: 'mock', notifyPhoneDay: '' });
+  assert.doesNotThrow(() => f.ctx.processLehrlingeReminders());
+  assert.equal(f.waCalls.length, 1);
+  const sms = fixture(); enable(sms, { MODE: 'live', CHANNELS: 'sms' });
+  sms.ctx.orderNotificationConfig_ = () => ({ key: 'mock', secret: 'mock', notifyPhoneDay: '' });
+  assert.throws(() => sms.ctx.processLehrlingeReminders(), /Day phone missing/);
+});
+
+test('channels=sms: no WhatsApp; invalid channel value sends nothing', () => {
+  const f = fixture(); enable(f, { CHANNELS: 'sms' });
+  f.ctx.processLehrlingeReminders();
+  assert.equal(f.calls.length, 1); assert.equal(f.waCalls.length, 0);
+  const bad = fixture(); enable(bad, { CHANNELS: 'whatsap' });
+  assert.throws(() => bad.ctx.processLehrlingeReminders(), /Invalid LEHRLINGE_REMINDERS_CHANNELS/);
+  assert.equal(bad.calls.length, 0); assert.equal(bad.waCalls.length, 0);
+});
+
+test('WhatsApp "skipped" (bot not configured) is not recorded as sent and is retried, up to 3 attempts per slot', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  f.setWa(() => ({ ok: false, skipped: true }));
+  for (let i = 0; i < 3; i++) assert.throws(() => f.ctx.processLehrlingeReminders(), /whatsapp:whatsapp_not_sent/);
+  f.ctx.processLehrlingeReminders(); f.ctx.processLehrlingeReminders(); // Limit erreicht: keine weiteren Versuche
+  assert.equal(f.waCalls.length, 3);
+  assert.match(f.props.get('LEHRLINGE_REMINDERS_LAST_WA_09'), /"status":"failed"/);
+  // sobald der Bot geht, wird beim nächsten Durchlauf (neuer Tag) wieder gesendet
+  f.setWa(() => ({ ok: true }));
+  f.setNow('2026-09-17T07:01:00Z'); f.ctx.processLehrlingeReminders();
+  assert.equal(f.waCalls.length, 4);
+  assert.match(f.props.get('LEHRLINGE_REMINDERS_LAST_WA_09'), /"status":"sent"/);
+});
+
+test('confirmed HTTP failure is retried and then delivered once; sent is not repeated', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  let n = 0;
+  f.setWa(() => { n += 1; if (n === 1) throw new Error('whatsapp_http_502:bad_gateway'); return { ok: true }; });
+  assert.throws(() => f.ctx.processLehrlingeReminders(), /whatsapp_http_502/);
+  f.ctx.processLehrlingeReminders();
+  f.ctx.processLehrlingeReminders();
+  assert.equal(f.waCalls.length, 2);
+  assert.match(f.props.get('LEHRLINGE_REMINDERS_LAST_WA_09'), /"status":"sent"/);
+});
+
+test('unclear WhatsApp outcome (timeout, invalid JSON) is not retried automatically', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' }); f.failWa();
+  assert.throws(() => f.ctx.processLehrlingeReminders(), /wa-timeout/);
+  f.ctx.processLehrlingeReminders();
+  assert.equal(f.waCalls.length, 1);
+  assert.match(f.props.get('LEHRLINGE_REMINDERS_LAST_WA_09'), /failed_or_unknown/);
+});
+
+test('setupLehrlingeWhatsAppLive: live now, WhatsApp only, single trigger; restore brings SMS back', () => {
+  const f = fixture();
+  f.props.set('LEHRLINGE_REMINDERS_LIVE_FROM', '2026-09-23');
+  f.props.set('LEHRLINGE_REMINDERS_MODE', 'test');
+  f.ctx.setupLehrlingeWhatsAppLive();
+  f.ctx.setupLehrlingeWhatsAppLive(); // idempotent
+  assert.equal(f.props.get('LEHRLINGE_REMINDERS_MODE'), 'live');
+  assert.equal(f.props.get('LEHRLINGE_REMINDERS_CHANNELS'), 'whatsapp');
+  assert.equal(f.props.get('LEHRLINGE_REMINDERS_LIVE_FROM'), undefined);
+  assert.equal(f.props.get('LEHRLINGE_REMINDERS_ENABLED'), 'true');
+  assert.equal(f.triggers.length, 1);
+  f.ctx.processLehrlingeReminders();
+  assert.equal(f.calls.length, 0); assert.equal(f.waCalls[0][0], GROUP);
+  f.ctx.restoreLehrlingeSmsChannel();
+  assert.equal(f.props.get('LEHRLINGE_REMINDERS_CHANNELS'), 'sms,whatsapp');
+});
+
+test('setupLehrlingeWhatsAppLive refuses to switch when the WhatsApp bot is not configured', () => {
+  const f = fixture(); f.noBot();
+  assert.throws(() => f.ctx.setupLehrlingeWhatsAppLive(), /mineev-bot not configured/);
+  assert.equal(f.props.get('LEHRLINGE_REMINDERS_CHANNELS'), undefined);
+  assert.equal(f.triggers.length, 0);
 });
