@@ -6,3 +6,6 @@ source/ssh_mineev.at.txt
 .env
 .env.*
 !.env.example
+
+# Временный файл с секретом для настройки GAS (после запуска удалить)
+source/_setup_secrets.gs
