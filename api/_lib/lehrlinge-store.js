@@ -83,6 +83,13 @@ export async function readState() {
   return { snapshot: parse(snapshot), plan };
 }
 
+// Только снапшот (без плана): для публичного списка и лёгких запросов.
+export async function readSnapshot() {
+  const snapshot = await run((db) => db.get(SNAPSHOT_KEY));
+  if (!snapshot) throw new Error("snapshot_missing");
+  return parse(snapshot);
+}
+
 export async function writeSnapshot({ builtAt, points, students, drivers, plan }) {
   const builtAtMs = Date.parse(builtAt) || Date.now();
   const [existingRaw, outboxRaw] = await run((db) => Promise.all([db.hGetAll(PLAN_KEY), db.hGetAll(OUTBOX_KEY)]));

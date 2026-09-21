@@ -17,6 +17,7 @@ const planSave = (await import("../api/lehrlinge/plan-save.js")).default;
 const session = (await import("../api/lehrlinge/session.js")).default;
 const sharedLogin = (await import("../api/lehrlinge/shared-login.js")).default;
 const students = (await import("../api/lehrlinge/students.js")).default;
+const portalStudents = (await import("../api/lehrlinge/portal-students.js")).default;
 
 /* ---------- Эмуляция Redis (подмножество API node-redis) ---------- */
 const kv = new Map();
@@ -416,7 +417,7 @@ test("shared-login: верный логин/пароль даёт токен, н
   assert.equal((await loginCall({ login: "lehrlinge", password: "8761" }, "5.5.5.5")).statusCode, 200); // другой IP не задет
 });
 
-test("общий доступ: список только id+имя, план без адреса, полное расписание запрещено", async () => {
+test("общий доступ: список только id+имя, план без адреса", async () => {
   await fresh();
   const headers = await sharedAuth();
   const list = await call(students, { headers });
@@ -432,8 +433,6 @@ test("общий доступ: список только id+имя, план б�
   assert.equal(plan.body.student.address, undefined);
   assert.equal(plan.body.driver, undefined);
 
-  const sched = await call(schedule, { headers, query: { from: "2026-09-21", to: "2026-09-22" } });
-  assert.equal(sched.statusCode, 403);
   assert.equal((await call(students, {})).statusCode, 401);
 });
 
@@ -480,3 +479,36 @@ test("общий доступ: сохранение идёт через очер
 async function annaPlanFor(date) {
   return call(studentPlan, { query: { studentId: "anna", from: date, to: date }, headers: auth() });
 }
+
+test("общий доступ: полное расписание доступно, но без телефонов, данных водителя и подробностей об учениках", async () => {
+  await fresh();
+  const headers = await sharedAuth();
+  const query = { from: "2026-09-21", to: "2026-09-23", route: "all", direction: "all" };
+  const shared = await call(schedule, { headers, query });
+  assert.equal(shared.statusCode, 200);
+  assert.ok(shared.body.days.length > 0);
+  assert.equal(shared.body.driver, undefined);
+  assert.deepEqual(shared.body.students, [{ id: "anna", name: "Anna A" }, { id: "cara", name: "Cara C" }]);
+  const points = shared.body.days.flatMap((d) => d.routes.flatMap((r) => r.points));
+  assert.ok(points.length > 0);
+  assert.ok(points.every((point) => point.phone === undefined && point.address));
+
+  const driver = await call(schedule, { headers: auth(), query });
+  assert.equal(driver.body.driver.taxiNumber, "80");
+  assert.equal(driver.body.students[0].address, "Bahnhof 1");
+  assert.ok(driver.body.days.flatMap((d) => d.routes.flatMap((r) => r.points)).every((point) => "phone" in point));
+});
+
+test("portal-students: публичный список id+имя без авторизации; sharedEnabled отражает env; 503 без снапшота", async () => {
+  await fresh();
+  delete process.env.SHARED_LOGIN_PASSWORD;
+  const off = await call(portalStudents, {});
+  assert.equal(off.statusCode, 200);
+  assert.deepEqual(off.body.students, [{ id: "anna", name: "Anna A" }, { id: "cara", name: "Cara C" }]);
+  assert.equal(off.body.sharedEnabled, false);
+  assert.match(off.headers["Cache-Control"], /s-maxage/);
+  sharedEnv();
+  assert.equal((await call(portalStudents, {})).body.sharedEnabled, true);
+  kv.clear();
+  assert.equal((await call(portalStudents, {})).statusCode, 503);
+});
