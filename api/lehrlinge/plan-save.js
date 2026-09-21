@@ -1,9 +1,14 @@
 // POST /api/lehrlinge/plan-save — водитель сохраняет изменения плана.
-// Порядок: валидация -> запись в таблицу через GAS (источник правды) -> обновление Redis.
-import { readState, upsertPlanRows } from "../_lib/lehrlinge-store.js";
+// Порядок: валидация -> очередь + Redis (мгновенно, ответ водителю) -> запись в таблицу через GAS в фоне.
+// Таблица остаётся источником правды: очередь повторяет запись, пока GAS не подтвердит; чужие снапшоты
+// не перезаписывают ожидающие строки.
+import { enqueueOutbox, readState, upsertPlanRows } from "../_lib/lehrlinge-store.js";
 import { getDriverStudents } from "../_lib/lehrlinge-schedule.js";
 import { cors, fail, requireDriver } from "../_lib/http.js";
-import { gasPost, trustedFields } from "../_lib/gas.js";
+import { flushOutbox } from "../_lib/lehrlinge-outbox.js";
+import { background } from "../_lib/background.js";
+
+export const config = { maxDuration: 30 };
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const STATUSES = ["both", "out", "back", "none"];
@@ -33,14 +38,9 @@ export default async function handler(req, res) {
     });
 
     const updatedBy = "driver:" + String(driver.taxiNumber || driver.id || "unknown");
-    const result = await gasPost({
-      action: "driver_plan_save",
-      ...trustedFields(driver),
-      rows: JSON.stringify(rows),
-      holidays: JSON.stringify(holidays),
-      updatedBy,
-    });
-
+    // Сначала намерение (очередь), потом видимое изменение (Redis). Если что-то из этого упадёт,
+    // клиент получит 5xx и запишет напрямую через GAS.
+    await enqueueOutbox(rows.map((row) => ({ row, driver, updatedBy, holidays })));
     const saved = rows.map((row) => ({
       ...row,
       note: holidaySet.has(row.date) ? "holiday" : row.note,
@@ -48,7 +48,9 @@ export default async function handler(req, res) {
       updated_at: new Date().toISOString(),
     }));
     await upsertPlanRows(saved);
-    return res.status(200).json({ ok: true, saved: result.saved?.saved ?? saved.length, rows: saved });
+
+    background(flushOutbox());
+    return res.status(200).json({ ok: true, saved: saved.length, rows: saved });
   } catch (error) {
     return fail(res, error);
   }

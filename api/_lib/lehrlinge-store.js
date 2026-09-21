@@ -2,12 +2,20 @@
 //   lehrlinge:snapshot  — JSON { builtAt, points, students, drivers }
 //   lehrlinge:plan      — HASH  "date|studentId" -> JSON { status, note, updated_by, updated_at, vat? }
 // vat = время записи с Vercel (ms). Синхронизация из таблицы не затирает строки, записанные позже её снапшота.
+import { randomUUID } from "node:crypto";
 import { createClient } from "redis";
 
 const SNAPSHOT_KEY = "lehrlinge:snapshot";
 const PLAN_KEY = "lehrlinge:plan";
 const COMMAND_TIMEOUT_MS = 5000;
 const SNAPSHOT_TTL_SEC = 30 * 60;
+const OUTBOX_KEY = "lehrlinge:outbox"; // записи водителей, ещё не подтверждённые таблицей (см. lehrlinge-outbox.js)
+const DEAD_KEY = "lehrlinge:outbox:dead"; // отклонённые/безнадёжные записи для разбора
+const LOCK_KEY = "lehrlinge:outbox:lock";
+const LOCK_TTL_SEC = 90;
+// Строки, записанные с Vercel менее чем за это время до сборки снапшота, снапшот не перезаписывает:
+// он мог быть собран до того, как фоновая запись дошла до таблицы.
+const FRESH_WRITE_MARGIN_MS = 2 * 60 * 1000;
 
 let clientPromise = null;
 let injectedClient = null;
@@ -77,13 +85,23 @@ export async function readState() {
 
 export async function writeSnapshot({ builtAt, points, students, drivers, plan }) {
   const builtAtMs = Date.parse(builtAt) || Date.now();
-  const existing = (await run((db) => db.hGetAll(PLAN_KEY))) || {};
+  const [existingRaw, outboxRaw] = await run((db) => Promise.all([db.hGetAll(PLAN_KEY), db.hGetAll(OUTBOX_KEY)]));
+  const existing = existingRaw || {};
+  // Ключи, ожидающие записи в таблицу: снапшот их не трогает, пока очередь не разберётся.
+  const queuedKeys = new Set(Object.values(outboxRaw || {}).map((value) => {
+    const { row } = parse(value);
+    return `${row.date}|${row.student_id}`;
+  }));
+  const isProtected = (key) => {
+    if (queuedKeys.has(key)) return true;
+    const current = existing[key] ? parse(existing[key]) : null;
+    return Boolean(current?.vat && current.vat > builtAtMs - FRESH_WRITE_MARGIN_MS);
+  };
   const incoming = {};
   const keep = new Set();
   (plan || []).forEach((row) => {
     const key = `${row.date}|${row.student_id}`;
-    const current = existing[key] ? parse(existing[key]) : null;
-    if (current?.vat && current.vat > builtAtMs) {
+    if (isProtected(key)) {
       keep.add(key);
       return;
     }
@@ -95,11 +113,7 @@ export async function writeSnapshot({ builtAt, points, students, drivers, plan }
     });
   });
   // Строки, которых больше нет в таблице (или вышли за окно), удаляем — кроме свежих записей с Vercel.
-  const stale = Object.keys(existing).filter((key) => {
-    if (incoming[key] || keep.has(key)) return false;
-    const current = parse(existing[key]);
-    return !(current?.vat && current.vat > builtAtMs);
-  });
+  const stale = Object.keys(existing).filter((key) => !incoming[key] && !keep.has(key) && !isProtected(key));
   await run((db) => {
     const tx = db.multi();
     // TTL: если синхронизацию отключат/сломают, через SNAPSHOT_TTL_SEC Vercel перестанет отдавать устаревшее
@@ -126,4 +140,71 @@ export async function upsertPlanRows(rows) {
     });
   });
   await run((db) => db.hSet(PLAN_KEY, fields));
+}
+
+/* ---------- Очередь записи в таблицу (outbox) ---------- */
+
+// entries: [{ row: {date, student_id, status, note}, driver, updatedBy, holidays }]
+export async function enqueueOutbox(entries) {
+  if (!entries.length) return;
+  const at = Date.now();
+  const fields = {};
+  entries.forEach((entry) => {
+    // Уникальный ключ на каждую запись: ack удаляет ровно ту запись, которую отправили,
+    // а не более новую с тем же временем.
+    const field = `${entry.row.date}|${entry.row.student_id}|${at}|${randomUUID()}`;
+    fields[field] = JSON.stringify({ ...entry, at, attempts: 0 });
+  });
+  await run((db) => db.hSet(OUTBOX_KEY, fields));
+}
+
+// Возвращает записи очереди по возрастанию времени: [{ field, row, driver, updatedBy, holidays, at, attempts }]
+export async function readOutbox() {
+  const raw = (await run((db) => db.hGetAll(OUTBOX_KEY))) || {};
+  return Object.entries(raw)
+    .map(([field, value]) => ({ field, ...parse(value) }))
+    .sort((a, b) => a.at - b.at || (a.field < b.field ? -1 : 1));
+}
+
+export async function ackOutbox(fields) {
+  if (fields.length) await run((db) => db.hDel(OUTBOX_KEY, fields));
+}
+
+// Увеличивает счётчик попыток; при превышении лимита или fatal=true переносит запись в «мёртвые».
+export async function retryOrDeadLetter(entries, { fatal = false, reason = "", maxAttempts = 8 } = {}) {
+  let dead = 0;
+  await run(async (db) => {
+    const tx = db.multi();
+    entries.forEach((entry) => {
+      const { field, ...rest } = entry;
+      const attempts = (rest.attempts || 0) + 1;
+      if (fatal || attempts >= maxAttempts) {
+        tx.hSet(DEAD_KEY, field, JSON.stringify({ ...rest, attempts, reason, deadAt: new Date().toISOString() }));
+        tx.hDel(OUTBOX_KEY, field);
+        dead += 1;
+      } else {
+        tx.hSet(OUTBOX_KEY, field, JSON.stringify({ ...rest, attempts }));
+      }
+    });
+    return tx.exec();
+  });
+  return dead;
+}
+
+export async function outboxStats() {
+  const [pending, dead] = await run((db) => Promise.all([db.hLen(OUTBOX_KEY), db.hLen(DEAD_KEY)]));
+  return { pending, dead };
+}
+
+// Блокировка: один «сливатель» очереди за раз, чтобы записи одного ключа доходили до таблицы по порядку.
+export async function acquireOutboxLock() {
+  const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const ok = await run((db) => db.set(LOCK_KEY, token, { NX: true, EX: LOCK_TTL_SEC }));
+  return ok ? token : null;
+}
+
+export async function releaseOutboxLock(token) {
+  await run(async (db) => {
+    if ((await db.get(LOCK_KEY)) === token) await db.del(LOCK_KEY);
+  });
 }

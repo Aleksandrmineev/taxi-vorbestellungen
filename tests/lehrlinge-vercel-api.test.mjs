@@ -5,7 +5,9 @@ import test from "node:test";
 process.env.JWT_SECRET = "j".repeat(40);
 process.env.SYNC_SECRET = "sync-secret-for-tests";
 
-const { __setClientForTests } = await import("../api/_lib/lehrlinge-store.js");
+const { __setClientForTests, outboxStats } = await import("../api/_lib/lehrlinge-store.js");
+const { settleBackground } = await import("../api/_lib/background.js");
+const { flushOutbox } = await import("../api/_lib/lehrlinge-outbox.js");
 const { signJwt, verifyJwt } = await import("../api/_lib/jwt.js");
 const { issueDriverJwt } = await import("../api/_lib/driver-jwt.js");
 const sync = (await import("../api/lehrlinge/sync.js")).default;
@@ -26,10 +28,21 @@ const hashOf = (key) => {
 
 const commands = {
   get: (key) => kv.get(key) ?? null,
-  set: (key, value, options) => { kv.set(key, String(value)); setOptions.push(options); return "OK"; },
+  set: (key, value, options) => {
+    if (options?.NX && kv.has(key)) return null;
+    kv.set(key, String(value));
+    setOptions.push(options);
+    return "OK";
+  },
+  del: (key) => (kv.delete(key) ? 1 : 0),
   hGetAll: (key) => Object.fromEntries(kv.get(key) || []),
-  hSet: (key, fields) => { Object.entries(fields).forEach(([f, v]) => hashOf(key).set(f, String(v))); return Object.keys(fields).length; },
-  hDel: (key, fields) => fields.reduce((n, f) => n + (kv.get(key)?.delete(f) ? 1 : 0), 0),
+  hLen: (key) => kv.get(key)?.size || 0,
+  hSet: (key, fieldOrFields, value) => {
+    const fields = typeof fieldOrFields === "object" ? fieldOrFields : { [fieldOrFields]: value };
+    Object.entries(fields).forEach(([f, v]) => hashOf(key).set(f, String(v)));
+    return Object.keys(fields).length;
+  },
+  hDel: (key, fields) => [].concat(fields).reduce((n, f) => n + (kv.get(key)?.delete(f) ? 1 : 0), 0),
 };
 
 const fakeRedis = {
@@ -49,12 +62,16 @@ __setClientForTests(fakeRedis);
 
 let gasCalls = [];
 let gasReply = () => ({ ok: true, saved: { ok: true, saved: 1 } });
+let gasGate = null; // Promise: пока не выполнен, ответ GAS задерживается
+let gasNetworkDown = false;
 
 globalThis.fetch = async (url, init = {}) => {
   const href = String(url);
   if (href.includes("script.google.com")) {
     const body = JSON.parse(init.body);
     gasCalls.push(body);
+    if (gasGate) await gasGate;
+    if (gasNetworkDown) throw new TypeError("fetch failed");
     return new Response(JSON.stringify(gasReply(body)), { status: 200 });
   }
   throw new Error(`unexpected fetch ${href}`);
@@ -151,6 +168,7 @@ test("plan-save: пишет в GAS доверенным вызовом, пото
     body: { rows: [{ date: "2026-09-21", student_id: "anna", status: "out", note: "" }], holidays: [] },
   });
   assert.equal(res.statusCode, 200);
+  await settleBackground();
   assert.equal(gasCalls.length, 1);
   assert.equal(gasCalls[0].action, "driver_plan_save");
   assert.equal(gasCalls[0].serverKey, process.env.SYNC_SECRET);
@@ -161,9 +179,10 @@ test("plan-save: пишет в GAS доверенным вызовом, пото
   assert.deepEqual(plan.body.items.map((i) => [i.date, i.status, i.updated_by]), [["2026-09-21", "out", "driver:80"]]);
 });
 
-test("plan-save: неверные данные не доходят до GAS; ошибка GAS не меняет Redis", async () => {
+test("plan-save: неверные данные не попадают ни в очередь, ни в GAS", async () => {
   kv.clear();
   await call(sync, { method: "POST", headers: syncAuth, body: snapshotBody() });
+  await settleBackground();
   gasCalls = [];
   const bad = (row) => call(planSave, { method: "POST", headers: auth(), body: { rows: [row] } });
 
@@ -171,15 +190,113 @@ test("plan-save: неверные данные не доходят до GAS; о�
   assert.equal((await bad({ date: "2026-09-21", student_id: "nobody", status: "out" })).statusCode, 400);
   assert.equal((await bad({ date: "2026-09-21", student_id: "anna", status: "evil" })).statusCode, 400);
   assert.equal((await call(planSave, { method: "POST", body: { rows: [] } })).statusCode, 401);
+  await settleBackground();
   assert.equal(gasCalls.length, 0);
+  assert.deepEqual(await outboxStats(), { pending: 0, dead: 0 });
+});
 
-  gasReply = () => ({ ok: false, error: "morning_cutoff_passed" });
-  const failed = await bad({ date: "2026-09-21", student_id: "anna", status: "none" });
+async function fresh() {
+  kv.clear();
+  gasCalls = [];
+  gasGate = null;
+  gasNetworkDown = false;
   gasReply = () => ({ ok: true, saved: { ok: true, saved: 1 } });
-  assert.equal(failed.statusCode, 400); // осмысленная ошибка GAS: клиент не должен повторять через запасной путь
-  assert.equal(failed.body.error, "morning_cutoff_passed");
-  const plan = await call(studentPlan, { query: { studentId: "anna", from: "2026-09-21", to: "2026-09-25" }, headers: auth() });
-  assert.deepEqual(plan.body.items, []);
+  await call(sync, { method: "POST", headers: syncAuth, body: snapshotBody() });
+  await settleBackground();
+  gasCalls = [];
+}
+const save = (rows) => call(planSave, { method: "POST", headers: auth(), body: { rows } });
+const annaPlan = () => call(studentPlan, { query: { studentId: "anna", from: "2026-09-21", to: "2026-09-25" }, headers: auth() });
+
+test("plan-save отвечает сразу, не дожидаясь GAS; изменение уже видно в Redis, таблица получает его в фоне", async () => {
+  await fresh();
+  let release;
+  gasGate = new Promise((resolve) => { release = resolve; });
+
+  const res = await save([{ date: "2026-09-21", student_id: "anna", status: "out" }]);
+  assert.equal(res.statusCode, 200); // GAS ещё «висит»
+  assert.equal((await annaPlan()).body.items[0].status, "out");
+  assert.deepEqual(await outboxStats(), { pending: 1, dead: 0 });
+
+  release();
+  await settleBackground();
+  assert.equal(gasCalls.length, 1);
+  assert.deepEqual(await outboxStats(), { pending: 0, dead: 0 });
+});
+
+test("сбой сети GAS: запись остаётся в очереди и доходит при следующем сливе (sync)", async () => {
+  await fresh();
+  gasNetworkDown = true;
+  assert.equal((await save([{ date: "2026-09-21", student_id: "anna", status: "back" }])).statusCode, 200);
+  await settleBackground();
+  assert.deepEqual(await outboxStats(), { pending: 1, dead: 0 });
+  assert.equal((await annaPlan()).body.items[0].status, "back");
+
+  gasNetworkDown = false;
+  gasCalls = [];
+  const synced = await call(sync, { method: "POST", headers: syncAuth, body: snapshotBody({ builtAt: "2026-09-21T06:05:00.000Z" }) });
+  assert.equal(synced.body.outbox.pending, 1); // на момент ответа слив ещё идёт в фоне
+  await settleBackground();
+  assert.equal(gasCalls.length, 1);
+  assert.deepEqual(await outboxStats(), { pending: 0, dead: 0 });
+});
+
+test("осмысленный отказ GAS: запись уходит в «мёртвые», очередь не крутится вечно", async () => {
+  await fresh();
+  gasReply = () => ({ ok: false, error: "driver_auth_required" });
+  await save([{ date: "2026-09-21", student_id: "anna", status: "none" }]);
+  await settleBackground();
+  assert.deepEqual(await outboxStats(), { pending: 0, dead: 1 });
+  assert.equal(gasCalls.length, 1); // без повторов
+});
+
+test("после 8 неудачных попыток запись уходит в «мёртвые»", async () => {
+  await fresh();
+  gasNetworkDown = true;
+  await save([{ date: "2026-09-21", student_id: "anna", status: "out" }]);
+  await settleBackground();
+  for (let i = 0; i < 7; i++) await flushOutbox();
+  assert.deepEqual(await outboxStats(), { pending: 0, dead: 1 });
+});
+
+test("две быстрые записи одного ключа: в таблицу уходит последняя, один вызов", async () => {
+  await fresh();
+  let release;
+  gasGate = new Promise((resolve) => { release = resolve; });
+  await save([{ date: "2026-09-21", student_id: "anna", status: "out" }]);
+  await save([{ date: "2026-09-21", student_id: "anna", status: "back" }]);
+  release();
+  await settleBackground();
+  const sent = gasCalls.flatMap((call) => JSON.parse(call.rows));
+  assert.equal(sent[sent.length - 1].status, "back");
+  assert.deepEqual(await outboxStats(), { pending: 0, dead: 0 });
+  assert.equal((await annaPlan()).body.items[0].status, "back");
+});
+
+test("параллельные сливы не дублируются: второй пропускается по блокировке", async () => {
+  await fresh();
+  let release;
+  gasGate = new Promise((resolve) => { release = resolve; });
+  await save([{ date: "2026-09-21", student_id: "anna", status: "out" }]);
+  await new Promise((resolve) => setTimeout(resolve, 20)); // первый слив держит блокировку
+  assert.deepEqual(await flushOutbox(), { skipped: true });
+  release();
+  await settleBackground();
+});
+
+test("снапшот, собранный до фоновой записи, не откатывает изменение водителя", async () => {
+  await fresh();
+  let release;
+  gasGate = new Promise((resolve) => { release = resolve; });
+  await save([{ date: "2026-09-21", student_id: "anna", status: "out" }]);
+
+  // Снапшот собран ПОСЛЕ записи водителя (builtAt свежий), но таблица ещё старая: в плане нет строки anna
+  const staleButNewer = snapshotBody({ builtAt: new Date(Date.now() + 1000).toISOString(), plan: [] });
+  const synced = await call(sync, { method: "POST", headers: syncAuth, body: staleButNewer });
+  assert.equal(synced.statusCode, 200);
+  assert.equal((await annaPlan()).body.items[0].status, "out");
+  release();
+  await settleBackground();
 });
 
 test("sync не затирает запись Vercel, сделанную позже снапшота, но применяет остальное", async () => {
@@ -241,5 +358,25 @@ test("Redis недоступен: schedule даёт 503 store_unavailable (кл�
 test("снапшот пишется с TTL, чтобы отключённая синхронизация не оставляла устаревшие данные", async () => {
   setOptions.length = 0;
   await call(sync, { method: "POST", headers: syncAuth, body: snapshotBody() });
-  assert.deepEqual(setOptions, [{ EX: 1800 }]);
+  assert.ok(setOptions.some((options) => options?.EX === 1800));
+});
+
+test("записи в одну и ту же миллисекунду не перезаписывают друг друга в очереди", async () => {
+  await fresh();
+  const realNow = Date.now;
+  Date.now = () => 1790000000000;
+  try {
+    let release;
+    gasGate = new Promise((resolve) => { release = resolve; });
+    await save([{ date: "2026-09-21", student_id: "anna", status: "out" }]);
+    await save([{ date: "2026-09-21", student_id: "anna", status: "back" }]);
+    assert.equal((await outboxStats()).pending, 2);
+    release();
+    await settleBackground();
+  } finally {
+    Date.now = realNow;
+  }
+  const sent = gasCalls.flatMap((c) => JSON.parse(c.rows));
+  assert.equal(sent[sent.length - 1].status, "back");
+  assert.deepEqual(await outboxStats(), { pending: 0, dead: 0 });
 });
