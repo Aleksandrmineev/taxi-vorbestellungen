@@ -22,7 +22,7 @@ function fixture() {
       return format === 'HH' ? parts.hour : `${parts.year}-${parts.month}-${parts.day}`;
     } },
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => props.get(k), setProperty: (k,v) => props.set(k,v), deleteProperty: k => props.delete(k) }) },
-    SpreadsheetApp: { getActive: () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [['report_date','shift','route','timestamp'], ...(rows || defaultRows())] }) }) }) },
+    SpreadsheetApp: { getActive: () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [['report_date','shift','route','timestamp','deletion_status'], ...(rows || defaultRows())] }) }) }) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
     orderNotificationConfig_: () => ({ key: 'mock', secret: 'mock', notifyPhoneDay: '+431234' }),
     sendZadarmaSms_: (...args) => { calls.push(args); if (fail) throw Error('timeout'); return { status: 'success' }; },
@@ -372,4 +372,46 @@ test('a report with an invalid date sent that day still counts as a working day 
   const message = f.ctx.previewLehrlingeAfternoon().message;
   assert.match(message, /Berichtsdatum fehlt/);
   assert.match(message, /16\.09\. Nachmittag R1: fehlt/);
+});
+
+/* ---------- Zum Löschen markierte Zeilen (deletion_status = DELETE) ---------- */
+test('a duplicate marked DELETE is not a duplicate any more (case and spaces do not matter)', () => {
+  for (const mark of ['DELETE', 'delete', ' Delete ']) {
+    const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+    f.setNow('2026-09-16T15:01:00Z');
+    f.setRows([...full('2026-09-15'), ...full('2026-09-14'), ...full('2026-09-11'),
+      ...full('2026-09-16'), ['2026-09-16', 'Nachmittag', 1, '', mark]]); // Doppel, zum Löschen markiert
+    assert.equal(f.ctx.previewLehrlingeAfternoon().message, '', mark);
+  }
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  f.setNow('2026-09-16T15:01:00Z');
+  f.setRows([...full('2026-09-15'), ...full('2026-09-14'), ...full('2026-09-11'), ...full('2026-09-16'), ['2026-09-16', 'Nachmittag', 1, '', '']]);
+  assert.match(f.ctx.previewLehrlingeAfternoon().message, /16\.09\. Nachmittag R1: 2 Berichte \(doppelt\)/); // ohne Markierung weiter Doppel
+});
+
+test('the marked row is ignored, not the good one: only-marked report counts as missing', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  f.setNow('2026-09-16T15:01:00Z');
+  const rows = [...full('2026-09-15'), ...full('2026-09-14'), ...full('2026-09-11'), ...full('2026-09-16')];
+  rows[rows.length - 1] = ['2026-09-16', 'Nachmittag', 2, '', 'DELETE']; // einziger R2-Bericht ist zum Löschen markiert
+  f.setRows(rows);
+  assert.deepEqual([...f.ctx.previewLehrlingeAfternoon().issues], ['16.09. Nachmittag R2: fehlt']);
+});
+
+test('a day whose reports are all marked DELETE counts as a day without reports (day off)', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  f.setNow('2026-09-16T15:01:00Z');
+  const deleted = full('2026-09-15').map(row => [...row, 'DELETE']);
+  f.setRows([...deleted, ...full('2026-09-14'), ...full('2026-09-11'), ['2026-09-16', 'Früh', 1, '']]);
+  const issues = [...f.ctx.previewLehrlingeAfternoon().issues];
+  assert.ok(!issues.some(x => x.startsWith('15.09.')));
+  assert.ok(issues.some(x => x.startsWith('16.09. Nachmittag')));
+});
+
+test('sheets without a deletion_status column keep working', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  const old = f.ctx.SpreadsheetApp.getActive;
+  f.ctx.SpreadsheetApp.getActive = () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [['report_date','shift','route','timestamp'], ...full('2026-09-15'), ...full('2026-09-14'), ...full('2026-09-11'), ['2026-09-16','Früh',1,'']] }) }) });
+  assert.deepEqual([...f.ctx.previewLehrlingeMorning().issues], ['16.09. Früh R2: fehlt']);
+  f.ctx.SpreadsheetApp.getActive = old;
 });

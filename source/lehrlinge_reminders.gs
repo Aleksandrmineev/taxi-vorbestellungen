@@ -132,7 +132,10 @@ function lrPreview_(now, slot) {
     const row = { row_num: index + 2 };
     headers.forEach((h, i) => { row[h] = r[i]; });
     return row;
-  });
+  })
+    // Zeilen mit deletion_status = DELETE (in der Tabelle/„Letzte Sendungen“ zum Löschen markiert) sind keine Berichte:
+    // sie zählen weder als Doppelt noch als vorhandener Bericht (wie submissionMarkedForDeletion_ im Hauptmodul).
+    .filter(row => String(row.deletion_status || '').trim().toUpperCase() !== 'DELETE');
   const issues = lrIssues_(rows, targets);
   const liveFrom = props.getProperty(LR_PREFIX_ + 'LIVE_FROM') || '';
   if (liveFrom && !lrDate_(liveFrom)) throw new Error('Invalid Lehrlinge LIVE_FROM date');
