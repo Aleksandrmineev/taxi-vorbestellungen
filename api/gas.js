@@ -1,4 +1,17 @@
 // /api/gas.js — прокси к Google Apps Script Web App
+import { issueDriverJwt } from './_lib/driver-jwt.js';
+
+const DRIVER_SESSION_ACTIONS = new Set(['driver_login', 'driver_register', 'driver_pin_reset']);
+
+// К ответу входа водителя добавляем jwt (для /api/lehrlinge/*). Поле token остаётся как было.
+function withDriverJwt(action, data) {
+  try {
+    if (DRIVER_SESSION_ACTIONS.has(String(action || '').toLowerCase()) && data && data.ok !== false && data.token && data.driver) {
+      return { ...data, jwt: issueDriverJwt(data.driver) };
+    }
+  } catch (_) { /* JWT не настроен — вход работает как раньше */ }
+  return data;
+}
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -53,7 +66,7 @@ export default async function handler(req, res) {
           upstream_body: txt,
         });
       }
-      try { return res.status(r.status).json(JSON.parse(txt)); }
+      try { return res.status(r.status).json(withDriverJwt(req.body?.action, JSON.parse(txt))); }
       catch { return res.status(r.status).send(txt); }
     }
 

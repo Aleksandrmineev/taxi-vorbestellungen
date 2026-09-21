@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/Aleksandrmineev/taxi-vorbestellungen#readme",
   "dependencies": {
+    "redis": "^6.2.1",
     "web-push": "^3.6.7"
   }
 }
