@@ -8,7 +8,7 @@ function fixture() {
   const props = new Map();
   const calls = [];
   const waCalls = [];
-  let rows = [];
+  let rows = null; // null = realistic default relative to "now": last 3 workdays complete, today only Früh R1
   let fail = false;
   let waFail = false;
   let waImpl = null;
@@ -22,7 +22,7 @@ function fixture() {
       return format === 'HH' ? parts.hour : `${parts.year}-${parts.month}-${parts.day}`;
     } },
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => props.get(k), setProperty: (k,v) => props.set(k,v), deleteProperty: k => props.delete(k) }) },
-    SpreadsheetApp: { getActive: () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [['report_date','shift','route','timestamp'], ...rows] }) }) }) },
+    SpreadsheetApp: { getActive: () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [['report_date','shift','route','timestamp'], ...(rows || defaultRows())] }) }) }) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
     orderNotificationConfig_: () => ({ key: 'mock', secret: 'mock', notifyPhoneDay: '+431234' }),
     sendZadarmaSms_: (...args) => { calls.push(args); if (fail) throw Error('timeout'); return { status: 'success' }; },
@@ -35,6 +35,18 @@ function fixture() {
     },
   });
   vm.runInContext(source, ctx);
+  function defaultRows() {
+    const today = ctx.lrDate_(new Clock());
+    const out = [[today, 'Früh', 1, '']];
+    let day = today, found = 0;
+    for (let guard = 0; found < 3 && guard < 30; guard++) {
+      day = ctx.lrOffset_(day, -1);
+      if (!ctx.lrWorking_(day, [])) continue;
+      found += 1;
+      for (const shift of ['Früh', 'Nachmittag']) for (const route of [1, 2]) out.push([day, shift, route, '']);
+    }
+    return out;
+  }
   return { ctx, props, calls, waCalls, setRows: r => { rows = r; }, setNow: n => { now = n; }, fail: () => { fail = true; }, failWa: () => { waFail = true; }, setWa: fn => { waImpl = fn; }, triggers, noBot: () => { botConfigured = false; } };
 }
 test('national holidays, weekends, Easter and valid dates', () => {
@@ -267,18 +279,20 @@ test('setupLehrlingeWhatsAppLive refuses to switch when the WhatsApp bot is not 
 
 test('errors of the last 3 workdays are all in one message, oldest not dropped', () => {
   const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
-  // Wednesday 16.09. 09:00: Tue, Mon and Fri (across the weekend) are checked
+  // Wednesday 16.09. 09:00: Tue, Mon and Fri (across the weekend) are checked; Friday only has Früh R1
   f.setRows(['2026-09-15','2026-09-14'].flatMap(date => ['Früh','Nachmittag'].flatMap(shift => [1,2].map(route => [date,shift,route,''])))
-    .concat([['2026-09-16','Früh',1,''],['2026-09-16','Früh',2,'']]));
+    .concat([['2026-09-11','Früh',1,''], ['2026-09-16','Früh',1,''],['2026-09-16','Früh',2,'']]));
   const preview = f.ctx.previewLehrlingeMorning();
-  assert.equal(preview.issues.length, 4); // nur Freitag 11.09.: Früh/Nachmittag R1/R2 fehlen
-  assert.match(preview.message, /11\.09\. Früh R1: fehlt/);
+  assert.equal(preview.issues.length, 3); // nur Freitag 11.09.: Früh R2, Nachmittag R1/R2
+  assert.match(preview.message, /11\.09\. Früh R2: fehlt/);
   assert.match(preview.message, /11\.09\. Nachmittag R2: fehlt/);
   assert.doesNotMatch(preview.message, /10\.09\./); // nur 3 Arbeitstage zurück
 });
 
 test('PREVIOUS_DAYS property changes the window; invalid value stops sending', () => {
-  const f = fixture(); enable(f, { PREVIOUS_DAYS: '1' });
+  const partial = (date) => [[date, 'Früh', 1, '']];
+  const rows = [...partial('2026-09-14'), ...partial('2026-09-15'), ...partial('2026-09-16')];
+  const f = fixture(); enable(f, { PREVIOUS_DAYS: '1' }); f.setRows(rows);
   const days = new Set([...f.ctx.previewLehrlingeMorning().issues].map(x => x.slice(0, 6)));
   assert.deepEqual([...days].sort(), ['15.09.','16.09.']);
   for (const bad of ['-1', '11', 'abc', '1.5']) {
@@ -286,4 +300,76 @@ test('PREVIOUS_DAYS property changes the window; invalid value stops sending', (
     assert.throws(() => g.ctx.processLehrlingeReminders(), /Invalid LEHRLINGE_REMINDERS_PREVIOUS_DAYS/, bad);
     assert.equal(g.calls.length + g.waCalls.length, 0);
   }
+});
+
+/* ---------- Tage ohne jeden Bericht = freie Tage ---------- */
+const full = (date) => ['Früh','Nachmittag'].flatMap(shift => [1,2].map(route => [date, shift, route, '']));
+
+test('09:00, no report yet today but yesterday had reports: reminder as usual', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  f.setRows([...full('2026-09-15'), ...full('2026-09-14'), ...full('2026-09-11')]);
+  const preview = f.ctx.previewLehrlingeMorning();
+  assert.deepEqual([...preview.issues], ['16.09. Früh R1: fehlt', '16.09. Früh R2: fehlt']);
+  f.ctx.processLehrlingeReminders();
+  assert.equal(f.waCalls.length, 1);
+});
+
+test('09:00, nothing today and the previous workday was empty too: vacation continues, no reminder', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  f.setRows([...full('2026-09-11'), ...full('2026-09-10')]); // 14. und 15.09. leer
+  assert.equal(f.ctx.previewLehrlingeMorning().message, '');
+  f.ctx.processLehrlingeReminders();
+  assert.equal(f.waCalls.length, 0);
+});
+
+test('09:00 after a weekend: empty Friday and empty Monday morning are silent, a Friday with reports is checked', () => {
+  const silent = fixture(); enable(silent, { MODE: 'live', CHANNELS: 'whatsapp' });
+  silent.setNow('2026-09-14T07:01:00Z'); // Montag
+  silent.setRows(full('2026-09-10')); // Freitag 11.09. leer
+  assert.equal(silent.ctx.previewLehrlingeMorning().message, '');
+  const nag = fixture(); enable(nag, { MODE: 'live', CHANNELS: 'whatsapp' });
+  nag.setNow('2026-09-14T07:01:00Z');
+  nag.setRows([...full('2026-09-11'), ...full('2026-09-10'), ...full('2026-09-09')]);
+  assert.match(nag.ctx.previewLehrlingeMorning().message, /14\.09\. Früh R1: fehlt/);
+});
+
+test('09:00: reports already sent today make it a working day even after an empty day', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  f.setRows([['2026-09-16', 'Früh', 1, '']]); // gestern leer, heute kommt einer
+  assert.deepEqual([...f.ctx.previewLehrlingeMorning().issues], ['16.09. Früh R2: fehlt']);
+});
+
+test('17:00, no report at all today: day off, no reminder; one report today keeps normal reminders', () => {
+  const off = fixture(); enable(off, { MODE: 'live', CHANNELS: 'whatsapp' });
+  off.setNow('2026-09-16T15:01:00Z');
+  off.setRows([...full('2026-09-15'), ...full('2026-09-14'), ...full('2026-09-11')]);
+  assert.equal(off.ctx.previewLehrlingeAfternoon().message, '');
+  off.ctx.processLehrlingeReminders(); assert.equal(off.waCalls.length, 0);
+
+  const some = fixture(); enable(some, { MODE: 'live', CHANNELS: 'whatsapp' });
+  some.setNow('2026-09-16T15:01:00Z');
+  some.setRows([...full('2026-09-15'), ...full('2026-09-14'), ...full('2026-09-11'), ['2026-09-16', 'Früh', 1, '']]);
+  assert.match(some.ctx.previewLehrlingeAfternoon().message, /16\.09\. Nachmittag R1: fehlt/);
+});
+
+test('an empty day inside the window is skipped, partial days around it are still reported', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  f.setNow('2026-09-17T15:01:00Z'); // Donnerstag 17:00
+  // 16.09. leer (frei), 15.09. nur Früh R1, 14.09. vollständig, heute Früh komplett, Nachmittag fehlt
+  f.setRows([['2026-09-15','Früh',1,''], ...full('2026-09-14'),
+    ['2026-09-17','Früh',1,''], ['2026-09-17','Früh',2,'']]);
+  const issues = [...f.ctx.previewLehrlingeAfternoon().issues];
+  assert.ok(issues.some(x => x.startsWith('17.09. Nachmittag R1')));
+  assert.ok(issues.some(x => x.startsWith('15.09. Früh R2')));
+  assert.ok(!issues.some(x => x.startsWith('16.09.')));
+});
+
+test('a report with an invalid date sent that day still counts as a working day (and is flagged)', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  f.setNow('2026-09-16T15:01:00Z');
+  const stamp = new f.ctx.Date('2026-09-16T08:00:00Z');
+  f.setRows([...full('2026-09-15'), ...full('2026-09-14'), ...full('2026-09-11'), ['', 'Früh', 1, stamp]]);
+  const message = f.ctx.previewLehrlingeAfternoon().message;
+  assert.match(message, /Berichtsdatum fehlt/);
+  assert.match(message, /16\.09\. Nachmittag R1: fehlt/);
 });

@@ -53,21 +53,35 @@ function lrWorking_(date, excluded) {
 
 // Heute (09:00 nur Früh, 17:00 Früh und Nachmittag) plus die letzten `previousDays` Arbeitstage (ganze Tage).
 // Wochenenden und Feiertage werden übersprungen, sie unterbrechen das Fenster nicht.
+// Tage ganz ohne Berichte gelten als frei (Ferien, Brückentag), siehe lrIssues_:
+//  - vergangene Tage ohne jeden Bericht werden nicht geprüft;
+//  - heute 17:00 ohne jeden Bericht: freier Tag, keine Erinnerung;
+//  - heute 09:00 ohne Bericht, aber schon der vorige Arbeitstag war leer: die freie Zeit dauert vermutlich an, keine Erinnerung.
 function lrTargets_(today, slot, excluded, previousDays) {
   if (!lrWorking_(today, excluded)) return [];
   const wanted = previousDays === undefined ? LR_DEFAULT_PREVIOUS_DAYS_ : previousDays;
-  const result = [{ date: today, shifts: slot === '09' ? ['Früh'] : ['Früh', 'Nachmittag'] }];
+  const todayTarget = { date: today, shifts: slot === '09' ? ['Früh'] : ['Früh', 'Nachmittag'], skipIfNoReports: slot === '17' };
+  const result = [todayTarget];
   let cursor = today;
-  for (let guard = 0; result.length - 1 < wanted && guard < 60; guard++) {
+  let previousWorkday = '';
+  for (let guard = 0; guard < 60 && (!previousWorkday || result.length - 1 < wanted); guard++) {
     cursor = lrOffset_(cursor, -1);
-    if (lrWorking_(cursor, excluded)) result.push({ date: cursor, shifts: ['Früh', 'Nachmittag'] });
+    if (!lrWorking_(cursor, excluded)) continue;
+    if (!previousWorkday) previousWorkday = cursor;
+    if (result.length - 1 < wanted) result.push({ date: cursor, shifts: ['Früh', 'Nachmittag'], skipIfNoReports: true });
   }
+  if (slot === '09' && previousWorkday) todayTarget.skipIfPreviousEmpty = previousWorkday;
   return result;
 }
 
 function lrIssues_(rows, targets) {
   const issues = [];
+  // Ein Bericht (auch mit ungültigem Datum, aber an diesem Tag gesendet) heißt: es wurde gefahren.
+  const hasReports = date => rows.some(row => lrDate_(row.report_date) === date ||
+    (!lrDate_(row.report_date) && lrDate_(row.timestamp) === date));
   targets.forEach(target => {
+    if (target.skipIfNoReports && !hasReports(target.date)) return; // freier Tag: keine Erinnerung
+    if (target.skipIfPreviousEmpty && !hasReports(target.date) && !hasReports(target.skipIfPreviousEmpty)) return;
     const dateLabel = target.date.slice(8) + '.' + target.date.slice(5, 7) + '.';
     const relevant = rows.filter(row => lrDate_(row.report_date) === target.date);
     rows.filter(row => !lrDate_(row.report_date) && lrDate_(row.timestamp) === target.date).forEach(row => {
