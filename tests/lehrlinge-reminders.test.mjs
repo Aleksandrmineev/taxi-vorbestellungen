@@ -415,3 +415,21 @@ test('sheets without a deletion_status column keep working', () => {
   assert.deepEqual([...f.ctx.previewLehrlingeMorning().issues], ['16.09. Früh R2: fehlt']);
   f.ctx.SpreadsheetApp.getActive = old;
 });
+
+test('preview reports how many DELETE rows were ignored and whether the column exists', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  f.setNow('2026-09-16T15:01:00Z');
+  f.setRows([...full('2026-09-15'), ...full('2026-09-14'), ...full('2026-09-11'), ...full('2026-09-16'),
+    ['2026-09-16', 'Nachmittag', 1, '', 'DELETE'], ['2026-09-15', 'Früh', 2, '', 'delete']]);
+  const preview = f.ctx.previewLehrlingeAfternoon();
+  assert.equal(preview.deletion.deletionColumn, true);
+  assert.equal(preview.deletion.ignoredDeleted, 2);
+  assert.equal(preview.deletion.headers, undefined);
+
+  const g = fixture(); enable(g, { MODE: 'live', CHANNELS: 'whatsapp' });
+  g.ctx.SpreadsheetApp.getActive = () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [['report_date','shift','route','timestamp','Deletion Status'], ['2026-09-16','Früh',1,'','DELETE']] }) }) });
+  const missing = g.ctx.previewLehrlingeMorning();
+  assert.equal(missing.deletion.deletionColumn, false);
+  assert.deepEqual([...missing.deletion.headers], ['report_date','shift','route','timestamp','Deletion Status']);
+  assert.equal(missing.deletion.ignoredDeleted, 0);
+});

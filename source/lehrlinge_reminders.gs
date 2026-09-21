@@ -128,14 +128,17 @@ function lrPreview_(now, slot) {
   ['report_date', 'shift', 'route', 'timestamp'].forEach(h => {
     if (!headers.includes(h)) throw new Error('Missing Submissions column: ' + h);
   });
-  const rows = values.slice(1).map((r, index) => {
+  const allRows = values.slice(1).map((r, index) => {
     const row = { row_num: index + 2 };
     headers.forEach((h, i) => { row[h] = r[i]; });
     return row;
-  })
-    // Zeilen mit deletion_status = DELETE (in der Tabelle/„Letzte Sendungen“ zum Löschen markiert) sind keine Berichte:
-    // sie zählen weder als Doppelt noch als vorhandener Bericht (wie submissionMarkedForDeletion_ im Hauptmodul).
-    .filter(row => String(row.deletion_status || '').trim().toUpperCase() !== 'DELETE');
+  });
+  // Zeilen mit deletion_status = DELETE (in der Tabelle/„Letzte Sendungen“ zum Löschen markiert) sind keine Berichte:
+  // sie zählen weder als Doppelt noch als vorhandener Bericht (wie submissionMarkedForDeletion_ im Hauptmodul).
+  const rows = allRows.filter(row => String(row.deletion_status || '').trim().toUpperCase() !== 'DELETE');
+  const deletion = { deletionColumn: headers.includes('deletion_status'), ignoredDeleted: allRows.length - rows.length };
+  // Diagnose: fehlt die Spalte, hier die Spaltennamen zeigen (Tippfehler/Leerzeichen im Kopf erkennen).
+  if (!deletion.deletionColumn) deletion.headers = headers;
   const issues = lrIssues_(rows, targets);
   const liveFrom = props.getProperty(LR_PREFIX_ + 'LIVE_FROM') || '';
   if (liveFrom && !lrDate_(liveFrom)) throw new Error('Invalid Lehrlinge LIVE_FROM date');
@@ -146,7 +149,7 @@ function lrPreview_(now, slot) {
   // Ohne SMS-Kanal werden weder Empfänger noch Tagesnummer gebraucht.
   const phones = !channels.sms ? [] : mode === 'test' ? ['+4368181289405'] : [...new Set([orderNotificationConfig_().notifyPhoneDay, copyPhone].filter(Boolean))];
   if (mode === 'live' && channels.sms && !orderNotificationConfig_().notifyPhoneDay) throw new Error('Day phone missing');
-  return { today: today, slot: slot, mode: mode, channels: channels, phones: phones,
+  return { today: today, slot: slot, mode: mode, channels: channels, deletion: deletion, phones: phones,
     whatsappTarget: channels.whatsapp ? lrWhatsAppTarget_(mode) : null, targets: targets, issues: issues,
     message: issues.length ? (mode === 'test' ? '[TEST] ' : '') + 'Lehrlinge:\n' + issues.join('\n') + '\nBitte Berichte ergänzen/korrigieren.' : '' };
 }
