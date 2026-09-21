@@ -6,6 +6,7 @@ const LR_WHATSAPP_TEST_TARGET_ = '4368181289405';
 const LR_WHATSAPP_GROUP_JID_ = '436506367662-1552028657@g.us'; // Pöls Lehrlinge-wer fährt?
 
 const LR_WA_MAX_ATTEMPTS_ = 3;
+const LR_DEFAULT_PREVIOUS_DAYS_ = 3; // Script Property LEHRLINGE_REMINDERS_PREVIOUS_DAYS (0-10)
 
 // Kanäle: Script Property LEHRLINGE_REMINDERS_CHANNELS = "sms,whatsapp" (Standard) | "whatsapp" | "sms".
 function lrChannels_(props) {
@@ -50,17 +51,16 @@ function lrWorking_(date, excluded) {
   return day !== 0 && day !== 6 && !lrHolidays_(Number(date.slice(0, 4))).includes(date) && !excluded.includes(date);
 }
 
-function lrTargets_(today, slot, excluded) {
+// Heute (09:00 nur Früh, 17:00 Früh und Nachmittag) plus die letzten `previousDays` Arbeitstage (ganze Tage).
+// Wochenenden und Feiertage werden übersprungen, sie unterbrechen das Fenster nicht.
+function lrTargets_(today, slot, excluded, previousDays) {
   if (!lrWorking_(today, excluded)) return [];
+  const wanted = previousDays === undefined ? LR_DEFAULT_PREVIOUS_DAYS_ : previousDays;
   const result = [{ date: today, shifts: slot === '09' ? ['Früh'] : ['Früh', 'Nachmittag'] }];
-  // Never carry reports across a weekend, including holiday Mondays.
-  let previous = lrOffset_(today, -1);
-  while (![0, 6].includes(new Date(previous + 'T12:00:00Z').getUTCDay())) {
-    if (lrWorking_(previous, excluded)) {
-      result.push({ date: previous, shifts: ['Früh', 'Nachmittag'] });
-      break;
-    }
-    previous = lrOffset_(previous, -1);
+  let cursor = today;
+  for (let guard = 0; result.length - 1 < wanted && guard < 60; guard++) {
+    cursor = lrOffset_(cursor, -1);
+    if (lrWorking_(cursor, excluded)) result.push({ date: cursor, shifts: ['Früh', 'Nachmittag'] });
   }
   return result;
 }
@@ -100,7 +100,10 @@ function lrPreview_(now, slot) {
   const excluded = String(props.getProperty(LR_PREFIX_ + 'EXCLUDED_DATES') || '').split(',').map(s => s.trim()).filter(Boolean);
   if (excluded.some(s => !lrDate_(s))) throw new Error('Invalid LEHRLINGE_REMINDERS_EXCLUDED_DATES');
   const today = lrDate_(now);
-  const targets = lrTargets_(today, slot, excluded);
+  const previousRaw = String(props.getProperty(LR_PREFIX_ + 'PREVIOUS_DAYS') || '').trim();
+  const previousDays = previousRaw === '' ? LR_DEFAULT_PREVIOUS_DAYS_ : Number(previousRaw);
+  if (!Number.isInteger(previousDays) || previousDays < 0 || previousDays > 10) throw new Error('Invalid LEHRLINGE_REMINDERS_PREVIOUS_DAYS');
+  const targets = lrTargets_(today, slot, excluded, previousDays);
   if (!targets.length) return { today: today, slot: slot, issues: [], message: '' };
   const ss = SpreadsheetApp.getActive();
   if (!ss) throw new Error('Lehrlinge spreadsheet unavailable');

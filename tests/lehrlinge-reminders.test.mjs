@@ -44,13 +44,25 @@ test('national holidays, weekends, Easter and valid dates', () => {
   assert.equal(c.lrWorking_('2026-09-16', ['2026-09-16']), false);
   assert.equal(c.lrDate_('2026-02-30'), '');
 });
-test('previous workday stays within current week, including holiday Monday', () => {
+test('window = today + last 3 workdays; weekends and holidays are skipped, not a barrier', () => {
   const {ctx:c} = fixture();
-  assert.equal(c.lrTargets_('2026-09-14','09',[]).length, 1);
-  assert.equal(c.lrTargets_('2026-04-07','17',[]).length, 1);
-  assert.equal(c.lrTargets_('2026-05-15','17',[])[1].date, '2026-05-13');
-  assert.equal(c.lrTargets_('2026-09-16','09',[])[1].date, '2026-09-15');
-  assert.equal(c.lrTargets_('2026-10-26','09',[]).length, 0);
+  const dates = (today, slot='17', excluded=[], previous) => [...c.lrTargets_(today, slot, excluded, previous)].map(x => x.date);
+  // Monday: Fri, Thu, Wed of the previous week
+  assert.deepEqual(dates('2026-09-14'), ['2026-09-14','2026-09-11','2026-09-10','2026-09-09']);
+  // Wednesday: Tue, Mon, and Fri across the weekend
+  assert.deepEqual(dates('2026-09-16'), ['2026-09-16','2026-09-15','2026-09-14','2026-09-11']);
+  // Tuesday after Easter Monday: holiday is skipped
+  assert.deepEqual(dates('2026-04-07'), ['2026-04-07','2026-04-03','2026-04-02','2026-04-01']);
+  // excluded dates (e.g. school holidays) are skipped as well
+  assert.deepEqual(dates('2026-09-16','17',['2026-09-15','2026-09-14']), ['2026-09-16','2026-09-11','2026-09-10','2026-09-09']);
+  // explicit window sizes
+  assert.deepEqual(dates('2026-09-16','17',[],1), ['2026-09-16','2026-09-15']);
+  assert.deepEqual(dates('2026-09-16','17',[],0), ['2026-09-16']);
+  // nothing on weekends and holidays
+  assert.deepEqual(dates('2026-09-19'), []); assert.deepEqual(dates('2026-10-26'), []);
+  // shifts: morning check looks at today's Früh only; previous days are complete
+  const morning = c.lrTargets_('2026-09-16','09',[]);
+  assert.deepEqual([...morning[0].shifts], ['Früh']); assert.deepEqual([...morning[1].shifts], ['Früh','Nachmittag']);
 });
 test('missing, duplicate, corrected reports and afternoon recheck', () => {
   const {ctx:c} = fixture();
@@ -88,7 +100,7 @@ test('uncertain delivery is recorded and not automatically resent', () => {
 });
 test('preview does not send; correct reports do not send', () => {
   const f=fixture();
-  f.setRows(['2026-09-15','2026-09-16'].flatMap(date => ['Früh','Nachmittag'].flatMap(shift => [1,2].map(route => [date,shift,route,'']))));
+  f.setRows(['2026-09-11','2026-09-14','2026-09-15','2026-09-16'].flatMap(date => ['Früh','Nachmittag'].flatMap(shift => [1,2].map(route => [date,shift,route,'']))));
   assert.equal(f.ctx.previewLehrlingeMorning().message,'');
   f.props.set('LEHRLINGE_REMINDERS_ENABLED','true'); f.ctx.processLehrlingeReminders();
   assert.equal(f.calls.length,0);
@@ -251,4 +263,27 @@ test('setupLehrlingeWhatsAppLive refuses to switch when the WhatsApp bot is not 
   assert.throws(() => f.ctx.setupLehrlingeWhatsAppLive(), /mineev-bot not configured/);
   assert.equal(f.props.get('LEHRLINGE_REMINDERS_CHANNELS'), undefined);
   assert.equal(f.triggers.length, 0);
+});
+
+test('errors of the last 3 workdays are all in one message, oldest not dropped', () => {
+  const f = fixture(); enable(f, { MODE: 'live', CHANNELS: 'whatsapp' });
+  // Wednesday 16.09. 09:00: Tue, Mon and Fri (across the weekend) are checked
+  f.setRows(['2026-09-15','2026-09-14'].flatMap(date => ['Früh','Nachmittag'].flatMap(shift => [1,2].map(route => [date,shift,route,''])))
+    .concat([['2026-09-16','Früh',1,''],['2026-09-16','Früh',2,'']]));
+  const preview = f.ctx.previewLehrlingeMorning();
+  assert.equal(preview.issues.length, 4); // nur Freitag 11.09.: Früh/Nachmittag R1/R2 fehlen
+  assert.match(preview.message, /11\.09\. Früh R1: fehlt/);
+  assert.match(preview.message, /11\.09\. Nachmittag R2: fehlt/);
+  assert.doesNotMatch(preview.message, /10\.09\./); // nur 3 Arbeitstage zurück
+});
+
+test('PREVIOUS_DAYS property changes the window; invalid value stops sending', () => {
+  const f = fixture(); enable(f, { PREVIOUS_DAYS: '1' });
+  const days = new Set([...f.ctx.previewLehrlingeMorning().issues].map(x => x.slice(0, 6)));
+  assert.deepEqual([...days].sort(), ['15.09.','16.09.']);
+  for (const bad of ['-1', '11', 'abc', '1.5']) {
+    const g = fixture(); enable(g, { PREVIOUS_DAYS: bad });
+    assert.throws(() => g.ctx.processLehrlingeReminders(), /Invalid LEHRLINGE_REMINDERS_PREVIOUS_DAYS/, bad);
+    assert.equal(g.calls.length + g.waCalls.length, 0);
+  }
 });
