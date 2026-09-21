@@ -365,7 +365,7 @@ function saveLehrlingeDriverPlan_(body, driver) {
   return saveLehrlingePlan_({
     rows: JSON.stringify(normalized),
     holidays: String(body.holidays || "[]"),
-    updatedBy: "driver:" + String(driver.taxiNumber || driver.id || "unknown"),
+    updatedBy: (driver.id === "shared" ? "portal:" : "driver:") + String(driver.taxiNumber || driver.id || "unknown"),
   });
 }
 

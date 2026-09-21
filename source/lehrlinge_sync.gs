@@ -29,6 +29,8 @@ function requireTrustedDriver_(body) {
   if (!config || !key || key !== config.secret) throw new Error("driver_auth_required");
   let claimed;
   try { claimed = JSON.parse(String(body.driverJson || "{}")); } catch (_) { throw new Error("driver_auth_required"); }
+  // Общий пробный доступ учеников (см. api/lehrlinge/shared-login.js): нет строки в Drivers, права проверил Vercel.
+  if (claimed && claimed.id === "shared") return { id: "shared", name: "Lehrlinge", surname: "", taxiNumber: "lehrlinge", active: "1" };
   const driver = getDriverAuthRecordById_(String((claimed && claimed.id) || "").trim());
   if (!driver || driver.active !== "1") throw new Error("driver_auth_required");
   return driver;

@@ -4,7 +4,8 @@
 // не перезаписывают ожидающие строки.
 import { enqueueOutbox, readState, upsertPlanRows } from "../_lib/lehrlinge-store.js";
 import { getDriverStudents } from "../_lib/lehrlinge-schedule.js";
-import { cors, fail, requireDriver } from "../_lib/http.js";
+import { cors, fail, requireAccess } from "../_lib/http.js";
+import { assertCutoffsOpen } from "../_lib/lehrlinge-cutoff.js";
 import { flushOutbox } from "../_lib/lehrlinge-outbox.js";
 import { background } from "../_lib/background.js";
 
@@ -17,8 +18,8 @@ export default async function handler(req, res) {
   if (cors(req, res)) return;
   if (req.method !== "POST") return res.status(405).json({ ok: false, error: "method_not_allowed" });
   try {
-    const { snapshot } = await readState();
-    const driver = requireDriver(req, snapshot);
+    const { snapshot, plan } = await readState();
+    const driver = requireAccess(req, snapshot);
     const body = req.body || {};
     const requested = Array.isArray(body.rows) ? body.rows : null;
     if (!requested || requested.length > 400) throw new Error("invalid_plan_rows");
@@ -37,7 +38,10 @@ export default async function handler(req, res) {
       return { date, student_id: studentId, status, note: String(item?.note || "").trim() };
     });
 
-    const updatedBy = "driver:" + String(driver.taxiNumber || driver.id || "unknown");
+    // Общий доступ учеников: сроки изменений проверяет сервер (у водителей, как раньше, только интерфейс).
+    if (driver.role === "shared") assertCutoffsOpen(rows, plan);
+
+    const updatedBy = driver.role === "shared" ? "portal:lehrlinge" : "driver:" + String(driver.taxiNumber || driver.id || "unknown");
     // Сначала намерение (очередь), потом видимое изменение (Redis). Если что-то из этого упадёт,
     // клиент получит 5xx и запишет напрямую через GAS.
     await enqueueOutbox(rows.map((row) => ({ row, driver, updatedBy, holidays })));

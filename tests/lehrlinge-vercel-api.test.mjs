@@ -15,6 +15,8 @@ const schedule = (await import("../api/lehrlinge/schedule.js")).default;
 const studentPlan = (await import("../api/lehrlinge/student-plan.js")).default;
 const planSave = (await import("../api/lehrlinge/plan-save.js")).default;
 const session = (await import("../api/lehrlinge/session.js")).default;
+const sharedLogin = (await import("../api/lehrlinge/shared-login.js")).default;
+const students = (await import("../api/lehrlinge/students.js")).default;
 
 /* ---------- Эмуляция Redis (подмножество API node-redis) ---------- */
 const kv = new Map();
@@ -35,6 +37,8 @@ const commands = {
     return "OK";
   },
   del: (key) => (kv.delete(key) ? 1 : 0),
+  incr: (key) => { const value = Number(kv.get(key) || 0) + 1; kv.set(key, String(value)); return value; },
+  expire: () => 1,
   hGetAll: (key) => Object.fromEntries(kv.get(key) || []),
   hLen: (key) => kv.get(key)?.size || 0,
   hSet: (key, fieldOrFields, value) => {
@@ -380,3 +384,99 @@ test("записи в одну и ту же миллисекунду не пер
   assert.equal(sent[sent.length - 1].status, "back");
   assert.deepEqual(await outboxStats(), { pending: 0, dead: 0 });
 });
+
+/* ---------- Общий пробный доступ учеников ---------- */
+const sharedEnv = () => { process.env.SHARED_LOGIN_PASSWORD = "8761"; };
+const loginCall = (body, ip = "1.2.3.4") => call(sharedLogin, { method: "POST", headers: { "x-forwarded-for": ip }, body });
+const sharedAuth = async () => {
+  sharedEnv();
+  const res = await loginCall({ login: "lehrlinge", password: "8761" });
+  return { authorization: `Bearer ${res.body.jwt}` };
+};
+
+test("shared-login: без SHARED_LOGIN_PASSWORD доступ выключен (503)", async () => {
+  delete process.env.SHARED_LOGIN_PASSWORD;
+  const res = await loginCall({ login: "lehrlinge", password: "8761" });
+  assert.equal(res.statusCode, 503);
+  assert.equal(res.body.error, "shared_access_disabled");
+});
+
+test("shared-login: верный логин/пароль даёт токен, неверные отклоняются, лимит попыток", async () => {
+  await fresh();
+  sharedEnv();
+  const ok = await loginCall({ login: "Lehrlinge", password: "8761" });
+  assert.equal(ok.statusCode, 200);
+  assert.equal(verifyJwt(ok.body.jwt).role, "shared");
+  assert.equal((await loginCall({ login: "lehrlinge", password: "0000" })).statusCode, 401);
+  assert.equal((await loginCall({ login: "admin", password: "8761" })).statusCode, 401);
+  // лимит: с одного IP не больше 10 попыток за окно
+  for (let i = 0; i < 12; i++) await loginCall({ login: "lehrlinge", password: "x" }, "9.9.9.9");
+  const blocked = await loginCall({ login: "lehrlinge", password: "8761" }, "9.9.9.9");
+  assert.equal(blocked.statusCode, 429);
+  assert.equal((await loginCall({ login: "lehrlinge", password: "8761" }, "5.5.5.5")).statusCode, 200); // другой IP не задет
+});
+
+test("общий доступ: список только id+имя, план без адреса, полное расписание запрещено", async () => {
+  await fresh();
+  const headers = await sharedAuth();
+  const list = await call(students, { headers });
+  assert.equal(list.statusCode, 200);
+  assert.deepEqual(list.body.students, [{ id: "anna", name: "Anna A" }, { id: "cara", name: "Cara C" }]);
+
+  const driverList = await call(students, { headers: auth() });
+  assert.equal(driverList.body.students[0].address, "Bahnhof 1"); // у водителя адрес остаётся
+
+  const plan = await call(studentPlan, { headers, query: { studentId: "anna", from: "2026-09-21", to: "2026-09-25" } });
+  assert.equal(plan.statusCode, 200);
+  assert.equal(plan.body.student.name, "Anna A");
+  assert.equal(plan.body.student.address, undefined);
+  assert.equal(plan.body.driver, undefined);
+
+  const sched = await call(schedule, { headers, query: { from: "2026-09-21", to: "2026-09-22" } });
+  assert.equal(sched.statusCode, 403);
+  assert.equal((await call(students, {})).statusCode, 401);
+});
+
+test("общий доступ: выключатель — после удаления env все токены перестают работать", async () => {
+  await fresh();
+  const headers = await sharedAuth();
+  assert.equal((await call(students, { headers })).statusCode, 200);
+  delete process.env.SHARED_LOGIN_PASSWORD;
+  assert.equal((await call(students, { headers })).statusCode, 401);
+});
+
+test("общий доступ: сохранение идёт через очередь как portal:lehrlinge; сервер проверяет сроки", async () => {
+  await fresh();
+  const headers = await sharedAuth();
+  const put = (date, status = "out") => call(planSave, { method: "POST", headers, body: { rows: [{ date, student_id: "anna", status }] } });
+
+  const future = await put("2099-01-05");
+  assert.equal(future.statusCode, 200);
+  await settleBackground();
+  assert.equal(gasCalls.length, 1);
+  assert.equal(JSON.parse(gasCalls[0].driverJson).id, "shared");
+  assert.equal(gasCalls[0].updatedBy, "portal:lehrlinge");
+  const plan = await call(studentPlan, { headers, query: { studentId: "anna", from: "2099-01-05", to: "2099-01-05" } });
+  assert.equal(plan.body.items[0].updated_by, "portal:lehrlinge");
+
+  gasCalls = [];
+  const past = await put("2020-01-06", "none"); // прошедший день: и Hin, и Zurück закрыты
+  assert.equal(past.statusCode, 400);
+  assert.equal(past.body.error, "morning_cutoff_passed");
+  const pastBack = await put("2020-01-06", "out"); // «both» -> «out»: меняется только Zurück
+  assert.equal(pastBack.body.error, "evening_cutoff_passed");
+  await settleBackground();
+  assert.equal(gasCalls.length, 0);
+  assert.equal((await annaPlanFor("2020-01-06")).body.items.length, 0);
+
+  // Изменение, не меняющее статус (both -> both) в прошлом, срок не нарушает
+  assert.equal((await put("2020-01-07", "both")).statusCode, 200);
+  // Водитель срок на сервере не проверяется (как раньше)
+  const driver = await call(planSave, { method: "POST", headers: auth(), body: { rows: [{ date: "2020-01-06", student_id: "anna", status: "out" }] } });
+  assert.equal(driver.statusCode, 200);
+  await settleBackground();
+});
+
+async function annaPlanFor(date) {
+  return call(studentPlan, { query: { studentId: "anna", from: date, to: date }, headers: auth() });
+}

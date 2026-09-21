@@ -208,3 +208,13 @@ export async function releaseOutboxLock(token) {
     if ((await db.get(LOCK_KEY)) === token) await db.del(LOCK_KEY);
   });
 }
+
+// Простой лимит попыток: не более `limit` обращений с ключом за `windowSec` секунд. Возвращает false, если лимит превышен.
+export async function allowAttempt(key, limit, windowSec) {
+  const count = await run(async (db) => {
+    const value = await db.incr(`lehrlinge:rl:${key}`);
+    if (value === 1) await db.expire(`lehrlinge:rl:${key}`, windowSec);
+    return value;
+  });
+  return count <= limit;
+}
