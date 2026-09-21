@@ -107,6 +107,7 @@ function pushLehrlingeSnapshot() {
   const result = JSON.parse(response.getContentText());
   // outbox.dead > 0: Vercel не смог записать изменения водителей в таблицу (см. Redis lehrlinge:outbox:dead).
   if (result.outbox && result.outbox.dead > 0) Logger.log("WARNUNG Lehrlinge outbox: " + result.outbox.dead + " abgelehnte Eintraege");
+  Logger.log("Lehrlinge sync: " + JSON.stringify(result)); // виден в журнале выполнения (редактор возвращаемое значение не показывает)
   return result;
 }
 
