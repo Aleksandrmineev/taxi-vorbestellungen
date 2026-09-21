@@ -5,10 +5,20 @@ Fahrtenplan читает данные из Redis, а не из Google Sheets. Т
 
 ```
 Sheet ──(GAS: lehrlinge_sync.gs)──▶ /api/lehrlinge/sync ──▶ Redis ◀── /api/lehrlinge/{schedule,student-plan}
-Schreiben: Browser ▶ /api/lehrlinge/plan-save ▶ GAS (Sheet) ▶ dann Redis
+Schreiben: Browser ▶ /api/lehrlinge/plan-save ▶ Redis + Outbox (sofort, ~0,2 s) ▶ im Hintergrund GAS ▶ Sheet
 ```
 
 Если Redis недоступен или пуст, клиент (`lehrlinge/driver-data.js`) сам переходит на прямой вызов GAS, как раньше.
+
+## Запись: очередь (outbox) / Schreiben
+
+`plan-save` отвечает водителю сразу: изменение попадает в Redis и в очередь `lehrlinge:outbox`, затем в фоне
+(`waitUntil`) уходит в таблицу через GAS. Таблица остаётся источником правды, но с задержкой в секунды.
+
+- Сбой сети/GAS: запись остаётся в очереди и повторяется (после каждого сохранения и при каждой синхронизации, т. е. ≤ 5 мин). После 8 неудач или осмысленного отказа GAS запись уходит в `lehrlinge:outbox:dead` (Redis), в ответе `sync` виден счётчик `outbox.dead`, GAS пишет предупреждение в лог.
+- Пока запись в очереди или моложе 2 минут, снапшот из таблицы её не перезаписывает (нет «отката» на экране).
+- Если сам Redis недоступен, клиент пишет напрямую в GAS (медленно, но надёжно).
+- Один слив за раз (блокировка `lehrlinge:outbox:lock`), записи одного ключа уходят по порядку.
 
 ## Einrichtung / Включение
 

@@ -104,7 +104,10 @@ function pushLehrlingeSnapshot() {
   const code = response.getResponseCode();
   if (code !== 200) throw new Error("lehrlinge_sync_failed_" + code + ": " + response.getContentText().slice(0, 200));
   PropertiesService.getScriptProperties().setProperty(LEHRLINGE_SYNC_LAST_KEY, String(Date.now()));
-  return JSON.parse(response.getContentText());
+  const result = JSON.parse(response.getContentText());
+  // outbox.dead > 0: Vercel не смог записать изменения водителей в таблицу (см. Redis lehrlinge:outbox:dead).
+  if (result.outbox && result.outbox.dead > 0) Logger.log("WARNUNG Lehrlinge outbox: " + result.outbox.dead + " abgelehnte Eintraege");
+  return result;
 }
 
 /** Вариант для вызова после записи данных: никогда не ломает основной запрос. */
