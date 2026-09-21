@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     cars: [],
     route: "1",
     lastReportSelection: null,
+    planSelection: null,
     pointSelection: null,
   };
 
@@ -42,6 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
     confirmBox: document.getElementById("confirm"),
     dateEl: document.getElementById("reportDate"),
     showAllPoints: document.getElementById("showAllPoints"),
+    planHint: document.getElementById("planHint"),
     // НЕТ themeBtn — темой управляет только theme.js
   };
 
@@ -147,6 +149,55 @@ document.addEventListener("DOMContentLoaded", () => {
       App.pointsRestoreStrong();
   }
 
+  // ========== Vorauswahl der Punkte laut Fahrtenplan ==========
+  const planDayLabel = (date) =>
+    new Date(`${date}T12:00:00`).toLocaleDateString("de-AT", { weekday: "short", day: "2-digit", month: "2-digit" });
+
+  function showPlanHint(result) {
+    const el = App.dom.planHint;
+    if (!el) return;
+    el.hidden = !result;
+    if (result) {
+      el.textContent = `Vorauswahl laut Fahrtenplan (${planDayLabel(result.date)}, ${result.direction === "evening" ? "Rückfahrt" : "Hinfahrt"})`;
+    }
+  }
+
+  // Cache zuerst (sofort), danach frische Daten; Rückgabe true, wenn ein Plan angewendet wurde.
+  async function applyPlanSelection(route, token) {
+    const PS = window.PlanSelection;
+    const DD = window.DriverData;
+    if (!PS || !DD?.loadSchedule || !DD.readSession?.()) return false;
+    let applied = false;
+    const apply = (data) => {
+      if (token !== _loadToken || App.state.pointSelection) return; // veraltet oder schon manuell geändert
+      const result = PS.planPointSelection({
+        days: data?.days,
+        route,
+        points: App.state.points,
+        direction: PS.directionForShift(App.dom.shiftSel?.value),
+        today: DD.defaultPeriod().from,
+      });
+      if (!result) return;
+      applied = true;
+      App.state.planSelection = result.ids;
+      showPlanHint(result);
+      App.render?.();
+    };
+    try {
+      await DD.loadSchedule({ ...DD.defaultPeriod(), route: "all", direction: "all" }, apply);
+    } catch (error) {
+      console.warn("plan selection unavailable", error);
+    }
+    return applied;
+  }
+
+  // Schichtwechsel (Früh/Nachmittag): Vorauswahl für die passende Fahrtrichtung neu berechnen
+  App.dom.shiftSel?.addEventListener("change", () => {
+    if (!App.state.planSelection) return;
+    App.state.pointSelection = null;
+    applyPlanSelection(App.state.route, _loadToken);
+  });
+
   async function load(r) {
     const route = String(r || "1");
     App.state.route = route;
@@ -163,7 +214,9 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       if (warm) {
         App.state.lastReportSelection = null;
+        App.state.planSelection = null;
         App.state.pointSelection = null;
+        showPlanHint(null);
         applyRouteData(warm);
       }
 
@@ -172,8 +225,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (myToken !== _loadToken) return; // устаревший ответ
 
       App.state.lastReportSelection = null;
+      App.state.planSelection = null;
       App.state.pointSelection = null;
+      showPlanHint(null);
       applyRouteData(res);
+      // 1) Punkte laut Fahrtenplan; 2) nur wenn es keinen Plan gibt: Punkte des letzten Berichts (wie bisher)
+      if (await applyPlanSelection(route, myToken)) return;
+      if (myToken !== _loadToken) return;
       try {
         const recent = await window.loadRecent(route, 1);
         const latest = Array.isArray(recent) ? recent[0] : null;

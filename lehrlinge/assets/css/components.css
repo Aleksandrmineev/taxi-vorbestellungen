@@ -201,6 +201,17 @@ input[type="date"]:focus {
   height: 18px;
 }
 
+.plan-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted, #6e7b87);
+  font-size: 12px;
+}
+
+.plan-hint[hidden] {
+  display: none;
+}
+
 /* ===== SAVE BUTTON ===== */
 .save {
   appearance: none;

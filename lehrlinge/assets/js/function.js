@@ -129,15 +129,19 @@
 
     const showAll = !!App.dom.showAllPoints?.checked;
 
+    // Vorrang: eigene Auswahl > Fahrtenplan > letzter Bericht > alles
     const savedSet = App.state.pointSelection instanceof Set
       ? App.state.pointSelection
-      : App.state.lastReportSelection instanceof Set
-        ? App.state.lastReportSelection
-        : null;
+      : App.state.planSelection instanceof Set
+        ? App.state.planSelection
+        : App.state.lastReportSelection instanceof Set
+          ? App.state.lastReportSelection
+          : null;
     const shortCodes = new Set();
     const isRequired = (p, index, allPoints) =>
       p?.required === true || index === 0 || index >= allPoints.length - 2;
-    const isChecked = (p) => savedSet ? savedSet.has(String(p.id)) : true;
+    // Pflichtpunkte (Start/Ziel) sind immer angehakt, auch wenn sie nicht im Plan stehen
+    const isChecked = (p, index, allPoints) => savedSet ? (isRequired(p, index, allPoints) || savedSet.has(String(p.id))) : true;
 
     list.innerHTML = (points || [])
       .map(
