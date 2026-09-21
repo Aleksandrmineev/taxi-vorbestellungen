@@ -79,7 +79,7 @@
     document.body.classList.remove("driver-auth-locked");
     const expiresInSec = Number(session.expiresInSec);
     const sessionTtl = Number.isFinite(expiresInSec) && expiresInSec > 0 ? expiresInSec : 365 * 24 * 60 * 60;
-    localStorage.setItem(TOKEN_KEY, JSON.stringify({ token: session.token, expiresAt: Date.now() + sessionTtl * 1000, driver }));
+    localStorage.setItem(TOKEN_KEY, JSON.stringify({ token: session.token, jwt: session.jwt || undefined, expiresAt: Date.now() + sessionTtl * 1000, driver }));
     localStorage.setItem(AUTH_KEY, "1");
     localStorage.removeItem(GUEST_KEY);
     if (driver.id) localStorage.setItem("mt:lastDriver", driver.id);

@@ -1,5 +1,3 @@
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwS88JTgj1NVqhGAaMKi3MXxTawF9zA6mkG6avgxmIj8c61_20EjNZdY0_0U6kKor29/exec";
-const API_SECRET = "102030";
 const qs = new URLSearchParams(location.search);
 const studentId = String(qs.get("studentId") || "").toLowerCase();
 const from = document.getElementById("from");
@@ -12,10 +10,7 @@ const changes = new Map();
 let data = null;
 let toastTimer;
 
-const session = (() => {
-  try { return JSON.parse(localStorage.getItem("mt:driver-session") || "null"); }
-  catch (_) { return null; }
-})();
+const session = DriverData.readSession();
 
 const toast = document.createElement("div");
 toast.className = "save-toast";
@@ -88,28 +83,38 @@ function render() {
   }));
 }
 
+let loadSeq = 0;
+
+function showPlan(result, meta) {
+  data = result;
+  document.getElementById("studentName").textContent = result.student.name;
+  document.getElementById("studentMeta").textContent = [result.student.route && `Route ${result.student.route}`, result.student.address, result.student.time].filter(Boolean).join(" · ");
+  render();
+  if (meta.offline) status.textContent = `Keine Verbindung · gespeicherte Daten von ${DriverData.formatSyncedAt(meta.savedAt)}`;
+  else if (meta.cached) status.textContent = `Gespeicherte Daten von ${DriverData.formatSyncedAt(meta.savedAt)} · wird aktualisiert…`;
+  else status.textContent = "";
+}
+
 async function loadPlan() {
-  if (!session?.token) {
+  if (!session) {
     status.textContent = "Die Fahreranmeldung fehlt oder ist abgelaufen. Bitte auf der zentralen Startseite erneut anmelden.";
     return;
   }
+  const seq = ++loadSeq;
   load.disabled = true;
   status.textContent = "Daten werden geladen…";
-  const url = new URL(GAS_URL);
-  Object.entries({ fn: "driver_student_plan", driverToken: session.token, studentId, from: from.value, to: to.value, secret: API_SECRET, _ts: Date.now() }).forEach(([key, value]) => url.searchParams.set(key, value));
   try {
-    const response = await fetch(url, { cache: "no-store" });
-    const result = await response.json();
-    if (!response.ok || result.ok === false) throw Error(result.error || "API-Fehler");
-    data = result;
-    document.getElementById("studentName").textContent = result.student.name;
-    document.getElementById("studentMeta").textContent = [result.student.route && `Route ${result.student.route}`, result.student.address, result.student.time].filter(Boolean).join(" · ");
-    render();
-    status.textContent = "";
+    await DriverData.loadStudentPlan(studentId, from.value, to.value, (result, meta) => {
+      if (seq !== loadSeq) return;
+      // Ungespeicherte Änderungen bleiben erhalten: render() nimmt changes vor den Serverdaten.
+      showPlan(result, meta);
+    });
   } catch (error) {
+    if (seq !== loadSeq) return;
+    if (error.name === "AuthError") DriverData.clearSession();
     status.textContent = `Fehler: ${friendlyError(error)}`;
   } finally {
-    load.disabled = false;
+    if (seq === loadSeq) load.disabled = false;
   }
 }
 
@@ -125,20 +130,20 @@ save.addEventListener("click", async () => {
   status.textContent = "Änderungen werden gespeichert…";
 
   try {
-    const body = new URLSearchParams({
-      action: "driver_plan_save",
-      driverToken: session.token,
-      rows: JSON.stringify([...changes.values()]),
-      holidays: JSON.stringify(data.holidays || []),
-      updatedBy: `driver:${session.driver?.taxiNumber || session.driver?.id || "unknown"}`,
-      secret: API_SECRET,
-    });
-    const response = await fetch(GAS_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body });
-    const result = await response.json();
-    if (!response.ok || result.ok === false) throw Error(result.error || "Speichern fehlgeschlagen");
+    const rows = [...changes.values()];
+    const updatedBy = `driver:${session?.driver?.taxiNumber || session?.driver?.id || "unknown"}`;
+    await DriverData.savePlan(rows, data.holidays || [], updatedBy);
+    // Ergebnis lokal übernehmen statt neu zu laden: spart einen kompletten Server-Roundtrip.
+    const saved = new Map(rows.map((row) => [row.date, row]));
+    const now = new Date().toISOString();
+    const items = (data.items || []).filter((item) => !saved.has(item.date));
+    saved.forEach((row) => items.push({ date: row.date, student_id: studentId, status: row.status, note: row.note || "", updated_by: updatedBy, updated_at: now }));
+    data = { ...data, items };
+    DriverData.writeCache(DriverData.studentPlanKey(studentId, from.value, to.value), data);
     changes.clear();
+    render();
+    status.textContent = "";
     showToast("Änderungen gespeichert", "success");
-    await loadPlan();
   } catch (error) {
     const message = friendlyError(error);
     status.textContent = `Fehler beim Speichern: ${message}`;
