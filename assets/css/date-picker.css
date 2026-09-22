@@ -31,35 +31,37 @@
 .dp-native { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; }
 .dp-field.is-invalid .dp-trigger { border-color: var(--danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 20%, transparent); }
 
-/* Sheet (eigener <dialog>, liegt über dem Bestelldialog) */
+/* Sheet (eigener <dialog>, liegt über dem Bestelldialog). Schwebende Karte mit Rand ringsum statt
+   randlos am Bildschirmrand zu kleben — wirkte sonst zu sehr "hingequetscht". */
 .dp-sheet {
-  width: min(420px, 100vw);
-  max-width: 100vw;
+  --dp-sheet-margin: max(10px, env(safe-area-inset-bottom, 0px));
+  width: min(420px, calc(100vw - 20px));
+  max-width: calc(100vw - 20px);
   /* Etwas Sicherheitsabstand oben (vorher 94dvh): auf iPhones mit eingeblendeter Safari-Adressleiste
      reichte das nicht — bei "Mehrere Tage wählen" war der Fertig-Button am unteren Rand abgeschnitten. */
-  max-height: min(88dvh, calc(100dvh - 28px));
-  margin: auto auto 0;
+  max-height: min(86dvh, calc(100dvh - var(--dp-sheet-margin) - 24px));
+  margin: auto auto var(--dp-sheet-margin);
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 20px 20px 0 0;
+  border-radius: 20px;
   background: var(--surface);
   color: var(--text);
-  box-shadow: 0 -12px 40px rgba(0, 0, 0, .28);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .28);
   overflow: auto;
   overscroll-behavior: contain;
 }
 .dp-sheet::backdrop { background: rgba(0, 0, 0, .5); }
 @media (min-width: 560px) {
-  .dp-sheet { margin: auto; border-radius: 20px; box-shadow: 0 20px 70px rgba(0, 0, 0, .35); }
+  .dp-sheet { margin: auto; box-shadow: 0 20px 70px rgba(0, 0, 0, .35); }
 }
-.dp-panel { display: grid; gap: 10px; padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
+.dp-panel { display: grid; gap: 10px; padding: 18px; }
 .dp-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .dp-title { font-size: 17px; }
 .dp-close { width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; color: inherit; font-size: 26px; line-height: 1; cursor: pointer; }
 .dp-close:hover, .dp-close:focus-visible { background: var(--surface-2); outline: 0; }
 
 /* Schnellwahl: eine Zeile, seitlich wischbar (spart Höhe auf schmalen Telefonen) */
-.dp-chips { display: flex; flex-wrap: nowrap; gap: 8px; margin: 0 -16px; padding: 2px 16px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.dp-chips { display: flex; flex-wrap: nowrap; gap: 8px; margin: 0 -18px; padding: 2px 18px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .dp-chips::-webkit-scrollbar { display: none; }
 .dp-chips[hidden] { display: none; }
 .dp-chip {
@@ -134,7 +136,7 @@ html[data-theme="dark"] { --dp-selected-bg: #2563eb; }
    Schwelle bewusst hoch (vorher 640px) — mit eingeblendeter Safari-Adressleiste bleibt auf einem
    normalen iPhone oft deutlich weniger als die volle Bildschirmhöhe für die Seite übrig. */
 @media (max-height: 820px) {
-  .dp-panel { gap: 8px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .dp-panel { gap: 8px; padding: 14px; }
   .dp-chips { margin: 0 -14px; padding: 2px 14px; }
   .dp-title { font-size: 16px; }
   .dp-close { width: 36px; height: 36px; }
