@@ -28,6 +28,16 @@ const MINEEV_BOT_PROPERTIES_ = {
   URL: "MINEEV_BOT_URL",
   TOKEN: "MINEEV_BOT_TOKEN",
 };
+// Bestellungs-Erinnerungen (Ersatz für SMS, siehe docs/order-notifications.md):
+//   ORDER_REMINDER_CHANNEL     "sms" (Standard, altes Verhalten) | "whatsapp" — erst nach Test per
+//                              sendOrderReminderTestNow() auf "whatsapp" umstellen (ein Property, einfacher Rollback).
+//   ORDER_WHATSAPP_GROUP_JID   Überschreibt die Ziel-Gruppe; leer/nicht gesetzt = ORDER_WHATSAPP_GROUP_JID_ (Murtal Taxi).
+const ORDER_NOTIFY_PROPERTIES_ = {
+  CHANNEL: "ORDER_REMINDER_CHANNEL",
+  GROUP_JID: "ORDER_WHATSAPP_GROUP_JID",
+};
+const ORDER_WHATSAPP_GROUP_JID_ = "436605703688-1417303237@g.us"; // Murtal Taxi
+const ORDER_WHATSAPP_TEST_TARGET_ = "4368181289405";
 
 /** Утилита ответа JSON */
 function json(obj, code) {
@@ -574,6 +584,52 @@ function orderNotificationPhones_(time) {
   return [...new Set(phones.filter(Boolean))];
 }
 
+function orderReminderChannel_() {
+  const value = String(orderNotificationProperties_().getProperty(ORDER_NOTIFY_PROPERTIES_.CHANNEL) || "sms").trim().toLowerCase();
+  return value === "whatsapp" ? "whatsapp" : "sms";
+}
+
+function orderWhatsAppTarget_(testMode) {
+  if (testMode) return ORDER_WHATSAPP_TEST_TARGET_;
+  const override = String(orderNotificationProperties_().getProperty(ORDER_NOTIFY_PROPERTIES_.GROUP_JID) || "").trim();
+  return override || ORDER_WHATSAPP_GROUP_JID_;
+}
+
+/** Manueller Test jederzeit: nimmt die nächste offene Bestellung (sonst ein Beispiel) und schickt sie
+ * nur an die persönliche Testnummer, unabhängig von ORDER_REMINDER_CHANNEL. Sendet nichts an die Gruppe. */
+function sendOrderReminderTestNow() {
+  const upcoming = readOrders_()
+    .filter((item) => item.status !== "cancelled" && item.status !== "done")
+    .map((item) => ({ item: item, start: new Date(item.date + "T" + item.time + ":00") }))
+    .filter((row) => !isNaN(row.start.getTime()))
+    .sort((a, b) => a.start - b.start)[0];
+  const sample = upcoming ? upcoming.item : { id: "TEST", time: "12:00", message: "Beispielfahrt", phone_raw: "+43 660 0000000" };
+  const text = "[TEST] " + orderWhatsAppText_(sample);
+  sendWhatsAppMessage_(ORDER_WHATSAPP_TEST_TARGET_, text);
+  console.log("Sent order reminder test to the personal number:\n" + text);
+  return { sample_id: sample.id, text: text };
+}
+
+// "TaxiApp: HH:MM" + Notiz + Tel + #id — gleiche Felder wie die bisherige SMS (orderSmsText_), mit Präfix für die Gruppe.
+function orderWhatsAppText_(item) {
+  return "TaxiApp: " + orderSmsText_(item, true);
+}
+
+function sendOrderWhatsAppReminder_(item, testMode) {
+  const target = orderWhatsAppTarget_(testMode);
+  if (!target) {
+    safeNotificationLog_("order_whatsapp_skipped", { reason: "group_not_configured" });
+    return { skipped: true };
+  }
+  try {
+    sendWhatsAppMessage_(target, orderWhatsAppText_(item));
+    return { sent: true };
+  } catch (err) {
+    safeNotificationLog_("order_reminder_error", { message: redactLogText_(err && err.message, 180) });
+    return { skipped: true };
+  }
+}
+
 function sendOrderSms_(item, reminder) {
   const phones = orderNotificationPhones_(item.time);
   if (!phones.length) return { skipped: true };
@@ -798,7 +854,7 @@ function sendOrderConfirmation_(item) {
 function sendOrderReminder_(item) {
   if (!item || item.reminder_sent_at) return;
   try {
-    const result = sendOrderSms_(item, true);
+    const result = orderReminderChannel_() === "sms" ? sendOrderSms_(item, true) : sendOrderWhatsAppReminder_(item, false);
     if (result && result.skipped) return;
     setOrderNotification_(item.id, "reminder_sent_at", new Date());
   } catch (err) {
