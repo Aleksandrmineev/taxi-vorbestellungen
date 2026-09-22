@@ -154,11 +154,36 @@ document.addEventListener("DOMContentLoaded", () => {
   // "Früh" (Hinfahrt) im <select> ist nur die erste <option>, kein Zeitbezug — ohne diese Vorbelegung
   // bleibt die Schicht bis zur manuellen Auswahl auf "Früh" stehen, auch nachmittags. Die Punkte-Vorauswahl
   // unten liest die Schicht direkt beim Laden, also braucht sie hier schon den richtigen Wert.
+  // Grenzen 03:00/12:00 wie beim Fahrtenplan-Fenster (Hinfahrt-Cutoff 03:00, Rückfahrt-Cutoff 12:00,
+  // siehe docs/lehrlinge-shuttle-summary.md) — nachts bis 03:00 gilt noch die Nachmittagsschicht des Vortags.
   function defaultShiftForNow_() {
     const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Vienna", hour: "2-digit", hourCycle: "h23" }).format(new Date()));
-    return hour < 12 ? "Früh" : "Nachmittag";
+    return hour >= 3 && hour < 12 ? "Früh" : "Nachmittag";
   }
   if (App.dom.shiftSel) App.dom.shiftSel.value = defaultShiftForNow_();
+
+  // Bleibt die Seite über 03:00/12:00 hinweg offen (z. B. Übergabe zwischen Fahrern), wechselt die
+  // Schicht automatisch mit — das war der Grund für falsche Vorauswahlen in Berichten. Eine manuelle
+  // Auswahl des Fahrers wird respektiert und danach nicht mehr automatisch überschrieben.
+  let shiftManuallyChosen_ = false;
+  function autoSyncShift_() {
+    if (shiftManuallyChosen_ || !App.dom.shiftSel) return;
+    const wanted = defaultShiftForNow_();
+    if (App.dom.shiftSel.value === wanted) return;
+    App.dom.shiftSel.value = wanted;
+    if (!App.state.planSelection) return;
+    App.state.pointSelection = null;
+    applyPlanSelection(App.state.route, _loadToken);
+  }
+  let shiftSyncId_ = setInterval(autoSyncShift_, 60_000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      clearInterval(shiftSyncId_);
+    } else {
+      autoSyncShift_();
+      shiftSyncId_ = setInterval(autoSyncShift_, 60_000);
+    }
+  });
 
   const planDayLabel = (date) =>
     new Date(`${date}T12:00:00`).toLocaleDateString("de-AT", { weekday: "short", day: "2-digit", month: "2-digit" });
@@ -203,6 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Schichtwechsel (Früh/Nachmittag): Vorauswahl für die passende Fahrtrichtung neu berechnen
   App.dom.shiftSel?.addEventListener("change", () => {
+    shiftManuallyChosen_ = true; // ab jetzt keine automatische Umschaltung mehr für diese Seite
     if (!App.state.planSelection) return;
     App.state.pointSelection = null;
     applyPlanSelection(App.state.route, _loadToken);
