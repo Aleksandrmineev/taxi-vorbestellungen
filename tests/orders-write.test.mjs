@@ -4,6 +4,7 @@ import test from "node:test";
 import { makeFakeRedis } from "./helpers/fake-redis.mjs";
 
 process.env.ORDERS_REDIS = "on";
+process.env.ORDERS_REDIS_WRITES = "on";
 process.env.SYNC_SECRET = "sync-secret-for-tests";
 
 const { __setRedisClientForTests } = await import("../api/_lib/redis.js");
@@ -314,4 +315,22 @@ test("writes need the shared secret", async () => {
   assert.equal(res.statusCode, 403);
   const bad = await call({ method: "POST", query: { op: "create", secret: "x" }, body: { data: createData(day(1)) } });
   assert.equal(bad.statusCode, 403);
+});
+
+test("writes are a separate switch: with ORDERS_REDIS_WRITES off, reads work but writes answer 503 (client uses GAS)", async () => {
+  await seedOk([baseOrder("101", day(2))]);
+  delete process.env.ORDERS_REDIS_WRITES;
+  try {
+    assert.equal((await list({ date: day(2) })).statusCode, 200);
+    for (const [op, body] of [["create", { data: createData(day(1)) }], ["update", { id: "101", data: { date: day(1), time: "08:00" } }], ["status", { id: "101", status: "done" }]]) {
+      const res = await post(op, body);
+      assert.equal(res.statusCode, 503, op);
+      assert.equal(res.body.error, "orders_disabled");
+    }
+    await settleBackground();
+    assert.equal(gasCalls.length, 0);
+    assert.equal(fake.kv.get("orders:outbox")?.size || 0, 0);
+  } finally {
+    process.env.ORDERS_REDIS_WRITES = "on";
+  }
 });

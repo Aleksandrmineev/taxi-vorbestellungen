@@ -310,12 +310,14 @@ export function initForm({ onCreated }) {
       }
 
       const editingId = f.dataset.editingId || "";
+      // Gleiche requestId bei erneutem Speichern nach unklarem Fehler: der Server legt keine zweite Bestellung an
+      if (!editingId) data.requestId = f.dataset.requestId ||= (self.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
       const res = await (editingId
         ? Api.updateOrder(editingId, data)
         : Api.createOrder(data)
       ).catch((err) => ({
         ok: false,
-        error: String(err),
+        error: err?.message || String(err),
       }));
       if (!res.ok) {
         showToast({
@@ -335,7 +337,7 @@ export function initForm({ onCreated }) {
         const created = Math.max(1, Number(recurrence_count || 1));
         let ok = created;
         for (const day of chosenDates.slice(created)) {
-          const { dates: _dates, ...single } = data;
+          const { dates: _dates, requestId: _request, ...single } = data;
           const extra = await Api.createOrder({ ...single, date: day }).catch(() => ({ ok: false }));
           if (extra.ok === false) failedDates.push(day);
           else ok += 1;
@@ -372,9 +374,10 @@ export function initForm({ onCreated }) {
         linkHTML,
       });
 
-      const { dates: _saved, ...rememberable } = data;
+      const { dates: _saved, requestId: _request, ...rememberable } = data;
       localStorage.setItem("lastOrder", JSON.stringify(rememberable));
       delete f.dataset.editingId;
+      delete f.dataset.requestId;
       submitBtn.title = "Speichern";
       onCreated?.();
     } finally {

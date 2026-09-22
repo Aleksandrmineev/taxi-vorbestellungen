@@ -22,6 +22,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const openForm = ({ reset = false } = {}) => {
     if (reset && form) {
       delete form.dataset.editingId;
+      delete form.dataset.requestId; // neue Bestellung = neue Anfrage-ID
       if (form.elements.rrule) form.elements.rrule.value = "";
       if (form.elements.until) form.elements.until.value = "";
       form.elements.rrule?.dispatchEvent(new Event("change"));

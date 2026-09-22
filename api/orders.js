@@ -1,8 +1,10 @@
 // /api/orders?op=… – Vorbestellungen aus der Redis-Kopie (Tabelle bleibt die Wahrheit).
-//   op=sync   POST  (Bearer SYNC_SECRET, von GAS)  Snapshot aller Bestellungen
-//   op=list   GET   ?date=&includeAll=1            wie GAS ordersbydate
-//   op=todos  GET   ?hours=                        wie GAS todos
-// Nur aktiv mit ORDERS_REDIS=on in den Vercel-Umgebungsvariablen; sonst 503 und der Client nutzt GAS.
+//   op=sync    POST  (Bearer SYNC_SECRET, von GAS)  Snapshot aller Bestellungen
+//   op=list    GET   ?date=&includeAll=1            wie GAS ordersbydate
+//   op=todos   GET   ?hours=                        wie GAS todos
+//   op=create|update|status  POST                   Redis zuerst, Tabelle im Hintergrund
+// Lesen nur mit ORDERS_REDIS=on, Schreiben zusätzlich mit ORDERS_REDIS_WRITES=on (Vercel-Umgebung);
+// sonst 503 und der Client nutzt GAS.
 import crypto from "node:crypto";
 import { buildOrders, listOrders, normalizePhone, pickOrderId, todoOrders } from "./_lib/orders-core.js";
 import {
@@ -23,6 +25,9 @@ const same = (a, b) => {
 };
 
 export const ordersEnabled = () => process.env.ORDERS_REDIS === "on";
+// Schreiben (anlegen/ändern/Status) separat einschaltbar: erst Lesen beobachten, dann Schreiben.
+export const writesEnabled = () => ordersEnabled() && process.env.ORDERS_REDIS_WRITES === "on";
+const requireWrites = () => { if (!writesEnabled()) throw new Error("orders_disabled"); };
 
 // Fehler, die der Benutzer beheben kann (gleiche Codes wie in GAS): Antwort 400
 const BUSINESS = new Set([
@@ -102,6 +107,7 @@ Object.assign(handlers, {
   async create(req, res) {
     if (req.method !== "POST") throw new Error("method_not_allowed");
     requireClient(req);
+    requireWrites();
     const { data, requestId } = req.body || {};
     if (!data || typeof data !== "object") throw Object.assign(new Error("invalid_order"), { business: true });
     await readMeta(); // ohne frische Kopie nichts annehmen (503 -> Client nutzt GAS)
@@ -133,6 +139,7 @@ Object.assign(handlers, {
   async update(req, res) {
     if (req.method !== "POST") throw new Error("method_not_allowed");
     requireClient(req);
+    requireWrites();
     const { id, data = {} } = req.body || {};
     const orderId = String(id || "").trim();
     const date = String(data.date || "").trim();
@@ -158,6 +165,7 @@ Object.assign(handlers, {
   async status(req, res) {
     if (req.method !== "POST") throw new Error("method_not_allowed");
     requireClient(req);
+    requireWrites();
     const { id, comment = "" } = req.body || {};
     const newStatus = String(req.body?.status || "").toLowerCase();
     if (!["done", "cancelled", "open"].includes(newStatus)) throw Object.assign(new Error("invalid_status"), { business: true });

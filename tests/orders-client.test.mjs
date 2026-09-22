@@ -82,3 +82,97 @@ test("device kill switch mt_orders_redis=off goes straight to GAS", async () => 
   assert.equal(calls.filter(isOrders).length, 0);
   assert.equal(calls.filter(isGas).length, 1);
 });
+
+/* ---------- Schreiben ---------- */
+const orderData = { date: "2026-09-23", time: "08:00", type: "Orts", duration_min: 15, phone: "+43 1", message: "Test" };
+const gasBody = (c) => JSON.parse(c.init.body);
+
+test("create goes to Redis with a requestId; GAS is not called", async () => {
+  fresh();
+  plan = () => json({ ok: true, data: { id: "123", recurrence_count: 1 }, queued: true });
+  const res = await Api.createOrder({ ...orderData, requestId: "req-1" });
+  assert.equal(res.data.id, "123");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url.searchParams.get("op"), "create");
+  assert.equal(calls[0].init.method, "POST");
+  const body = gasBody(calls[0]);
+  assert.equal(body.requestId, "req-1");
+  assert.equal(body.data.message, "Test");
+  assert.equal(body.data.requestId, undefined);
+  assert.equal(body.data.type, "Orts");
+  assert.ok(body.data.created_by_device);
+  // ohne mitgegebene requestId wird eine erzeugt
+  calls = [];
+  await Api.createOrder({ ...orderData });
+  assert.ok(gasBody(calls[0]).requestId.length > 8);
+});
+
+test("create: only 'nothing accepted' (503/404/device off) may fall back to GAS", async () => {
+  for (const failure of [() => json({ ok: false, error: "orders_disabled" }, 503), () => json({ ok: false, error: "snapshot_missing" }, 503), () => new Response("nf", { status: 404 })]) {
+    fresh();
+    plan = (url) => (isOrders({ url }) ? failure() : json({ ok: true, data: { id: "gas1", recurrence_count: 1 } }));
+    const res = await Api.createOrder({ ...orderData });
+    assert.equal(res.data.id, "gas1");
+    const gas = calls.filter(isGas);
+    assert.equal(gas.length, 1);
+    assert.equal(gasBody(gas[0]).action, "create");
+    assert.equal(gasBody(gas[0]).data.requestId, undefined);
+  }
+  fresh();
+  storage.set("mt_orders_redis", "off");
+  plan = () => json({ ok: true, data: { id: "gas2" } });
+  await Api.createOrder({ ...orderData });
+  assert.equal(calls.filter(isOrders).length, 0);
+  assert.equal(calls.filter(isGas).length, 1);
+});
+
+test("create: unclear outcomes (network error, 500) never fall back to GAS, so no duplicate order", async () => {
+  for (const failure of [() => { throw new TypeError("fetch failed"); }, () => json({ ok: false, error: "boom" }, 500)]) {
+    fresh();
+    plan = (url) => (isOrders({ url }) ? failure() : json({ ok: true, data: { id: "gas1" } }));
+    await assert.rejects(() => Api.createOrder({ ...orderData, requestId: "r" }), /Verbindung unklar/);
+    assert.equal(calls.filter(isGas).length, 0);
+    assert.equal(calls.filter(isOrders).length, 1);
+  }
+});
+
+test("create: business errors are shown as they are (GAS codes), without fallback", async () => {
+  fresh();
+  plan = () => json({ ok: false, error: "date_and_time_required" }, 400);
+  await assert.rejects(() => Api.createOrder({ ...orderData }), /date_and_time_required/);
+  assert.equal(calls.filter(isGas).length, 0);
+});
+
+test("update and status: any problem falls back to GAS (safe to repeat), with the same payload", async () => {
+  for (const failure of [() => json({ ok: false, error: "order_unknown_here" }, 503), () => { throw new TypeError("fetch failed"); }, () => json({ ok: false, error: "boom" }, 500)]) {
+    fresh();
+    plan = (url) => (isOrders({ url }) ? failure() : json({ ok: true, id: "5" }));
+    await Api.updateOrder("5", { ...orderData, message: "neu" });
+    let gas = calls.filter(isGas);
+    assert.equal(gas.length, 1);
+    assert.equal(gasBody(gas[0]).action, "updateorder");
+    assert.equal(gasBody(gas[0]).id, "5");
+    assert.equal(gasBody(gas[0]).data.message, "neu");
+
+    calls = [];
+    await Api.updateStatus("5", "cancelled", "Grund", true);
+    gas = calls.filter(isGas);
+    assert.equal(gasBody(gas[0]).action, "updatestatus");
+    assert.equal(gasBody(gas[0]).status, "cancelled");
+    assert.equal(gasBody(gas[0]).allSeries, "1");
+  }
+});
+
+test("update and status use Redis when available", async () => {
+  fresh();
+  plan = () => json({ ok: true, queued: true, updated_count: 3 });
+  const st = await Api.updateStatus({ id: "7", status: "done", comment: "ok", allSeries: true });
+  assert.equal(st.updated_count, 3);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url.searchParams.get("op"), "status");
+  assert.deepEqual(gasBody(calls[0]), { id: "7", status: "done", comment: "ok", allSeries: true });
+  calls = [];
+  await Api.updateOrder("7", { ...orderData });
+  assert.equal(calls[0].url.searchParams.get("op"), "update");
+  assert.equal(gasBody(calls[0]).id, "7");
+});

@@ -82,8 +82,14 @@ async function postJSON(bodyObj) {
 const ORDERS_URL = new URL("/api/orders", API).toString();
 const ORDERS_TIMEOUT_MS = 6000;
 
+// definite = der Server hat nichts angenommen (404/503): Schreibvorgänge dürfen dann über GAS laufen.
+// Netzwerkfehler, Timeout und 5xx sind unklar: die Bestellung könnte angekommen sein.
 class OrdersUnavailable extends Error {
-  constructor(message) { super(message || "orders_unavailable"); this.name = "OrdersUnavailable"; }
+  constructor(message, { definite = false } = {}) {
+    super(message || "orders_unavailable");
+    this.name = "OrdersUnavailable";
+    this.definite = definite;
+  }
 }
 
 function ordersRedisOff() {
@@ -91,7 +97,7 @@ function ordersRedisOff() {
 }
 
 async function ordersRequest(op, { method = "GET", params = {}, body } = {}) {
-  if (ordersRedisOff()) throw new OrdersUnavailable("disabled_on_device");
+  if (ordersRedisOff()) throw new OrdersUnavailable("disabled_on_device", { definite: true });
   const url = new URL(ORDERS_URL);
   url.searchParams.set("op", op);
   Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, String(value ?? "")));
@@ -114,7 +120,8 @@ async function ordersRequest(op, { method = "GET", params = {}, body } = {}) {
   }
   const data = await res.json().catch(() => null);
   // 404/5xx: Funktion fehlt, ausgeschaltet oder Redis nicht bereit -> Rückfall auf GAS
-  if (res.status === 404 || res.status >= 500) throw new OrdersUnavailable(data?.error || `HTTP ${res.status}`);
+  if (res.status === 404 || res.status === 503) throw new OrdersUnavailable(data?.error || `HTTP ${res.status}`, { definite: true });
+  if (res.status >= 500) throw new OrdersUnavailable(data?.error || `HTTP ${res.status}`);
   if (!res.ok || !data || data.ok === false) {
     const error = new Error(data?.error || `HTTP ${res.status}`);
     error.orders = true;
@@ -130,6 +137,25 @@ async function ordersOrGas(fast, slow) {
     if (error instanceof OrdersUnavailable) return slow();
     throw error;
   }
+}
+
+// Ändern/Status sind wiederholbar: bei jedem Problem einfach über GAS.
+const ordersWrite = ordersOrGas;
+
+// Anlegen: nur bei „nichts angenommen“ über GAS; bei unklarem Ergebnis Fehler zeigen (Wiederholen mit derselben requestId
+// legt keine zweite Bestellung an).
+async function ordersCreate(fast, slow) {
+  try {
+    return await fast();
+  } catch (error) {
+    if (!(error instanceof OrdersUnavailable)) throw error;
+    if (error.definite) return slow();
+    throw new Error("Verbindung unklar – bitte noch einmal auf Speichern tippen (es entsteht keine doppelte Bestellung).");
+  }
+}
+
+function newRequestId() {
+  return self.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 // ---- API ----
@@ -209,21 +235,25 @@ export const Api = {
       created_by_device: deviceId,
     });
 
+    const { requestId, ...orderData } = payload;
     // можно и GET, но POST надёжнее для длинных тел
-    return postJSON({ action: "create", data: payload });
+    return ordersCreate(
+      () => ordersRequest("create", { method: "POST", body: { data: orderData, requestId: String(requestId || newRequestId()) } }),
+      () => postJSON({ action: "create", data: orderData }),
+    );
   },
 
   /** Изменить существующий заказ */
   async updateOrder(id, data) {
     const { deviceId, displayName } = identity();
-    return postJSON({
-      action: "updateorder",
-      id: String(id),
-      data: Object.assign({}, data, {
-        created_by_name: displayName,
-        created_by_device: deviceId,
-      }),
+    const payload = Object.assign({}, data, {
+      created_by_name: displayName,
+      created_by_device: deviceId,
     });
+    return ordersWrite(
+      () => ordersRequest("update", { method: "POST", body: { id: String(id), data: payload } }),
+      () => postJSON({ action: "updateorder", id: String(id), data: payload }),
+    );
   },
 
   /** Список ближайших задач/заказов */
@@ -248,13 +278,16 @@ export const Api = {
       comment = c || "";
       allSeries = d || false;
     }
-    return postJSON({
-      action: "updatestatus",
-      id: String(id),
-      status: String(status),
-      comment: String(comment),
-      allSeries: allSeries ? "1" : "0",
-    });
+    return ordersWrite(
+      () => ordersRequest("status", { method: "POST", body: { id: String(id), status: String(status), comment: String(comment), allSeries: Boolean(allSeries) } }),
+      () => postJSON({
+        action: "updatestatus",
+        id: String(id),
+        status: String(status),
+        comment: String(comment),
+        allSeries: allSeries ? "1" : "0",
+      }),
+    );
   },
 
   /** Поиск заказов */
