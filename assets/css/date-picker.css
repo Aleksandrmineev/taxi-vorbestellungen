@@ -35,7 +35,9 @@
 .dp-sheet {
   width: min(420px, 100vw);
   max-width: 100vw;
-  max-height: 94dvh;
+  /* Etwas Sicherheitsabstand oben (vorher 94dvh): auf iPhones mit eingeblendeter Safari-Adressleiste
+     reichte das nicht — bei "Mehrere Tage wählen" war der Fertig-Button am unteren Rand abgeschnitten. */
+  max-height: min(88dvh, calc(100dvh - 28px));
   margin: auto auto 0;
   padding: 0;
   border: 1px solid var(--border);
@@ -128,8 +130,10 @@
 .dp-done:disabled { opacity: .5; cursor: default; }
 html[data-theme="dark"] { --dp-selected-bg: #2563eb; }
 
-/* Niedrige Bildschirme (z. B. iPhone SE): kompakter, damit ohne Scrollen alles sichtbar ist */
-@media (max-height: 640px) {
+/* Niedrige Bildschirme: kompakter, damit ohne Scrollen alles sichtbar ist (inkl. Fertig-Button).
+   Schwelle bewusst hoch (vorher 640px) — mit eingeblendeter Safari-Adressleiste bleibt auf einem
+   normalen iPhone oft deutlich weniger als die volle Bildschirmhöhe für die Seite übrig. */
+@media (max-height: 820px) {
   .dp-panel { gap: 8px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); }
   .dp-chips { margin: 0 -14px; padding: 2px 14px; }
   .dp-title { font-size: 16px; }
