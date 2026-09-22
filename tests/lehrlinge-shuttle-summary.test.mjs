@@ -60,7 +60,7 @@ test("lssDirectionForSlot_: 03 -> morning (Hinfahrt), 12 -> evening (Rückfahrt)
   assert.equal(ctx.lssDirectionForSlot_("12"), "evening");
 });
 
-test("lssSummaryText_: header, per-route blocks in order, points only with riders, names comma-joined", () => {
+test("lssSummaryText_: header, per-route blocks in order, no addresses — just names, one per line, in stop order", () => {
   const { ctx } = fixture();
   const schedule = { days: [day("2026-09-22", [
     route("1", "morning", [
@@ -74,10 +74,11 @@ test("lssSummaryText_: header, per-route blocks in order, points only with rider
   assert.equal(text, [
     "TaxiApp: Fahrtenplan Zellstoff Pöls — Hinfahrt 22.09. · 4 Lehrlinge",
     "",
-    "Route 1 (3):\nBahnhof Zeltweg: Anna Muster, Ben B\nSchule Knittelfeld: Cara C",
+    "Route 1 (3):\nAnna Muster\nBen B\nCara C",
     "",
-    "Route 2 (1):\nWerk Pusterwald: Dan D",
+    "Route 2 (1):\nDan D",
   ].join("\n"));
+  assert.ok(!text.includes("Bahnhof Zeltweg") && !text.includes("Werk Pusterwald"), "no addresses in the message");
 });
 
 test("lssSummaryText_: cancellations are listed even for a route with zero riders; empty schedule returns null", () => {

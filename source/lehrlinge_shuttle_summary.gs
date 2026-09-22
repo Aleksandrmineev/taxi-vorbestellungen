@@ -40,18 +40,16 @@ function lssSummaryText_(scheduleResult, direction, dateLabel) {
   const routeBlocks = day.routes.map(function (route) {
     const routeCount = route.count != null ? route.count : route.points.reduce(function (sum, point) { return sum + point.students.length; }, 0);
     totalStudents += routeCount;
-    const pointLines = route.points
-      .filter(function (point) { return point.students.length; })
-      .map(function (point) {
-        const names = point.students.map(function (student) { return student.name; }).join(", ");
-        return point.address + ": " + names;
-      });
+    // Nur Namen, keine Adressen — eine Zeile je Lehrling, in Fahrtreihenfolge (Reihenfolge der Punkte).
+    const nameLines = route.points.reduce(function (names, point) {
+      return names.concat(point.students.map(function (student) { return student.name; }));
+    }, []);
     const cancellations = route.cancellations || [];
     totalCancellations += cancellations.length;
     const cancelBlock = cancellations.length
       ? "\nAbsagen: " + cancellations.map(function (item) { return item.name; }).join(", ")
       : "";
-    return "Route " + route.route + " (" + routeCount + "):\n" + pointLines.join("\n") + cancelBlock;
+    return "Route " + route.route + " (" + routeCount + "):\n" + nameLines.join("\n") + cancelBlock;
   }).filter(function (block, index) {
     // Route ohne Fahrten und ohne Absagen nicht mit anzeigen (z. B. Route 2 fährt an diesem Tag nicht).
     return day.routes[index].count > 0 || (day.routes[index].cancellations || []).length > 0;

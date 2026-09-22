@@ -8,17 +8,22 @@ danach also nicht mehr ändern.
 
 ## Format
 
-Route für Route, Haltepunkte in Fahrtreihenfolge (wie auf der Fahrtenplan-Seite), je Haltepunkt die Namen:
+Route für Route, nur Vor- und Nachnamen (keine Adressen), eine Zeile je Lehrling, in Fahrtreihenfolge
+(Reihenfolge der Haltepunkte auf der Fahrtenplan-Seite):
 
 ```
 TaxiApp: Fahrtenplan Zellstoff Pöls — Hinfahrt 22.09. · 7 Lehrlinge
 
 Route 1 (4):
-Bahnhof Zeltweg: Anna Muster, Ben B
-Schule Knittelfeld: Cara C, Dan D
+Anna Muster
+Ben B
+Cara C
+Dan D
 
 Route 2 (3):
-Werk Pusterwald: Eve E, Frank F, Gerda G
+Eve E
+Frank F
+Gerda G
 ```
 
 Absagen/Änderungen (falls vorhanden) stehen am Ende des jeweiligen Routenblocks. Eine Route ohne Fahrten und

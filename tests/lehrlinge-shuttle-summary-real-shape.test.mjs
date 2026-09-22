@@ -51,5 +51,6 @@ test("lssSummaryText_ formats the real getLehrlingeDriverSchedule_ output withou
 
   const real = ctx.getLehrlingeDriverSchedule_("2026-09-22", "2026-09-22", "all", "morning");
   const text = ctx.lssSummaryText_(real, "morning", "22.09.");
-  assert.equal(text, "TaxiApp: Fahrtenplan Zellstoff Pöls — Hinfahrt 22.09. · 3 Lehrlinge\n\nRoute 1 (3):\nBahnhof Zeltweg: Anna Muster, Ben B\nSchule Knittelfeld: Cara C");
+  assert.equal(text, "TaxiApp: Fahrtenplan Zellstoff Pöls — Hinfahrt 22.09. · 3 Lehrlinge\n\nRoute 1 (3):\nAnna Muster\nBen B\nCara C");
+  assert.ok(!text.includes("Bahnhof Zeltweg") && !text.includes("Schule Knittelfeld"), "no addresses in the message");
 });
