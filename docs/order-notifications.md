@@ -50,6 +50,9 @@ wird aber nicht mehr aufgerufen, solange WhatsApp aktiv ist — einfacher Rollba
 
 ## Verhalten der Schicht-Übersicht
 
+- Format: `TaxiApp: Tagschicht 22.09. · 2 Fahrten:` bzw. `TaxiApp: Nachtschicht 23.09. · 1 Fahrt:`, dann eine
+  Zeile je Fahrt (`HH:MM · Notiz · Tel: … · #Nr.`). Keine Uhrzeiten im Header (steckt schon im Schicht-Namen);
+  bei der Nachtschicht ist das Datum das vom Schichtende (Folgetag-Morgen), da sie über Mitternacht geht.
 - Fenster: 06:00 → 18:00 desselben Tages; 18:00 → 06:00 des Folgetages (Europe/Vienna).
 - Enthält offene Bestellungen (`status` ≠ `cancelled`/`done`) mit Startzeit im Fenster, sortiert nach Uhrzeit.
 - Ohne Fahrten wird trotzdem eine kurze Bestätigung „Keine Vorbestellungen in diesem Zeitraum.“ gesendet

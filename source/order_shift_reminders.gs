@@ -34,10 +34,13 @@ function osrOrdersInWindow_(orders, window) {
 }
 
 function osrSummaryText_(orders, window) {
-  const fromLabel = Utilities.formatDate(window.from, OSR_ZONE_, "HH:mm");
-  const toLabel = Utilities.formatDate(window.to, OSR_ZONE_, "dd.MM. HH:mm");
-  const dayLabel = Utilities.formatDate(window.from, OSR_ZONE_, "dd.MM.");
-  const header = "TaxiApp: Schicht " + dayLabel + " " + fromLabel + " – " + toLabel + " · " + orders.length + " Fahrt" + (orders.length === 1 ? "" : "en");
+  // "Nachtschicht"/"Tagschicht" statt Uhrzeiten — kurz und eindeutig genug. Die Nachtschicht geht über
+  // Mitternacht, daher das Datum vom Schichtende (Folgetag-Morgen); die Tagschicht ist immer derselbe
+  // Kalendertag wie ihr Start. Nie die Uhrzeit im Header, die steckt schon im Schicht-Namen.
+  const shiftLabel = window.slot === "18" ? "Nachtschicht" : "Tagschicht";
+  const dateLabel = Utilities.formatDate(window.slot === "18" ? window.to : window.from, OSR_ZONE_, "dd.MM.");
+  const count = orders.length + " Fahrt" + (orders.length === 1 ? "" : "en");
+  const header = "TaxiApp: " + shiftLabel + " " + dateLabel + " · " + count;
   if (!orders.length) return header + "\nKeine Vorbestellungen in diesem Zeitraum.";
   const lines = orders.map(function (item) {
     const message = String(item.message || "").trim().replace(/\s+/g, " ").slice(0, 160);
@@ -49,7 +52,7 @@ function osrSummaryText_(orders, window) {
       "#" + String(item.id || "—"),
     ].filter(Boolean).join(" · ");
   });
-  return header + "\n" + lines.join("\n");
+  return header + ":\n" + lines.join("\n");
 }
 
 function previewOrderShiftSummary(slot) {

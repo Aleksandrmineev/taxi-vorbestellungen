@@ -77,15 +77,22 @@ test("osrOrdersInWindow_: only open orders inside the window, sorted by time, ca
   assert.deepEqual(result.map((o) => o.id), ["2", "1"]);
 });
 
-test("osrSummaryText_: header with count and window, one line per order, empty window says so", () => {
+test("osrSummaryText_: Tagschicht header uses the start date, no time, colon before the list", () => {
   const { ctx } = fixture();
-  const window = ctx.osrWindow_(new ctx.Date("2026-09-22T04:00:00Z"), "06");
+  const window = ctx.osrWindow_(new ctx.Date("2026-09-22T04:00:00Z"), "06"); // Vienna 06:00 22.09.
   const text = ctx.osrSummaryText_([order("101", "2026-09-22", "08:00", "open", { message: "Bahnhof", phone_raw: "+436601" })], window);
-  assert.match(text, /^TaxiApp: Schicht 22\.09\. \d{2}:\d{2} – .* · 1 Fahrt$/m);
+  assert.equal(text.split("\n")[0], "TaxiApp: Tagschicht 22.09. · 1 Fahrt:");
   assert.match(text, /08:00 · Bahnhof · Tel: \+436601 · #101/);
   const empty = ctx.osrSummaryText_([], window);
-  assert.match(empty, /0 Fahrten$/m);
-  assert.match(empty, /Keine Vorbestellungen/);
+  assert.equal(empty, "TaxiApp: Tagschicht 22.09. · 0 Fahrten\nKeine Vorbestellungen in diesem Zeitraum.");
+});
+
+test("osrSummaryText_: Nachtschicht header uses the end date (next morning), not the start date", () => {
+  const { ctx } = fixture();
+  const window = ctx.osrWindow_(new ctx.Date("2026-09-22T16:00:00Z"), "18"); // Vienna 18:00 22.09. -> 06:00 23.09.
+  const text = ctx.osrSummaryText_([order("394", "2026-09-23", "04:15", "open", { message: "Dr Pölzg 21", phone_raw: "" })], window);
+  assert.equal(text.split("\n")[0], "TaxiApp: Nachtschicht 23.09. · 1 Fahrt:");
+  assert.equal(text.split("\n")[1], "04:15 · Dr Pölzg 21 · #394");
 });
 
 test("processOrderShiftReminders: sends only at 06 and 18, once per slot per day, group required", () => {
