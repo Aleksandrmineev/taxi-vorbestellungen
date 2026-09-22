@@ -77,10 +77,23 @@ html[data-theme="dark"] .order-dialog {
   line-height: 1.35;
   box-sizing: border-box;
 }
-/* iOS/Safari: Zeit-Feld wie normales Textfeld ausrichten */
+/* iOS/Safari: Zeit-Feld wie normales Textfeld ausrichten (WebKit zentriert den internen
+   Datetime-Wert sonst nicht vertikal in einem appearance:none-Feld fester Höhe — der Text
+   wirkt nach oben verschoben). */
 #f input[type="time"], #f input[type="number"] { display: block; text-align: left; }
-#f input[type="time"]::-webkit-date-and-time-value { text-align: left; min-height: 1.2em; margin: 0; }
-#f input[type="time"]::-webkit-datetime-edit { padding: 0; }
+#f input[type="time"]::-webkit-datetime-edit {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0;
+}
+#f input[type="time"]::-webkit-date-and-time-value {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  text-align: left;
+  margin: 0;
+}
 #f input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 #f input[name="duration_min"] { width: 100%; max-width: none; }
 #f select:disabled { opacity: .6; }

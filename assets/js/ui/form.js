@@ -374,8 +374,6 @@ export function initForm({ onCreated }) {
         linkHTML,
       });
 
-      const { dates: _saved, requestId: _request, ...rememberable } = data;
-      localStorage.setItem("lastOrder", JSON.stringify(rememberable));
       delete f.dataset.editingId;
       delete f.dataset.requestId;
       submitBtn.title = "Speichern";
@@ -383,20 +381,6 @@ export function initForm({ onCreated }) {
     } finally {
       makeSubmitLoading(submitBtn, false);
     }
-  });
-
-  // 5) Повтор последнего
-  document.getElementById("repeatLast")?.addEventListener("click", () => {
-    const last = JSON.parse(localStorage.getItem("lastOrder") || "{}");
-    for (const [k, v] of Object.entries(last)) {
-      if (k === "date" || k === "time") continue;
-      if (f.elements[k]) f.elements[k].value = v;
-    }
-    f.elements.type.dispatchEvent(new Event("change"));
-    repeatInput?.dispatchEvent(new Event("change")); // „bis“-Feld ein-/ausblenden
-    syncTypeButtons();
-    if (!timeInput.value) setNewOrderDefaults();
-    window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
   // Публичная функция
