@@ -150,6 +150,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ========== Vorauswahl der Punkte laut Fahrtenplan ==========
+
+  // "Früh" (Hinfahrt) im <select> ist nur die erste <option>, kein Zeitbezug — ohne diese Vorbelegung
+  // bleibt die Schicht bis zur manuellen Auswahl auf "Früh" stehen, auch nachmittags. Die Punkte-Vorauswahl
+  // unten liest die Schicht direkt beim Laden, also braucht sie hier schon den richtigen Wert.
+  function defaultShiftForNow_() {
+    const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Vienna", hour: "2-digit", hourCycle: "h23" }).format(new Date()));
+    return hour < 12 ? "Früh" : "Nachmittag";
+  }
+  if (App.dom.shiftSel) App.dom.shiftSel.value = defaultShiftForNow_();
+
   const planDayLabel = (date) =>
     new Date(`${date}T12:00:00`).toLocaleDateString("de-AT", { weekday: "short", day: "2-digit", month: "2-digit" });
 
