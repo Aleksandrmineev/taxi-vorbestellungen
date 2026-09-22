@@ -56,6 +56,11 @@
     margin: 15px 0;
   }
 
+  /* main-tabs: весь Rahmen (Nächste/Suche/Datum) — Innenabstand halbiert */
+  .main-tabs {
+    padding: 8px;
+  }
+
   /* мобильные табы */
   .mobile-tabs {
     display: flex;
