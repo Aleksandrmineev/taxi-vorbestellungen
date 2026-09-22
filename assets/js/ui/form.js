@@ -2,6 +2,7 @@
 // === Управление формой создания заказа (дефолты, нормализация, лок.история, отправка, toasts)
 
 import { Api } from "../api.js?v=20260904-3";
+import { enhanceDateInput, untilChips, workweek, todayISO as isoToday, addDays } from "./datePicker.js?v=20260922-1";
 import {
   todayISO,
   buildTimeOptionsHTML,
@@ -179,11 +180,58 @@ export function initForm({ onCreated }) {
     syncTypeButtons();
   }));
 
+  // Eigene Datumsauswahl (Kalender-Sheet, mehrere Tage per Tipp) statt der nativen Felder
+  const datePicker = enhanceDateInput(f.elements.date, {
+    placeholder: "Datum wählen",
+    title: "Datum wählen",
+    multiple: true,
+    label: f.querySelector("#dateLabel"),
+    chips: () => {
+      const today = isoToday();
+      return [
+        { label: "Heute", dates: [today] },
+        { label: "Morgen", dates: [addDays(today, 1)] },
+        { label: "Mo–Fr diese Woche", dates: workweek(today, 0) },
+        { label: "Mo–Fr nächste Woche", dates: workweek(today, 1) },
+      ].filter((chip) => chip.dates.length);
+    },
+  });
+  const untilPicker = repeatUntilInput
+    ? enhanceDateInput(repeatUntilInput, {
+        placeholder: "Enddatum wählen",
+        title: "Wiederholen bis",
+        label: f.querySelector("#untilLabel"),
+        chips: () => untilChips(datePicker.dates[0] || ""),
+      })
+    : null;
+  const repeatHint = f.querySelector("#repeatHint");
+  const clearInvalid = (picker) => picker?.trigger.closest(".dp-field")?.classList.remove("is-invalid");
+  const markInvalid = (picker) => {
+    picker?.trigger.closest(".dp-field")?.classList.add("is-invalid");
+    picker?.trigger.focus({ preventScroll: false });
+  };
+
   const syncRepeatFields = () => {
     const active = Boolean(repeatInput?.value);
     if (repeatUntilWrap) repeatUntilWrap.hidden = !active;
-    if (repeatUntilInput) repeatUntilInput.required = active;
+    syncMultiDates();
   };
+  // Mehrere Tage und Wiederholung schließen sich aus: jeder gewählte Tag wird einzeln angelegt.
+  function syncMultiDates() {
+    const many = datePicker.dates.length > 1;
+    const editing = Boolean(f.dataset.editingId);
+    if (repeatInput) {
+      if (many && repeatInput.value) {
+        repeatInput.value = "";
+        if (repeatUntilWrap) repeatUntilWrap.hidden = true;
+      }
+      repeatInput.disabled = many;
+    }
+    if (repeatHint) repeatHint.hidden = !many;
+    datePicker.setMultipleAllowed(!editing && !repeatInput?.value);
+  }
+  datePicker.onChange(() => { clearInvalid(datePicker); syncMultiDates(); });
+  untilPicker?.onChange(() => clearInvalid(untilPicker));
   repeatInput?.addEventListener("change", syncRepeatFields);
   syncRepeatFields();
 
@@ -232,6 +280,19 @@ export function initForm({ onCreated }) {
   f.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    // Pflichtangaben der eigenen Datumsfelder (die nativen Felder sind versteckt)
+    const chosenDates = datePicker.dates;
+    if (!chosenDates.length) {
+      markInvalid(datePicker);
+      showToast({ title: "Datum fehlt", message: "Bitte ein Datum wählen.", type: "warn", sound: false });
+      return;
+    }
+    if (repeatInput?.value && !untilPicker?.dates.length) {
+      markInvalid(untilPicker);
+      showToast({ title: "Enddatum fehlt", message: "Bitte wählen, bis wann die Fahrt wiederholt werden soll.", type: "warn", sound: false });
+      return;
+    }
+
     // мгновенный отклик
     makeSubmitLoading(submitBtn, true);
 
@@ -240,6 +301,13 @@ export function initForm({ onCreated }) {
       const fd = new FormData(f);
       const data = Object.fromEntries(fd.entries());
       data.phone = (data.phone || "").trim();
+      data.date = chosenDates[0];
+      const multi = chosenDates.length > 1 && !f.dataset.editingId;
+      if (multi) {
+        data.dates = chosenDates; // Server legt jeden Tag an
+        data.rrule = "";
+        data.until = "";
+      }
 
       const editingId = f.dataset.editingId || "";
       const res = await (editingId
@@ -259,7 +327,21 @@ export function initForm({ onCreated }) {
       }
 
       const payload = res.data || res;
-      const { id, conflicts, gcal_event_id, recurrence_count } = payload || {};
+      let { id, conflicts, gcal_event_id, recurrence_count } = payload || {};
+
+      // Ältere Server-Version kennt „dates“ nicht und legt nur den ersten Tag an: die übrigen einzeln nachtragen.
+      let failedDates = [];
+      if (multi && Number(recurrence_count || 1) < chosenDates.length) {
+        const created = Math.max(1, Number(recurrence_count || 1));
+        let ok = created;
+        for (const day of chosenDates.slice(created)) {
+          const { dates: _dates, ...single } = data;
+          const extra = await Api.createOrder({ ...single, date: day }).catch(() => ({ ok: false }));
+          if (extra.ok === false) failedDates.push(day);
+          else ok += 1;
+        }
+        recurrence_count = ok;
+      }
       const resultId = id || editingId;
       const feedbackUrl = resultId
         ? `${window.location.origin}/feedback.html?order=${encodeURIComponent(resultId)}`
@@ -275,24 +357,23 @@ export function initForm({ onCreated }) {
         linkHTML += `<div class="toast__msg"><a href="${feedbackUrl}">Rückmeldung geben</a></div>`;
       }
       const hasConf = conflicts && conflicts.length;
-      const msg = hasConf
-        ? `Überschneidungen: ${conflicts.length}. Bitte Kalender prüfen.`
-        : recurrence_count > 1
-        ? `${recurrence_count} Vorbestellungen gespeichert.`
-        : "Gespeichert.";
+      const failedNote = failedDates.length
+        ? ` Nicht gespeichert: ${failedDates.map((d) => `${d.slice(8)}.${d.slice(5, 7)}.`).join(", ")}`
+        : "";
 
       showToast({
         title: editingId ? "Bestellung aktualisiert" : `Bestellung Nr.${id}`,
-        message: hasConf
+        message: (hasConf
           ? `Überschneidungen: ${conflicts.length}. Bitte Kalender prüfen.`
           : recurrence_count > 1
           ? `${recurrence_count} Vorbestellungen gespeichert.`
-          : "Gespeichert.",
-        type: hasConf ? "warn" : "ok",
+          : "Gespeichert.") + failedNote,
+        type: hasConf || failedDates.length ? "warn" : "ok",
         linkHTML,
       });
 
-      localStorage.setItem("lastOrder", JSON.stringify(data));
+      const { dates: _saved, ...rememberable } = data;
+      localStorage.setItem("lastOrder", JSON.stringify(rememberable));
       delete f.dataset.editingId;
       submitBtn.title = "Speichern";
       onCreated?.();
@@ -309,6 +390,8 @@ export function initForm({ onCreated }) {
       if (f.elements[k]) f.elements[k].value = v;
     }
     f.elements.type.dispatchEvent(new Event("change"));
+    repeatInput?.dispatchEvent(new Event("change")); // „bis“-Feld ein-/ausblenden
+    syncTypeButtons();
     if (!timeInput.value) setNewOrderDefaults();
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
@@ -326,6 +409,7 @@ export function initForm({ onCreated }) {
     if (rrule !== undefined && repeatInput) repeatInput.value = rrule || "";
     if (until !== undefined && repeatUntilInput) repeatUntilInput.value = until || "";
     syncRepeatFields();
+    syncMultiDates();
     f.elements.type.dispatchEvent(new Event("change"));
     syncTypeButtons();
     submitBtn.title = id ? "Änderungen speichern" : "Speichern";

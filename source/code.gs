@@ -856,13 +856,15 @@ function orderTimeValue_(value) {
 
 function createOrder_(raw) {
   const data = raw && typeof raw === "object" ? raw : {};
-  const date = String(data.date || "").trim();
+  const explicitDates = normalizeOrderDates_(data.dates);
+  // Mehrere einzeln gewählte Tage (Formular „Mehrere Tage“): kein Serientyp, jeder Tag wird angelegt.
+  const date = explicitDates.length ? explicitDates[0] : String(data.date || "").trim();
   const time = String(data.time || "").trim();
-  const rrule = String(data.rrule || "").trim().toUpperCase();
-  const until = String(data.until || "").trim();
+  const rrule = explicitDates.length ? "" : String(data.rrule || "").trim().toUpperCase();
+  const until = explicitDates.length ? "" : String(data.until || "").trim();
   if (!date || !time) throw new Error("date_and_time_required");
 
-  const dates = recurrenceDates_(date, rrule, until);
+  const dates = explicitDates.length ? explicitDates : recurrenceDates_(date, rrule, until);
   const seriesId = dates.length > 1 ? "s_" + Date.now() + "_" + Math.floor(Math.random() * 1000) : "";
   const sh = orderSheet_();
   const head = ensureHeaders_(sh, ORDER_HEADERS_);
@@ -887,6 +889,26 @@ function createOrder_(raw) {
     if (!first) first = item;
   });
   return Object.assign({}, first, { recurrence_count: dates.length });
+}
+
+// Liste einzelner Tage (yyyy-MM-dd): gültig, eindeutig, aufsteigend, höchstens 62. Leer = nicht angegeben.
+function normalizeOrderDates_(value) {
+  let list = value;
+  if (typeof list === "string" && list.trim()) {
+    try { list = JSON.parse(list); } catch (_) { throw new Error("invalid_dates"); }
+  }
+  if (list === undefined || list === null || list === "" || (Array.isArray(list) && !list.length)) return [];
+  if (!Array.isArray(list)) throw new Error("invalid_dates");
+  const seen = {};
+  list.forEach(function (item) {
+    const day = String(item || "").trim();
+    const parsed = /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(day + "T12:00:00Z") : null;
+    if (!parsed || isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== day) throw new Error("invalid_dates");
+    seen[day] = true;
+  });
+  const days = Object.keys(seen).sort();
+  if (days.length > 62) throw new Error("too_many_dates");
+  return days;
 }
 
 function recurrenceDates_(startDate, rule, until) {

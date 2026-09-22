@@ -58,6 +58,8 @@
     <link rel="stylesheet" href="assets/css/responsive.css?v=20260114" />
     <link rel="stylesheet" href="assets/css/components.css?v=20260114" />
     <link rel="stylesheet" href="assets/css/modal.css?v=20260114" />
+    <link rel="stylesheet" href="assets/css/date-picker.css?v=20260922-1" />
+    <link rel="stylesheet" href="assets/css/order-form.css?v=20260922-1" />
     <link rel="stylesheet" href="assets/css/toast.css?v=20260114" />
   </head>
 
@@ -197,13 +199,13 @@
         <form id="f" class="form-card">
           <!-- <h2 id="aside-new-title" class="section-title">Neue</h2> -->
 
-          <div class="full">
-            <label class="label">Datum</label>
-            <input type="date" name="date" lang="de-AT" aria-label="Datum (TT.MM.JJJJ)" required />
+          <div class="full field field--date">
+            <label class="label" id="dateLabel">Datum</label>
+            <input type="date" name="date" lang="de-AT" aria-label="Datum" />
           </div>
 
-          <div class="full">
-            <label class="label">Uhrzeit</label>
+          <div class="full field field--time">
+            <label class="label" for="time">Uhrzeit</label>
             <input
               type="time"
               name="time"
@@ -215,7 +217,12 @@
             <datalist id="time5"></datalist>
           </div>
 
-          <div class="full">
+          <div class="full field field--duration">
+            <label class="label" for="duration">Dauer (Min.)</label>
+            <input type="number" name="duration_min" id="duration" step="15" min="0" max="999" inputmode="numeric" value="15" />
+          </div>
+
+          <div class="full field field--repeat">
             <label class="label" for="repeat">Wiederholung</label>
             <select name="rrule" id="repeat">
               <option value="">Keine Wiederholung</option>
@@ -223,16 +230,18 @@
               <option value="WEEKLY">Jede Woche</option>
               <option value="BIWEEKLY">Alle 2 Wochen</option>
             </select>
+            <p class="field-hint" id="repeatHint" hidden>Bei mehreren Tagen nicht nötig: jeder gewählte Tag wird angelegt.</p>
           </div>
 
-          <div class="full" id="repeatUntilWrap" hidden>
-            <label class="label" for="repeatUntil">Wiederholen bis</label>
-            <input type="date" name="until" id="repeatUntil" lang="de-AT" />
+          <div class="full field field--until" id="repeatUntilWrap" hidden>
+            <label class="label" id="untilLabel">Wiederholen bis</label>
+            <input type="date" name="until" id="repeatUntil" lang="de-AT" aria-label="Wiederholen bis" />
+            <p class="field-hint">Letzter Tag der Wiederholung – bis zu diesem Datum wird die Fahrt angelegt.</p>
           </div>
 
           <!-- Телефон -->
-          <div class="full" id="phoneField" hidden>
-            <label class="label">Telefonnummer</label>
+          <div class="full field" id="phoneField" hidden>
+            <label class="label" for="phone">Telefonnummer</label>
             <input
               type="tel"
               name="phone"
@@ -245,8 +254,8 @@
           </div>
 
           <!-- Notiz / Adresse (textarea нельзя привязать к datalist, сделаем кастом) -->
-          <div class="full">
-            <label class="label label--hint">Notiz / Adresse</label>
+          <div class="full field">
+            <label class="label" for="message">Notiz / Adresse</label>
             <textarea
               name="message"
               id="message"
@@ -256,8 +265,8 @@
             ></textarea>
           </div>
 
-          <div class="full">
-            <label class="label">Fahrtart</label>
+          <div class="full field">
+            <label class="label" id="typeLabel">Fahrtart</label>
             <div class="type-choice" role="group" aria-label="Fahrtart auswählen">
               <button type="button" class="type-choice__button is-selected" data-type="Orts" aria-pressed="true"><span class="type-choice__icon" aria-hidden="true">⌖</span><span>Orts</span></button>
               <button type="button" class="type-choice__button" data-type="KT" aria-pressed="false"><span class="type-choice__icon" aria-hidden="true">✚</span><span>KT</span></button>
@@ -268,11 +277,6 @@
               <option value="KT">Krankentransport</option>
               <option value="RE">Rechnungsfahrt</option>
             </select>
-          </div>
-
-          <div class="full">
-            <label class="label">Dauer (Minuten)</label>
-            <input type="number" name="duration_min" step="15" min="0" max="999" inputmode="numeric" value="15" />
           </div>
 
           <div class="actions full">

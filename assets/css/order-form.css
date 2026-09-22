@@ -1,0 +1,136 @@
+/* ===== Formular „Neue Vorbestellung“ (Dialog): einheitliche Felder, Raster, Buttons ===== */
+.order-dialog {
+  --of-btn-bg: #0d5ef7;
+  --of-btn-bg-hover: #0a4fd1;
+  --of-btn-fg: #ffffff;
+  --of-field-h: 48px;
+  width: min(560px, calc(100vw - 20px));
+  max-height: calc(100dvh - 20px);
+  padding: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+html[data-theme="dark"] .order-dialog {
+  --of-btn-bg: #2563eb;      /* weiß auf #2563eb: 5,2:1 (vorher dunkler Text auf hellblau) */
+  --of-btn-bg-hover: #3572f0;
+  --of-btn-fg: #ffffff;
+}
+.order-dialog__head h2 { font-size: 19px; }
+.dialog-close { width: 40px; height: 40px; border-radius: 50%; }
+.dialog-close:hover, .dialog-close:focus-visible { background: var(--surface-2); outline: 0; }
+
+/* Raster: 12 Spalten; Mobil Datum voll, Uhrzeit|Dauer nebeneinander; ab 520px Datum|Uhrzeit|Dauer */
+#f.order-dialog__form {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px 12px;
+  align-items: start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+#f .field { grid-column: span 12; min-width: 0; }
+#f .field--time, #f .field--duration { grid-column: span 6; }
+@media (min-width: 520px) {
+  #f .field--date { grid-column: span 6; }
+  #f .field--time, #f .field--duration { grid-column: span 3; }
+}
+
+/* Sichtbare Beschriftungen (vorher global ausgeblendet, dadurch war z. B. „bis“ nicht verständlich) */
+#f .label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  opacity: .8;
+}
+#f .field-hint { margin: 6px 2px 0; color: var(--text-muted); font-size: 12.5px; line-height: 1.35; }
+#f .field-hint[hidden] { display: none; }
+
+/* Alle Eingabefelder gleich hoch (48px) und 16px, damit iOS nicht zoomt */
+#f input:not([type="checkbox"]):not([type="radio"]):not(.dp-native),
+#f select,
+#f .dp-trigger {
+  width: 100%;
+  min-height: var(--of-field-h);
+  height: var(--of-field-h);
+  padding: 0 14px;
+  border: 1px solid var(--control-border);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.2;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+#f select { padding-right: 38px; }
+#f textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.35;
+  box-sizing: border-box;
+}
+/* iOS/Safari: Zeit-Feld wie normales Textfeld ausrichten */
+#f input[type="time"], #f input[type="number"] { display: block; text-align: left; }
+#f input[type="time"]::-webkit-date-and-time-value { text-align: left; min-height: 1.2em; margin: 0; }
+#f input[type="time"]::-webkit-datetime-edit { padding: 0; }
+#f input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+#f input[name="duration_min"] { width: 100%; max-width: none; }
+#f select:disabled { opacity: .6; }
+
+/* Fahrtart: gleiche Höhe wie die Felder */
+#f .type-choice { gap: 8px; }
+#f .type-choice__button { min-height: var(--of-field-h); border-radius: 12px; font-size: 14px; gap: 3px; }
+
+/* Aktionen: Speichern groß und gut lesbar, „Letzte übernehmen“ als zweite Aktion */
+#f .actions.full {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 4px;
+}
+@media (min-width: 520px) {
+  #f .actions.full { flex-direction: row; flex-wrap: nowrap; align-items: stretch; }
+  #f .actions.full .icon-btn--primary { flex: 1 1 0; width: auto; }
+}
+#f .actions.full .icon-btn {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  min-height: var(--of-field-h);
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  transform: none;
+}
+#f .actions.full .action-label { font-size: 16px; white-space: nowrap; }
+#f .actions.full .icon-btn svg { width: 22px; height: 22px; }
+#f .actions.full .icon-btn--primary {
+  border: 1px solid var(--of-btn-bg);
+  background: var(--of-btn-bg);
+  color: var(--of-btn-fg);
+}
+#f .actions.full .icon-btn--primary:hover { background: var(--of-btn-bg-hover); border-color: var(--of-btn-bg-hover); }
+#f .actions.full .icon-btn--primary:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--of-btn-bg) 35%, transparent); }
+#f .actions.full .icon-btn--muted {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 600;
+}
+#f .actions.full .icon-btn--muted:hover { background: var(--surface-2); }
+@media (min-width: 520px) { #f .actions.full .icon-btn--muted { width: auto; flex: 0 0 auto; } }
