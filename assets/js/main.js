@@ -11,7 +11,7 @@ window.addEventListener("DOMContentLoaded", () => {
   dialog.className = "order-dialog";
   dialog.innerHTML = `
     <div class="order-dialog__head">
-      <h2>Neue Vorbestellung</h2>
+      <h2 id="orderDialogTitle">Neue Vorbestellung</h2>
       <button type="button" class="dialog-close" aria-label="Schließen" title="Schließen">×</button>
     </div>`;
   document.body.append(dialog);
@@ -19,6 +19,12 @@ window.addEventListener("DOMContentLoaded", () => {
     dialog.append(form);
     form.classList.add("order-dialog__form");
   }
+  const dialogTitle = dialog.querySelector("#orderDialogTitle");
+  // Karte/„Korrigieren“ öffnen denselben Dialog zum Bearbeiten (Formular füllt sich mit der bestehenden
+  // Bestellung, editingId gesetzt) — ohne diesen Titelwechsel stand dort immer „Neue Vorbestellung“.
+  const syncDialogTitle = () => {
+    if (dialogTitle) dialogTitle.textContent = form?.dataset.editingId ? "Bestellung korrigieren" : "Neue Vorbestellung";
+  };
   const openForm = ({ reset = false } = {}) => {
     if (reset && form) {
       delete form.dataset.editingId;
@@ -30,6 +36,7 @@ window.addEventListener("DOMContentLoaded", () => {
       form.elements.time.value = "";
       formApi?.setNewOrderDefaults?.();
     }
+    syncDialogTitle();
     if (!dialog.open) dialog.showModal();
     form?.querySelector('[name="date"]')?.focus({ preventScroll: true });
   };
