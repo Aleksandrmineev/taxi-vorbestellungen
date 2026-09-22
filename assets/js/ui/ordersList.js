@@ -34,7 +34,10 @@ export function initOrdersList({ fillForm }) {
            data-dur="${it.duration_min}"
            data-phone="${display || ""}"
            data-message="${(it.message || "").replace(/"/g, "&quot;")}"
-           data-time="${it.time}">
+           data-time="${it.time}"
+           data-date="${it.date || ""}"
+           data-rrule="${it.rrule || ""}"
+           data-until="${it.until || ""}">
   
         <div class="item__top">
           <div class="item__dt">
@@ -52,6 +55,14 @@ export function initOrdersList({ fillForm }) {
   
         <div class="item__bottom">
           <div class="btns">
+            <button class="icon-btn edit" title="Korrigieren" aria-label="Korrigieren">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"
+                      fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
             <button class="icon-btn todo-repeat" title="Kopieren" aria-label="Kopieren">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M20 12a8 8 0 1 1-2.35-5.65"
@@ -62,7 +73,7 @@ export function initOrdersList({ fillForm }) {
                           stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </button>
-  
+
             <button class="icon-btn icon-btn--primary done" title="Erledigt" aria-label="Erledigt">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5.5 12.5l3.5 3.5 9.5-9.5"
@@ -141,7 +152,7 @@ export function initOrdersList({ fillForm }) {
     const item = btn.closest(".item");
     const id = item?.dataset?.id;
 
-    // Kopieren (Formular vorfüllen)
+    // Kopieren (Formular vorfüllen, neue Bestellung)
     if (
       btn.classList.contains("todo-repeat") ||
       btn.classList.contains("copy")
@@ -153,6 +164,22 @@ export function initOrdersList({ fillForm }) {
         duration_min: item.dataset.dur,
         phone: item.dataset.phone || "",
         message: item.dataset.message || "",
+      });
+      return;
+    }
+
+    // Korrigieren (Formular vorfüllen, bestehende Bestellung ändern statt neu anlegen)
+    if (btn.classList.contains("edit")) {
+      fillForm({
+        id,
+        date: item.dataset.date || "",
+        time: (item.dataset.time || "").padStart(5, "0"),
+        type: item.dataset.type,
+        duration_min: item.dataset.dur,
+        phone: item.dataset.phone || "",
+        message: item.dataset.message || "",
+        rrule: item.dataset.rrule || "",
+        until: item.dataset.until || "",
       });
       return;
     }
