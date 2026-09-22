@@ -84,8 +84,12 @@ function processOrderShiftReminders() {
       safeNotificationLog_("order_shift_skipped", { reason: "group_not_configured" });
       return;
     }
-    props.setProperty(key, JSON.stringify({ token: token, status: "attempting" }));
     const orders = osrOrdersInWindow_(readOrders_(), window);
+    if (!orders.length) {
+      props.setProperty(key, JSON.stringify({ token: token, status: "skipped_empty" }));
+      return;
+    }
+    props.setProperty(key, JSON.stringify({ token: token, status: "attempting" }));
     const text = osrSummaryText_(orders, window);
     try {
       sendWhatsAppMessage_(target, text);

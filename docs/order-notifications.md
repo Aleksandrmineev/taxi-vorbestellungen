@@ -55,8 +55,10 @@ wird aber nicht mehr aufgerufen, solange WhatsApp aktiv ist — einfacher Rollba
   bei der Nachtschicht ist das Datum das vom Schichtende (Folgetag-Morgen), da sie über Mitternacht geht.
 - Fenster: 06:00 → 18:00 desselben Tages; 18:00 → 06:00 des Folgetages (Europe/Vienna).
 - Enthält offene Bestellungen (`status` ≠ `cancelled`/`done`) mit Startzeit im Fenster, sortiert nach Uhrzeit.
-- Ohne Fahrten wird trotzdem eine kurze Bestätigung „Keine Vorbestellungen in diesem Zeitraum.“ gesendet
-  (damit die Gruppe weiß, dass geprüft wurde) — kein stilles Ausbleiben wie bei den Lehrlinge-Erinnerungen.
+- Ohne Fahrten im Fenster wird nichts an die Gruppe gesendet (wie bei den Lehrlinge-Erinnerungen) — intern wird
+  das Fenster trotzdem als geprüft markiert (`skipped_empty`, kein Wiederholungsversuch). Der manuelle Test
+  (`sendOrderShiftSummaryTestNow()`) zeigt „Keine Vorbestellungen in diesem Zeitraum.“ weiterhin an, damit man
+  auch an fahrtenlosen Tagen prüfen kann, dass alles läuft.
 - Wie bei den Lehrlinge-/SMS-Erinnerungen: pro Fenster höchstens ein Versuch, Status in
   `ORDER_SHIFT_LAST_06` / `ORDER_SHIFT_LAST_18` (`sent` / `failed_or_unknown`), kein automatischer Neuversuch
   bei unklarem Ergebnis (verhindert doppelte Nachrichten in der Gruppe).

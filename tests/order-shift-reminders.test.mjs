@@ -95,11 +95,24 @@ test("osrSummaryText_: Nachtschicht header uses the end date (next morning), not
   assert.equal(text.split("\n")[1], "04:15 · Dr Pölzg 21 · #394");
 });
 
+test("processOrderShiftReminders: no orders in the window -> nothing sent, but the slot is marked done (no retry)", () => {
+  const f = fixture("2026-09-22T04:00:00Z"); // 06:00 Vienna
+  f.props.set("ORDER_SHIFT_ENABLED", "true");
+  f.props.set("ORDER_WHATSAPP_GROUP_JID", "grp@g.us");
+  f.setOrders([]); // keine Fahrten im Fenster
+  f.ctx.processOrderShiftReminders();
+  assert.equal(f.waCalls.length, 0);
+  assert.match(f.props.get("ORDER_SHIFT_LAST_06"), /skipped_empty/);
+  f.ctx.processOrderShiftReminders(); // gleicher Slot erneut: kein zweiter Versuch, kein Senden
+  assert.equal(f.waCalls.length, 0);
+});
+
 test("processOrderShiftReminders: sends only at 06 and 18, once per slot per day, group required", () => {
   const f = fixture("2026-09-22T04:00:00Z"); // 06:00 Vienna
   f.props.set("ORDER_SHIFT_ENABLED", "true");
   f.props.set("ORDER_WHATSAPP_GROUP_JID", "grp@g.us");
-  f.setOrders([order("1", "2026-09-22", "09:00")]);
+  // je eine Fahrt in beiden Fenstern, sonst würde das leere Fenster jetzt gar nicht senden (eigener Test dafür)
+  f.setOrders([order("1", "2026-09-22", "09:00"), order("2", "2026-09-23", "01:00")]);
   f.ctx.processOrderShiftReminders();
   assert.equal(f.waCalls.length, 1);
   assert.equal(f.waCalls[0][0], "grp@g.us");
@@ -134,6 +147,7 @@ test("WhatsApp failure is recorded as failed_or_unknown and does not crash", () 
   const f = fixture("2026-09-22T04:00:00Z");
   f.props.set("ORDER_SHIFT_ENABLED", "true");
   f.props.set("ORDER_WHATSAPP_GROUP_JID", "grp@g.us");
+  f.setOrders([order("1", "2026-09-22", "09:00")]);
   f.fail();
   assert.doesNotThrow(() => f.ctx.processOrderShiftReminders());
   assert.match(f.props.get("ORDER_SHIFT_LAST_06"), /failed_or_unknown/);
