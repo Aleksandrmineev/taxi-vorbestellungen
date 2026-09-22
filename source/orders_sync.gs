@@ -155,3 +155,25 @@ function removeOrdersSyncTriggers() {
     if (handler === "pushOrdersSnapshot" || handler === "onOrdersSheetEdit_") ScriptApp.deleteTrigger(trigger);
   });
 }
+
+/**
+ * Diagnose der Bestellnummern (schreibt nichts): wie viele dreistellige Nummern sind belegt/frei
+ * und welche Nummer würde als nächste vergeben. Nach der Bereitstellung von Hand starten und das Journal lesen.
+ */
+function checkOrderIdCapacity() {
+  const sh = SpreadsheetApp.getActive().getSheetByName("Orders");
+  const ids = sh && sh.getLastRow() > 1
+    ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(function (row) { return String(row[0] || "").trim(); }).filter(Boolean)
+    : [];
+  const threeDigit = ids.filter(function (id) { return /^\d{3}$/.test(id); }).length;
+  const result = {
+    orders: ids.length,
+    usedThreeDigit: threeDigit,
+    freeThreeDigit: 900 - threeDigit,
+    fourOrFiveDigit: ids.length - threeDigit,
+    nextIdSample: orderId_(),
+    growsBeyondThreeDigits: true,
+  };
+  Logger.log("Orders id capacity: " + JSON.stringify(result));
+  return result;
+}
