@@ -77,6 +77,61 @@ async function postJSON(bodyObj) {
   return data;
 }
 
+// ---- Redis-Kopie der Bestellungen (schnell) mit Rückfall auf GAS ----
+// Lesen: bei jedem Problem wird der bisherige GAS-Weg genutzt. Ausschalten pro Gerät: localStorage mt_orders_redis = "off".
+const ORDERS_URL = new URL("/api/orders", API).toString();
+const ORDERS_TIMEOUT_MS = 6000;
+
+class OrdersUnavailable extends Error {
+  constructor(message) { super(message || "orders_unavailable"); this.name = "OrdersUnavailable"; }
+}
+
+function ordersRedisOff() {
+  try { return localStorage.getItem("mt_orders_redis") === "off"; } catch { return false; }
+}
+
+async function ordersRequest(op, { method = "GET", params = {}, body } = {}) {
+  if (ordersRedisOff()) throw new OrdersUnavailable("disabled_on_device");
+  const url = new URL(ORDERS_URL);
+  url.searchParams.set("op", op);
+  Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, String(value ?? "")));
+  url.searchParams.set("secret", API_SECRET);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ORDERS_TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch(url, {
+      method,
+      cache: "no-store",
+      signal: controller.signal,
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new OrdersUnavailable("network");
+  } finally {
+    clearTimeout(timer);
+  }
+  const data = await res.json().catch(() => null);
+  // 404/5xx: Funktion fehlt, ausgeschaltet oder Redis nicht bereit -> Rückfall auf GAS
+  if (res.status === 404 || res.status >= 500) throw new OrdersUnavailable(data?.error || `HTTP ${res.status}`);
+  if (!res.ok || !data || data.ok === false) {
+    const error = new Error(data?.error || `HTTP ${res.status}`);
+    error.orders = true;
+    throw error;
+  }
+  return data;
+}
+
+async function ordersOrGas(fast, slow) {
+  try {
+    return await fast();
+  } catch (error) {
+    if (error instanceof OrdersUnavailable) return slow();
+    throw error;
+  }
+}
+
 // ---- API ----
 export const Api = {
   /** История сообщений (polling) */
@@ -97,11 +152,14 @@ export const Api = {
 
   /** Заказы по дате */
   async ordersByDate(dateISO, includeAll = false) {
-    return getJSON({
-      action: "ordersbydate",
-      date: String(dateISO || ""),
-      includeAll: includeAll ? "1" : "0",
-    });
+    return ordersOrGas(
+      () => ordersRequest("list", { params: { date: String(dateISO || ""), includeAll: includeAll ? "1" : "0" } }),
+      () => getJSON({
+        action: "ordersbydate",
+        date: String(dateISO || ""),
+        includeAll: includeAll ? "1" : "0",
+      }),
+    );
   },
 
   /** Добавить обычное сообщение (или parsed — на бэке создаст заказ) */
@@ -170,10 +228,13 @@ export const Api = {
 
   /** Список ближайших задач/заказов */
   async todos(hours = 24) {
-    return getJSON({
-      action: "todos",
-      hours: String(hours),
-    });
+    return ordersOrGas(
+      () => ordersRequest("todos", { params: { hours: String(hours) } }),
+      () => getJSON({
+        action: "todos",
+        hours: String(hours),
+      }),
+    );
   },
 
   /** Обновить статус заказа */

@@ -330,11 +330,13 @@ function doPost(e) {
     // ===== ВЕТКА VORBESTELLUNGEN =====
     if (action === "create") {
       const saved = createOrder_(body.data || body);
+      pushOrdersSnapshotSafe_();
       return json({ ok: true, data: saved });
     }
 
     if (action === "updateorder") {
       const saved = updateOrder_(body.id, body.data || body);
+      pushOrdersSnapshotSafe_();
       return json({ ok: true, data: saved });
     }
 
@@ -350,6 +352,7 @@ function doPost(e) {
 
     if (action === "updatestatus") {
       const saved = updateOrderStatus_(body.id, body.status, body.comment || "", body.allSeries === true || body.allSeries === "1");
+      pushOrdersSnapshotSafe_();
       return json({ ok: true, ...saved });
     }
 
