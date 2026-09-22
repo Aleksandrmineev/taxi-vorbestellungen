@@ -1050,7 +1050,9 @@ function readOrders_() {
       phone_norm: String(get("phone_norm") || ""),
       message: String(get("message") || ""),
       rrule: String(get("rrule") || ""),
-      until: String(get("until") || ""),
+      // Google Sheets kann "until" als echtes Datum ablegen; String(Date) ergäbe "Thu Dec 31 2026 00:00:00 GMT+..."
+      // statt "yyyy-MM-dd" — das ließ das Datumsfeld beim Korrigieren leer wirken (enhanceDateInput erkennt nur ISO).
+      until: orderDateValue_(get("until")),
       series_id: String(get("series_id") || ""),
       gcal_event_id: String(get("gcal_event_id") || ""),
       status: String(get("status") || "open"),
