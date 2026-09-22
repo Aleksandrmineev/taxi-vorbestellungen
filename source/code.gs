@@ -487,6 +487,8 @@ function feedbackSheet_() {
   return sh;
 }
 
+// Kurze Bestellnummer: zuerst dreistellig (100-999); sind nach 30 Zufallsversuchen alle getroffenen Nummern belegt,
+// vierstellig (1000-9999), dann fünfstellig. Der dreistellige Bereich (900 Nummern) wird sonst irgendwann voll.
 function orderId_() {
   const sh = SpreadsheetApp.getActive().getSheetByName("Orders");
   const used = new Set();
@@ -497,9 +499,12 @@ function orderId_() {
       .forEach((row) => used.add(String(row[0] || "").trim()));
   }
 
-  for (let attempt = 0; attempt < 20; attempt++) {
-    const candidate = String(Math.floor(100 + Math.random() * 900));
-    if (!used.has(candidate)) return candidate;
+  const ranges = [[100, 900], [1000, 9000], [10000, 90000]];
+  for (let r = 0; r < ranges.length; r++) {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const candidate = String(ranges[r][0] + Math.floor(Math.random() * ranges[r][1]));
+      if (!used.has(candidate)) return candidate;
+    }
   }
 
   throw new Error("short_order_id_unavailable");
