@@ -33,3 +33,10 @@ export function trustedFields(driver) {
   if (!serverKey) throw new Error("sync_not_configured");
   return { serverKey, driverJson: JSON.stringify(driver) };
 }
+
+// Server-Schlüssel für vertrauenswürdige GAS-Aufrufe (Bestellungen): nur der Wert von SYNC_SECRET.
+export function serverKey() {
+  const key = String(process.env.SYNC_SECRET || "");
+  if (!key) throw new Error("sync_not_configured");
+  return key;
+}

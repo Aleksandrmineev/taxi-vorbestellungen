@@ -334,9 +334,15 @@ function doPost(e) {
       return json({ ok: true, data: saved });
     }
 
+    // Von Vercel (Redis-first): Bestellungen mit fertigen Nummern anlegen, idempotent; nur mit Server-Schlüssel.
+    if (action === "orders_import") {
+      requireOrdersServerKey_(body);
+      return json({ ok: true, ...importOrders_(body.items) });
+    }
+
     if (action === "updateorder") {
       const saved = updateOrder_(body.id, body.data || body);
-      pushOrdersSnapshotSafe_();
+      if (!isOrdersServerKey_(body)) pushOrdersSnapshotSafe_();
       return json({ ok: true, data: saved });
     }
 
@@ -352,7 +358,7 @@ function doPost(e) {
 
     if (action === "updatestatus") {
       const saved = updateOrderStatus_(body.id, body.status, body.comment || "", body.allSeries === true || body.allSeries === "1");
-      pushOrdersSnapshotSafe_();
+      if (!isOrdersServerKey_(body)) pushOrdersSnapshotSafe_();
       return json({ ok: true, ...saved });
     }
 

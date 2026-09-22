@@ -22,11 +22,70 @@ function ordersSyncConfig_() {
 }
 
 /** Vercel ruft GAS mit dem Server-Schlüssel auf (importieren, ändern, Status): nur mit SYNC_SECRET. */
-function requireOrdersServerKey_(body) {
+function isOrdersServerKey_(body) {
   const props = PropertiesService.getScriptProperties();
   const secret = String(props.getProperty("SYNC_SECRET") || "").trim();
   const key = String((body && body.serverKey) || "");
-  if (!secret || !key || key !== secret) throw new Error("forbidden");
+  return Boolean(secret && key && key === secret);
+}
+
+function requireOrdersServerKey_(body) {
+  if (!isOrdersServerKey_(body)) throw new Error("forbidden");
+}
+
+/**
+ * Legt Bestellungen mit fertigen Nummern an (von Vercel, nach dem Speichern in Redis). Idempotent:
+ *  - Nummer existiert schon mit gleichem Inhalt: übersprungen (Wiederholung nach unklarem Ergebnis);
+ *  - Nummer existiert mit anderem Inhalt (Kollision): neue Nummer, Zuordnung in `renamed`.
+ * Rückgabe: { imported, skipped: [ids], renamed: { alt: neu } }
+ */
+function importOrders_(items) {
+  const list = typeof items === "string" ? JSON.parse(items) : items;
+  if (!Array.isArray(list) || !list.length) return { imported: 0, skipped: [], renamed: {} };
+  if (list.length > 400) throw new Error("too_many_orders");
+  const sh = orderSheet_();
+  const head = ensureHeaders_(sh, ORDER_HEADERS_);
+  const col = function (name) { return head.indexOf(name); };
+  const values = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, head.length).getValues() : [];
+  const existing = {};
+  values.forEach(function (row) { existing[String(row[col("id")] || "").trim()] = row; });
+
+  const sameOrder = function (row, item) {
+    return orderDateValue_(row[col("date")]) === String(item.date) &&
+      orderTimeValue_(row[col("time")]) === String(item.time) &&
+      String(row[col("message")] || "").trim() === String(item.message || "").trim() &&
+      String(row[col("phone_raw")] || "").trim() === String(item.phone || "").trim();
+  };
+
+  const rows = [];
+  const skipped = [];
+  const renamed = {};
+  list.forEach(function (item) {
+    let id = String((item && item.id) || "").trim();
+    if (!id || !/^\d{4}-\d{2}-\d{2}$/.test(String(item.date || "")) || !/^\d{2}:\d{2}$/.test(String(item.time || ""))) throw new Error("invalid_order");
+    if (["open", "done", "cancelled"].indexOf(String(item.status || "open")) < 0) throw new Error("invalid_order");
+    if (existing[id]) {
+      if (existing[id] !== true && sameOrder(existing[id], item)) { skipped.push(id); return; }
+      const fresh = orderId_();
+      renamed[id] = fresh;
+      id = fresh;
+    }
+    existing[id] = true;
+    const record = Object.assign({}, item, {
+      id: id,
+      phone_raw: String(item.phone || ""),
+      created_at: item.created_at ? new Date(item.created_at) : new Date(),
+    });
+    rows.push(head.map(function (key) { return record[key] === undefined ? "" : record[key]; }));
+  });
+
+  if (rows.length) {
+    const start = sh.getLastRow() + 1;
+    const timeCol = col("time") + 1;
+    if (timeCol > 0) sh.getRange(start, timeCol, rows.length, 1).setNumberFormat("@"); // Uhrzeit bleibt Text
+    sh.getRange(start, 1, rows.length, head.length).setValues(rows);
+  }
+  return { imported: rows.length, skipped: skipped, renamed: renamed };
 }
 
 function buildOrdersSyncPayload_() {

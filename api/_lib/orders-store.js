@@ -144,3 +144,24 @@ export async function recallRequest(requestId) {
   const raw = await run((db) => db.get(REQUEST_PREFIX + requestId));
   return raw ? parse(raw) : null;
 }
+
+// Nummer für kurze Zeit reservieren (atomar), damit zwei gleichzeitige Bestellungen nie dieselbe Nummer bekommen.
+export async function reserveId(id) {
+  const ok = await run((db) => db.set(`orders:id:${id}`, "1", { NX: true, EX: 3600 }));
+  return Boolean(ok);
+}
+
+// GAS hat wegen einer Nummern-Kollision eine neue Nummer vergeben: Redis-Kopie umbenennen.
+export async function renameOrders(mapping) {
+  const entries = Object.entries(mapping || {});
+  if (!entries.length) return;
+  const map = await readOrderMap();
+  await run(async (db) => {
+    for (const [oldId, newId] of entries) {
+      const current = map.get(String(oldId));
+      if (!current) continue;
+      await db.hSet(ITEMS_KEY, String(newId), JSON.stringify({ ...current, id: String(newId), vat: Date.now() }));
+      await db.hDel(ITEMS_KEY, String(oldId));
+    }
+  });
+}
