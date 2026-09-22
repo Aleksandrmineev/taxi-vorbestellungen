@@ -330,6 +330,7 @@ form {
   color: var(--text-muted);
 }
 .order-row.item {
+  position: relative; /* Anker für das ausklappende Options-Menü */
   display: flex;
   align-items: center;
   gap: 12px;
@@ -402,9 +403,55 @@ form {
   margin-top: 2px;
 }
 .order-row__actions {
+  position: relative;
   display: flex;
   flex: 0 0 auto;
+}
+/* Ein Klick zeigt statt 3 Buttons nebeneinander (fraß auf schmalen Karten viel Platz weg vom
+   Bestelltext) ein schmales „⋯", das die Buttons als Panel über dem Text einblendet. */
+.order-actions-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.order-actions-toggle svg { width: 20px; height: 20px; }
+.order-actions-toggle:hover,
+.order-actions-toggle:focus-visible,
+.order-row__actions.is-open .order-actions-toggle {
+  background: var(--surface-2);
+  color: var(--primary);
+}
+.order-actions-menu {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
   gap: 4px;
+  padding: 4px 6px;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: -10px 0 14px -8px rgba(0, 0, 0, 0.22), 0 1px 6px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(10px);
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+}
+.order-row__actions.is-open .order-actions-menu {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(0);
 }
 .order-action {
   display: inline-flex;
@@ -431,7 +478,8 @@ form {
   color: var(--danger);
 }
 .order-action svg { width: 19px; height: 19px; }
-.order-action small { font-size: 9px; line-height: 1; }
+/* Im Panel ist jetzt Platz: Beschriftung etwas größer als vorher (9px) für bessere Lesbarkeit. */
+.order-action small { font-size: 11px; line-height: 1.1; }
 
 .new-order-fab {
   position: fixed;
@@ -483,8 +531,8 @@ form {
   .order-row__time { flex-basis: 40px; font-size: 16px; }
   .order-row__phone { font-size: 13px; }
   .search-order-row .order-row__date { font-size: 10px; }
-  .order-action { width: 48px; }
-  .order-action small { font-size: 8px; }
+  .order-action { width: 52px; }
+  .order-action small { font-size: 10px; }
 }
 
 /* телефон: 16px */

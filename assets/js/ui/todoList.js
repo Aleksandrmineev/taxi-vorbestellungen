@@ -47,7 +47,7 @@ export function initTodoList({ fillForm }) {
       const phone = display ? `<a href="${esc(href)}">${esc(display)}</a>` : "";
       const repeat = it.rrule ? `${it.rrule === "DAILY" ? "Jeden Tag" : it.rrule === "BIWEEKLY" ? "Alle 2 Wochen" : "Jede Woche"}${it.until ? ` · bis ${formatUntil(it.until)}` : ""}` : "";
       const secondary = [it.type || "Bestellung", `${it.duration_min || 0} Min.`, repeat].filter(Boolean).join(" · ");
-      return `${heading}<div class="order-row item" data-order-id="${esc(it.order_id || "")}" data-series-id="${esc(it.series_id || "")}" data-type="${esc(it.type || "Orts")}" data-dur="${esc(it.duration_min || "15")}" data-phone="${esc(display || "")}" data-message="${esc(it.message || "")}" data-rrule="${esc(it.rrule || "")}" data-until="${esc(it.until || "")}" data-start="${esc(it.start_iso)}"><div class="order-row__info"><div class="order-row__primary"><strong class="order-row__time">${esc(time)}</strong>${it.message ? `<span class="order-row__message">${esc(it.message)}</span>` : ""}</div><div class="order-row__secondary">${phone ? `${phone} · ` : ""}${esc(secondary)}</div></div><div class="order-row__actions"><button class="order-action todo-edit" type="button" title="Korrigieren" aria-label="Korrigieren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><small>Korrigieren</small></button><button class="order-action todo-repeat" type="button" title="Als neue Vorbestellung kopieren" aria-label="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0 2 2v10a2 2 0 0 1-2 2H8" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><small>Kopieren</small></button><button class="order-action todo-cancel" type="button" title="Vorbestellung stornieren" aria-label="Stornieren"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><small>Stornieren</small></button></div></div>`;
+      return `${heading}<div class="order-row item" data-order-id="${esc(it.order_id || "")}" data-series-id="${esc(it.series_id || "")}" data-type="${esc(it.type || "Orts")}" data-dur="${esc(it.duration_min || "15")}" data-phone="${esc(display || "")}" data-message="${esc(it.message || "")}" data-rrule="${esc(it.rrule || "")}" data-until="${esc(it.until || "")}" data-start="${esc(it.start_iso)}"><div class="order-row__info"><div class="order-row__primary"><strong class="order-row__time">${esc(time)}</strong>${it.message ? `<span class="order-row__message">${esc(it.message)}</span>` : ""}</div><div class="order-row__secondary">${phone ? `${phone} · ` : ""}${esc(secondary)}</div></div><div class="order-row__actions"><button class="order-actions-toggle" type="button" title="Optionen" aria-label="Optionen" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.9" fill="currentColor"/><circle cx="12" cy="12" r="1.9" fill="currentColor"/><circle cx="19" cy="12" r="1.9" fill="currentColor"/></svg></button><div class="order-actions-menu"><button class="order-action todo-edit" type="button" title="Korrigieren" aria-label="Korrigieren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><small>Korrigieren</small></button><button class="order-action todo-repeat" type="button" title="Als neue Vorbestellung kopieren" aria-label="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0 2 2v10a2 2 0 0 1-2 2H8" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><small>Kopieren</small></button><button class="order-action todo-cancel" type="button" title="Vorbestellung stornieren" aria-label="Stornieren"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><small>Stornieren</small></button></div></div></div>`;
     }).join("") || '<div class="item">Keine aktiven Vorbestellungen.</div>';
     const today = new Date();
     const todayKey = `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
@@ -60,13 +60,29 @@ export function initTodoList({ fillForm }) {
     fillForm({ id: row.dataset.orderId, date: start.slice(0, 10), time: hhmmFromISO(start), type: row.dataset.type, duration_min: row.dataset.dur, phone: row.dataset.phone, message: row.dataset.message, rrule: row.dataset.rrule, until: row.dataset.until });
   };
 
+  // Nur ein Options-Menü gleichzeitig offen (schmale Karten: das Menü liegt über dem Bestelltext).
+  const closeAllMenus = () => {
+    todoList.querySelectorAll(".order-row__actions.is-open").forEach((wrap) => {
+      wrap.classList.remove("is-open");
+      wrap.querySelector(".order-actions-toggle")?.setAttribute("aria-expanded", "false");
+    });
+  };
+
   todoList.addEventListener("click", async (event) => {
     const btn = event.target.closest("button");
     const item = btn?.closest(".order-row");
     const row = event.target.closest(".order-row");
     if (!row) return;
-    if (!btn) { fillFormForEdit(row); return; }
+    if (!btn) { closeAllMenus(); fillFormForEdit(row); return; }
     if (!item) return;
+    if (btn.classList.contains("order-actions-toggle")) {
+      const wrap = btn.closest(".order-row__actions");
+      const willOpen = !wrap.classList.contains("is-open");
+      closeAllMenus();
+      if (willOpen) { wrap.classList.add("is-open"); btn.setAttribute("aria-expanded", "true"); }
+      return;
+    }
+    closeAllMenus();
     if (btn.classList.contains("todo-edit")) { fillFormForEdit(item); return; }
     if (btn.classList.contains("todo-repeat")) { fillForm({ date: dateForRepeat(item.dataset.start), time: hhmmFromISO(item.dataset.start), type: item.dataset.type, duration_min: item.dataset.dur, phone: item.dataset.phone, message: item.dataset.message }); return; }
     if (!btn.classList.contains("todo-cancel") || !item.dataset.orderId) return;
@@ -82,6 +98,10 @@ export function initTodoList({ fillForm }) {
     const allSeries = reason === "Alle Aufträge dieser Serie stornieren";
     const result = await Api.updateStatus(item.dataset.orderId, "cancelled", seriesId ? "Serie storniert" : reason, allSeries).catch((err) => ({ ok: false, error: String(err) }));
     if (result.ok) removeRow(item);
+  });
+  // Außerhalb geklickt → Menü schließen.
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".order-row__actions")) closeAllMenus();
   });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
   return { load };
