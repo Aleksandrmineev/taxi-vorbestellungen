@@ -162,7 +162,9 @@ function processLehrlingeReminders() {
   if (props.getProperty(LR_PREFIX_ + 'ENABLED') !== 'true') return;
   const now = new Date();
   const slot = Utilities.formatDate(now, LR_ZONE_, 'HH');
-  if (!['09', '17'].includes(slot)) return;
+  // Nur noch einmal täglich um 09:00: die Prüfung umfasst ohnehin die letzten Arbeitstage (inkl. gestern Nachmittag),
+  // eine zweite Meldung um 17:00 wiederholte fast nur dieselben Punkte. Vorschau '17' bleibt für manuelle Prüfungen.
+  if (slot !== '09') return;
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) return;
   try {

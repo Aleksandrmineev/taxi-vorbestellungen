@@ -81,13 +81,17 @@ test("lssSummaryText_: header, per-route blocks in order, no addresses — just 
   assert.ok(!text.includes("Bahnhof Zeltweg") && !text.includes("Werk Pusterwald"), "no addresses in the message");
 });
 
-test("lssSummaryText_: cancellations are listed even for a route with zero riders; empty schedule returns null", () => {
+test("lssSummaryText_: no Absagen line; a route/day with only cancellations is not sent; empty schedule returns null", () => {
   const { ctx } = fixture();
-  const withCancel = { days: [day("2026-09-22", [
-    route("1", "evening", [], [{ id: "eve", name: "Eve E" }]),
+  const mixed = { days: [day("2026-09-22", [
+    route("1", "evening", [point("X", [student("ann", "Ann A")])], [{ id: "eve", name: "Eve E" }]),
+    route("2", "evening", [], [{ id: "max", name: "Max M" }]),
   ])] };
-  const text = ctx.lssSummaryText_(withCancel, "evening", "22.09.");
-  assert.equal(text, "TaxiApp: Fahrtenplan Zellstoff Pöls — Rückfahrt 22.09. · 0 Lehrlinge\n\nRoute 1 (0):\n\nAbsagen: Eve E");
+  const text = ctx.lssSummaryText_(mixed, "evening", "22.09.");
+  assert.equal(text, "TaxiApp: Fahrtenplan Zellstoff Pöls — Rückfahrt 22.09. · 1 Lehrlinge\n\nRoute 1 (1):\nAnn A");
+
+  const onlyCancel = { days: [day("2026-09-22", [route("1", "evening", [], [{ id: "eve", name: "Eve E" }])])] };
+  assert.equal(ctx.lssSummaryText_(onlyCancel, "evening", "22.09."), null);
 
   assert.equal(ctx.lssSummaryText_({ days: [] }, "morning", "22.09."), null);
   assert.equal(ctx.lssSummaryText_({ days: [day("2026-09-22", [route("1", "morning", [])])] }, "morning", "22.09."), null);
@@ -102,7 +106,7 @@ test("processLehrlingeShuttleSummary: sends only at 03 and 12, once per slot per
   f.props.set("LSS_ENABLED", "true");
   f.ctx.processLehrlingeShuttleSummary();
   assert.equal(f.waCalls.length, 1);
-  assert.equal(f.waCalls[0][0], "436506367662-1535622857@g.us");
+  assert.equal(f.waCalls[0][0], "436506367662-1552028657@g.us");
   assert.match(f.waCalls[0][1], /Hinfahrt/);
   f.ctx.processLehrlingeShuttleSummary(); // same slot again
   assert.equal(f.waCalls.length, 1);

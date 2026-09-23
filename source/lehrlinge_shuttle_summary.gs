@@ -10,7 +10,7 @@
 
 const LSS_ZONE_ = "Europe/Vienna";
 const LSS_PREFIX_ = "LSS_";
-const LSS_WHATSAPP_GROUP_JID_ = "436506367662-1535622857@g.us"; // Zellstoff Pöls Shuttle
+const LSS_WHATSAPP_GROUP_JID_ = "436506367662-1552028657@g.us"; // Pöls Lehrlinge-wer fährt?
 const LSS_GROUP_PROPERTY_ = "LSS_WHATSAPP_GROUP_JID"; // Script Property: überschreibt die Zielgruppe (z. B. zum Testen)
 
 function lssTarget_(testMode) {
@@ -36,26 +36,21 @@ function lssSummaryText_(scheduleResult, direction, dateLabel) {
   if (!day || !day.routes || !day.routes.length) return null;
 
   let totalStudents = 0;
-  let totalCancellations = 0;
-  const routeBlocks = day.routes.map(function (route) {
+  // Nur Fahrgäste, keine Absagen-Zeile (Absagen stehen im Portal; die Gruppe braucht nur, wer fährt).
+  const routeBlocks = day.routes.filter(function (route) {
+    // Route ohne Fahrten nicht mit anzeigen (z. B. Route 2 fährt an diesem Tag nicht).
+    return route.count > 0;
+  }).map(function (route) {
     const routeCount = route.count != null ? route.count : route.points.reduce(function (sum, point) { return sum + point.students.length; }, 0);
     totalStudents += routeCount;
     // Nur Namen, keine Adressen — eine Zeile je Lehrling, in Fahrtreihenfolge (Reihenfolge der Punkte).
     const nameLines = route.points.reduce(function (names, point) {
       return names.concat(point.students.map(function (student) { return student.name; }));
     }, []);
-    const cancellations = route.cancellations || [];
-    totalCancellations += cancellations.length;
-    const cancelBlock = cancellations.length
-      ? "\nAbsagen: " + cancellations.map(function (item) { return item.name; }).join(", ")
-      : "";
-    return "Route " + route.route + " (" + routeCount + "):\n" + nameLines.join("\n") + cancelBlock;
-  }).filter(function (block, index) {
-    // Route ohne Fahrten und ohne Absagen nicht mit anzeigen (z. B. Route 2 fährt an diesem Tag nicht).
-    return day.routes[index].count > 0 || (day.routes[index].cancellations || []).length > 0;
+    return "Route " + route.route + " (" + routeCount + "):\n" + nameLines.join("\n");
   });
 
-  if (!totalStudents && !totalCancellations) return null;
+  if (!totalStudents) return null;
 
   const header = "TaxiApp: Fahrtenplan Zellstoff Pöls — " + directionLabel + " " + dateLabel + " · " + totalStudents + " Lehrlinge";
   return header + "\n\n" + routeBlocks.join("\n\n");

@@ -117,12 +117,14 @@ test('preview does not send; correct reports do not send', () => {
   f.props.set('LEHRLINGE_REMINDERS_ENABLED','true'); f.ctx.processLehrlingeReminders();
   assert.equal(f.calls.length,0);
 });
-test('Vienna schedule, evening reminder, winter time and weekend silence', () => {
+test('Vienna schedule: once a day at 09:00, no 17:00 run, winter time and weekend silence', () => {
   const f=fixture(); f.props.set('LEHRLINGE_REMINDERS_ENABLED','true');
   f.setNow('2026-09-16T06:59:00Z'); f.ctx.processLehrlingeReminders(); assert.equal(f.calls.length,0);
   f.setNow('2026-09-16T07:01:00Z'); f.ctx.processLehrlingeReminders(); assert.equal(f.calls.length,1);
-  f.setNow('2026-09-16T15:01:00Z'); f.ctx.processLehrlingeReminders(); assert.equal(f.calls.length,2);
-  assert.match(f.calls[1][1], /16\.09\. Nachmittag R2: fehlt/);
+  f.setNow('2026-09-16T15:01:00Z'); f.ctx.processLehrlingeReminders(); assert.equal(f.calls.length,1);
+  assert.equal(f.waCalls.length,1);
+  // Next morning: yesterday's Nachmittag is part of the previous-days window
+  f.setNow('2026-09-17T07:01:00Z'); f.ctx.processLehrlingeReminders(); assert.equal(f.calls.length,2);
   f.setNow('2026-09-19T07:01:00Z'); f.ctx.processLehrlingeReminders(); assert.equal(f.calls.length,2);
   f.setNow('2026-12-16T07:01:00Z'); f.ctx.processLehrlingeReminders(); assert.equal(f.calls.length,2);
   f.setNow('2026-12-16T08:01:00Z'); f.ctx.processLehrlingeReminders(); assert.equal(f.calls.length,3);
@@ -140,7 +142,7 @@ test('automatic rollout on date, two recipients, removable copy and deduplicatio
   assert.equal(f.calls.length,3); assert.equal(f.calls[1][0],'+431234'); assert.equal(f.calls[2][0],'+4368181289405');
   assert.doesNotMatch(f.calls[1][1], /\[TEST\]/);
   f.props.delete('LEHRLINGE_REMINDERS_COPY_PHONE');
-  f.setNow('2026-09-23T15:01:00Z'); f.ctx.processLehrlingeReminders(); assert.equal(f.calls.length,4);
+  f.setNow('2026-09-24T07:01:00Z'); f.ctx.processLehrlingeReminders(); assert.equal(f.calls.length,4);
 });
 test('WhatsApp duplicate sent once per slot with the same text, deduplicated like SMS', () => {
   const f=fixture(); f.props.set('LEHRLINGE_REMINDERS_ENABLED','true');
@@ -148,7 +150,7 @@ test('WhatsApp duplicate sent once per slot with the same text, deduplicated lik
   assert.equal(f.waCalls.length,1);
   assert.equal(f.waCalls[0][0],'4368181289405');
   assert.equal(f.waCalls[0][1],f.calls[0][1]);
-  f.setNow('2026-09-16T15:01:00Z'); f.ctx.processLehrlingeReminders();
+  f.setNow('2026-09-17T07:01:00Z'); f.ctx.processLehrlingeReminders();
   assert.equal(f.waCalls.length,2);
 });
 test('WhatsApp switches to the group JID once in live mode', () => {

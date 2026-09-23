@@ -1,8 +1,9 @@
 # Zellstoff Pöls Shuttle: Fahrtenplan per WhatsApp (03:00 / 12:00)
 
 Sendet um **03:00** (Hinfahrt) und **12:00** (Rückfahrt), Europe/Vienna, die zu diesem Zeitpunkt endgültige
-Liste des Lehrlinge-Fahrtenplans an die WhatsApp-Gruppe **Zellstoff Pöls Shuttle**
-(`436506367662-1535622857@g.us`). Diese Uhrzeiten sind genau die Änderungsfristen im Portal
+Liste des Lehrlinge-Fahrtenplans an die WhatsApp-Gruppe **Pöls Lehrlinge-wer fährt?**
+(`436506367662-1552028657@g.us`, dieselbe Gruppe wie die Lehrlinge-Berichtserinnerungen; bis 23.09.2026:
+Zellstoff Pöls Shuttle `436506367662-1535622857@g.us`). Diese Uhrzeiten sind genau die Änderungsfristen im Portal
 (Hinfahrt bis 03:00, Rückfahrt bis 12:00 — `lehrlingeCutoffOpen_` in `lehrlinge_plan.gs`), die Liste kann sich
 danach also nicht mehr ändern.
 
@@ -26,8 +27,8 @@ Frank F
 Gerda G
 ```
 
-Absagen/Änderungen (falls vorhanden) stehen am Ende des jeweiligen Routenblocks. Eine Route ohne Fahrten und
-ohne Absagen wird nicht mit ausgegeben (z. B. Route 2 fährt an diesem Tag nicht).
+Keine Absagen-Zeile (seit 23.09.2026) — nur wer fährt. Eine Route ohne Fahrten wird nicht mit ausgegeben
+(z. B. Route 2 fährt an diesem Tag nicht); fährt an dem Tag niemand, wird nichts gesendet.
 
 ## An schulfreien Tagen (Wochenende, Ferien, Feiertag)
 
@@ -40,7 +41,7 @@ das Fenster trotzdem als geprüft markiert (kein Wiederholungsversuch).
 | Property | Werte | Bedeutung |
 |---|---|---|
 | `LSS_ENABLED` | `true`/`false` | Ein/Aus. Wird von `setupLehrlingeShuttleSummary()` gesetzt, nicht von Hand. |
-| `LSS_WHATSAPP_GROUP_JID` | z. B. `…@g.us` | Überschreibt die Zielgruppe (Standard: Zellstoff Pöls Shuttle, fest im Code) — z. B. zum Testen mit einer eigenen Gruppe. |
+| `LSS_WHATSAPP_GROUP_JID` | z. B. `…@g.us` | Überschreibt die Zielgruppe (Standard: Pöls Lehrlinge-wer fährt?, fest im Code) — z. B. zum Testen mit einer eigenen Gruppe. |
 
 ## Einrichten
 
