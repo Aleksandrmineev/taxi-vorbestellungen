@@ -150,6 +150,40 @@ function setGreeting() {
   $("#greeting").textContent = `${word}, ${name || `№${currentDriver}`}`;
 }
 
+// Entwurf des Formulars: bleibt erhalten, solange nicht wirklich gespeichert wurde (Wechsel des
+// Moduls, App kurz verlassen, Reload — sonst gingen eingetippte Werte verloren). Pro Fahrer, da sich
+// ein Gerät mehrere Fahrer teilen können.
+const DRAFT_FIELDS = ["reportDate", "hours", "reportNumber", "sales", "expenses", "voucher", "qr", "terminal", "actualCash"];
+const draftKey = () => currentDriver ? `taxi-draft-${currentDriver}` : null;
+
+function saveDraft() {
+  const key = draftKey();
+  if (!key) return;
+  try {
+    const draft = { car: $("#car").value, shiftType: document.querySelector('[name="shiftType"]:checked')?.value || "" };
+    DRAFT_FIELDS.forEach((id) => { draft[id] = $("#" + id).value; });
+    localStorage.setItem(key, JSON.stringify(draft));
+  } catch {}
+}
+
+function loadDraft() {
+  const key = draftKey();
+  if (!key) return null;
+  try { return JSON.parse(localStorage.getItem(key) || "null"); } catch { return null; }
+}
+
+function clearDraft() {
+  const key = draftKey();
+  if (key) { try { localStorage.removeItem(key); } catch {} }
+}
+
+function applyDraft(draft) {
+  if (!draft) return;
+  DRAFT_FIELDS.forEach((id) => { if (draft[id] !== undefined) $("#" + id).value = draft[id]; });
+  if (draft.shiftType === "day") $("#dayShift").checked = true;
+  else if (draft.shiftType === "night") $("#nightShift").checked = true;
+}
+
 function resetForm() {
   $("#reportForm").reset();
   $("#reportDate").value = localDateTime();
@@ -159,10 +193,12 @@ function resetForm() {
   const defaultShiftType = lastShiftType || (new Date().getHours() >= 5 && new Date().getHours() < 17 ? "day" : "night");
   $("#dayShift").checked = defaultShiftType === "day";
   $("#nightShift").checked = defaultShiftType === "night";
-  renderCars();
+  const draft = loadDraft(); // nicht gesendeter Entwurf hat Vorrang vor den Defaults oben
+  renderCars(draft?.car);
   renderPreviousDifference();
   const lastNumber = Number(reports.at(-1)?.reportNumber);
   if (Number.isFinite(lastNumber)) $("#reportNumber").value = String(lastNumber + 1);
+  applyDraft(draft);
   updateCalculation();
 }
 
@@ -329,6 +365,7 @@ $("#loginForm").addEventListener("submit", async (event) => {
 });
 
 $("#reportForm").addEventListener("input", updateCalculation);
+$("#reportForm").addEventListener("input", saveDraft);
 $("#reportForm").addEventListener("submit", (event) => {
   event.preventDefault();
   if (!$("#car").value) {
@@ -380,6 +417,7 @@ $("#confirmReportButton").addEventListener("click", async () => {
     const result = await api("/api/reports", { method: "POST", body: JSON.stringify({ report }) });
     db.profiles[currentDriver] = result.profile;
     localStorage.setItem(`taxi-recognized-${currentDriver}`, "1");
+    clearDraft();
   } catch {
     $("#confirmDialog").close();
     $("#saveMessage").textContent = "Bericht konnte nicht gespeichert werden. Verbindung prüfen.";
