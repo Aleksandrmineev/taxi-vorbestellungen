@@ -13,9 +13,12 @@ export function initTodoList({ fillForm }) {
   };
   const formatListDate = (iso) => {
     const date = new Date(iso);
-    const human = formatDateFromISO(iso);
     const today = new Date();
-    return date.toDateString() === today.toDateString() ? `Heute ${human}` : human;
+    // "Heute" sagt schon, welcher Wochentag es ist — der Wochentag aus formatDateFromISO wäre da doppelt.
+    if (date.toDateString() === today.toDateString()) {
+      return `Heute ${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}.${date.getFullYear()}`;
+    }
+    return formatDateFromISO(iso);
   };
   const removeRow = (el) => { el.style.opacity = "0"; el.style.transform = "translateY(4px)"; setTimeout(() => el.remove(), 220); };
 

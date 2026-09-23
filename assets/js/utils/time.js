@@ -38,18 +38,21 @@ export const hhmmFromISO = (iso) => {
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 };
 
-// Дата в формате DD.MM.YYYY из 'YYYY-MM-DD'
+// Kurzer Wochentag (de-AT), z. B. "Mi."
+const weekdayShort = (date) => date.toLocaleDateString("de-AT", { weekday: "short" });
+
+// Wochentag + Datum, z. B. "Mi., 23.09.2026" aus 'YYYY-MM-DD'
 export function formatDateHuman(dateStr) {
   if (!dateStr) return "";
   const [y, m, d] = dateStr.split("-").map(Number);
   if (!y || !m || !d) return dateStr;
-  return `${pad2(d)}.${pad2(m)}.${y}`;
+  return `${weekdayShort(new Date(y, m - 1, d))}, ${pad2(d)}.${pad2(m)}.${y}`;
 }
 
-// Дата в формате DD.MM.YYYY из ISO datetime
+// Wochentag + Datum, z. B. "Mi., 23.09.2026" aus ISO datetime
 export function formatDateFromISO(iso) {
   const d = new Date(iso);
-  return `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()}`;
+  return `${weekdayShort(d)}, ${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()}`;
 }
 
 export function dateForRepeat(startIso) {
