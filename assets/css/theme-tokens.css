@@ -81,13 +81,15 @@
 }
 
 html[data-theme="dark"] {
-  --bg: #0e1116;
-  --surface: #22252b;
-  --surface-2: #1f242c;
-  --surface-3: #2a3140;
+  /* Heller als vorher (--bg/--surface) und --border deutlich abgesetzt von --surface, statt fast
+     gleich dunkel — Kartenränder (z. B. Bestellungen) waren kaum zu erkennen. */
+  --bg: #161a21;
+  --surface: #262b34;
+  --surface-2: #232830;
+  --surface-3: #313a4d;
   --text: #e7eaf0;
   --text-muted: #a3a9b7;
-  --border: #2a3140;
+  --border: #414d63;
 
   --accent: #5a8cff;
   --accent-weak: rgba(90, 140, 255, 0.18);
@@ -102,7 +104,7 @@ html[data-theme="dark"] {
   --focus-ring: color-mix(in srgb, var(--accent) 20%, transparent);
   --focus: 2px solid var(--accent);
   --overlay-scrim: rgba(0, 0, 0, 0.45);
-  --hover: #1b212b;
+  --hover: #1f242c;
 
   --btn-sec-bg: #2b3b52;
   --btn-sec-text: #fff;
