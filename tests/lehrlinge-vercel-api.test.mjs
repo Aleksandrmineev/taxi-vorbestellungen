@@ -18,6 +18,7 @@ const session = (await import("../api/lehrlinge/session.js")).default;
 const sharedLogin = (await import("../api/lehrlinge/shared-login.js")).default;
 const students = (await import("../api/lehrlinge/students.js")).default;
 const portalStudents = (await import("../api/lehrlinge/portal-students.js")).default;
+const planLog = (await import("../api/lehrlinge/plan-log.js")).default;
 
 /* ---------- Эмуляция Redis (подмножество API node-redis) ---------- */
 const kv = new Map();
@@ -511,4 +512,28 @@ test("portal-students: публичный список id+имя без авто
   assert.equal((await call(portalStudents, {})).body.sharedEnabled, true);
   kv.clear();
   assert.equal((await call(portalStudents, {})).statusCode, 503);
+});
+
+test("plan-log: Fahrer lesen über GAS (vertrauenswürdig), gemeinsames Konto nur mit studentId und ohne Kontenliste", async () => {
+  await fresh();
+  gasCalls = [];
+  gasReply = (body) => ({ ok: true, entries: [{ text: "24.09. keine Fahrt", studentId: body.studentId || "anna" }], accounts: [{ id: "anna", status: "never" }] });
+  assert.equal((await call(planLog, {})).statusCode, 401);
+
+  const driverRes = await call(planLog, { headers: auth() });
+  assert.equal(driverRes.statusCode, 200);
+  assert.equal(driverRes.body.entries.length, 1);
+  assert.deepEqual(driverRes.body.accounts, [{ id: "anna", status: "never" }]);
+  assert.equal(gasCalls[0].action, "lehrlinge_log");
+  assert.equal(gasCalls[0].serverKey, process.env.SYNC_SECRET);
+  assert.equal(JSON.parse(gasCalls[0].driverJson).id, "d1");
+
+  const headers = await sharedAuth();
+  assert.equal((await call(planLog, { headers })).statusCode, 400); // ohne studentId
+  const sharedRes = await call(planLog, { headers, query: { studentId: "Anna" } });
+  assert.equal(sharedRes.statusCode, 200);
+  assert.equal(sharedRes.body.accounts, undefined);
+  assert.equal(gasCalls.at(-1).studentId, "anna");
+  assert.equal(JSON.parse(gasCalls.at(-1).driverJson).id, "shared");
+  gasReply = () => ({ ok: true, saved: { ok: true, saved: 1 } });
 });

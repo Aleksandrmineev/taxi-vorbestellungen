@@ -30,6 +30,12 @@ Gerda G
 Keine Absagen-Zeile (seit 23.09.2026) — nur wer fährt. Eine Route ohne Fahrten wird nicht mit ausgegeben
 (z. B. Route 2 fährt an diesem Tag nicht); fährt an dem Tag niemand, wird nichts gesendet.
 
+## Änderungen im Anhang (nur 03:00)
+
+An die 03:00-Nachricht wird „Änderungen seit …“ aus dem Änderungsprotokoll angehängt (seit der letzten
+gesendeten 03:00-Nachricht, Wochenende sammelt sich bis Montag). Details: `docs/lehrlinge-log.md`.
+Abschalten: `LSS_CHANGES_ENABLED = false`.
+
 ## An schulfreien Tagen (Wochenende, Ferien, Feiertag)
 
 Keine Nachricht — anders als bei den Bestellungs-Schichtübersichten wird hier **nicht** trotzdem eine

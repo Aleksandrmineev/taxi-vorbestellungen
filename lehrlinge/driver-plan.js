@@ -112,6 +112,88 @@ openStudentPlan.addEventListener("click", () => {
   window.location.href = `driver-student.html?studentId=${encodeURIComponent(studentSelect.value)}&from=${encodeURIComponent(fromInput.value)}&to=${encodeURIComponent(toInput.value)}`;
 });
 
+/* ---------- Änderungsprotokoll ---------- */
+const logDialog = document.getElementById("logDialog");
+const logList = document.getElementById("logList");
+const logStatus = document.getElementById("logStatus");
+const logStudent = document.getElementById("logStudent");
+const logAccounts = document.getElementById("logAccounts");
+const logChips = [...document.querySelectorAll(".log-chip")];
+const CHANNEL_LABEL = { student: "Eigenes Konto", shared: "Gemeinsames Konto", driver: "Fahrer", admin: "Büro" };
+let logEntries = [];
+let logChannel = "all";
+
+function formatLogTime(iso) {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("de-AT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+function renderLog() {
+  const studentId = logStudent.value;
+  const shown = logEntries.filter((entry) => {
+    if (studentId && entry.studentId !== studentId) return false;
+    if (logChannel === "all") return true;
+    if (logChannel === "lehrlinge") return entry.channel === "student" || entry.channel === "shared";
+    return entry.channel === logChannel && entry.event === "plan";
+  });
+  logStatus.textContent = logEntries.length && !shown.length ? "Keine Einträge für diesen Filter." : "";
+  logList.innerHTML = shown.length ? `
+    <div class="log-row log-head" aria-hidden="true"><span>Zeit</span><span>Lehrling</span><span>Änderung</span><span>Von</span></div>
+    ${shown.map((entry) => `
+      <div class="log-row${entry.event === "login" ? " is-login" : ""}">
+        <span class="log-time">${escapeHtml(formatLogTime(entry.at))}</span>
+        <strong class="log-name">${escapeHtml(entry.studentName)}</strong>
+        <span class="log-text">${escapeHtml(entry.text)}</span>
+        <span class="log-actor"><span class="log-badge log-badge--${escapeHtml(entry.event === "login" ? "login" : entry.channel)}">${escapeHtml(entry.event === "login" ? "Login" : CHANNEL_LABEL[entry.channel] || entry.channel)}</span>${entry.channel === "driver" ? ` ${escapeHtml(entry.actor.replace(/^Fahrer /, ""))}` : ""}</span>
+      </div>`).join("")}` : "";
+}
+
+function renderAccounts(accounts) {
+  if (!Array.isArray(accounts) || !accounts.length) { logAccounts.hidden = true; return; }
+  const groups = [
+    ["never", "Noch nie eingeloggt"],
+    ["no_pin", "Kein eigenes Konto (keine PIN)"],
+    ["active", "Nutzt eigenes Konto"],
+  ];
+  logAccounts.innerHTML = `<h3>Konten</h3>${groups.map(([key, label]) => {
+    const list = accounts.filter((account) => account.status === key);
+    return `<details${key === "never" ? " open" : ""}><summary>${label} <span>${list.length}</span></summary><p>${list.map((account) => escapeHtml(account.name) + (account.lastLogin ? ` <small>(${escapeHtml(formatLogTime(account.lastLogin))})</small>` : account.lastSharedChange ? " <small>(nutzt gemeinsames Konto)</small>" : "")).join(", ") || "—"}</p></details>`;
+  }).join("")}`;
+  logAccounts.hidden = false;
+}
+
+async function openLog() {
+  logDialog.hidden = false;
+  logStatus.textContent = "Wird geladen…";
+  logList.innerHTML = "";
+  try {
+    const result = await DriverData.loadPlanLog();
+    logEntries = result.entries || [];
+    const names = new Map(logEntries.map((entry) => [entry.studentId, entry.studentName]));
+    const selected = logStudent.value;
+    logStudent.innerHTML = '<option value="">Alle Lehrlinge</option>' + [...names.entries()]
+      .sort((a, b) => a[1].localeCompare(b[1], "de"))
+      .map(([id, name]) => `<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`).join("");
+    if (names.has(selected)) logStudent.value = selected;
+    renderAccounts(result.accounts);
+    if (!logEntries.length) { logStatus.textContent = "Noch keine Änderungen protokolliert."; return; }
+    renderLog();
+  } catch (error) {
+    if (error.name === "AuthError") { logDialog.hidden = true; showDriverAuthMessage(); return; }
+    logStatus.textContent = "Protokoll gerade nicht erreichbar. Bitte später erneut versuchen.";
+  }
+}
+
+document.getElementById("openLog").addEventListener("click", openLog);
+document.getElementById("closeLog").addEventListener("click", () => { logDialog.hidden = true; });
+logDialog.addEventListener("click", (event) => { if (event.target === logDialog) logDialog.hidden = true; });
+logStudent.addEventListener("change", renderLog);
+logChips.forEach((chip) => chip.addEventListener("click", () => {
+  logChannel = chip.dataset.channel;
+  logChips.forEach((other) => other.classList.toggle("is-active", other === chip));
+  renderLog();
+}));
+
 function renderSchedule(days) {
   const today = todayViennaKey();
   const visibleDays = days.filter((day) => day.date >= today);

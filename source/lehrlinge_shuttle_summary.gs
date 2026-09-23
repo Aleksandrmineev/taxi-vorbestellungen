@@ -64,7 +64,8 @@ function previewLehrlingeShuttleSummary(slot) {
   const today = lssToday_(now);
   const schedule = getLehrlingeDriverSchedule_(today, today, "all", direction);
   const text = lssSummaryText_(schedule, direction, today.slice(8) + "." + today.slice(5, 7) + ".");
-  const result = { slot: useSlot, direction: direction, date: today, willSend: text !== null, target: lssTarget_(false), text: text };
+  const changes = useSlot === LSS_CHANGES_SLOT_ ? lssChangesSection_(now) : "";
+  const result = { slot: useSlot, direction: direction, date: today, willSend: text !== null, target: lssTarget_(false), text: text && changes ? text + "\n\n" + changes : text };
   console.log(JSON.stringify(result));
   return result;
 }
@@ -93,16 +94,45 @@ function processLehrlingeShuttleSummary() {
       return;
     }
     const target = lssTarget_(false);
+    const changes = hour === LSS_CHANGES_SLOT_ ? lssChangesSection_(now, true) : "";
     props.setProperty(key, JSON.stringify({ token: token, status: "attempting" }));
     try {
-      sendWhatsAppMessage_(target, text);
+      sendWhatsAppMessage_(target, changes ? text + "\n\n" + changes : text);
       props.setProperty(key, JSON.stringify({ token: token, status: "sent" }));
+      // Erst nach dem Senden weiterschieben: Wochenende/Ferien (keine Nachricht) sammeln sich bis zur nächsten.
+      if (hour === LSS_CHANGES_SLOT_) props.setProperty(LSS_CHANGES_SINCE_, now.toISOString());
     } catch (err) {
       props.setProperty(key, JSON.stringify({ token: token, status: "failed_or_unknown" }));
       safeNotificationLog_("lehrlinge_shuttle_error", { message: redactLogText_(err && err.message, 180) });
     }
   } finally {
     lock.releaseLock();
+  }
+}
+
+/**
+ * Änderungen am Fahrtenplan (Protokoll, lehrlinge_log.gs) hängen einmal täglich an der 03:00-Nachricht:
+ * alles seit der letzten gesendeten 03:00-Nachricht (höchstens LSS_CHANGES_MAX_DAYS_ zurück).
+ * Abschalten: Script Property LSS_CHANGES_ENABLED = false. Nebenbei: Protokoll auf Vormonat + laufenden Monat kürzen.
+ */
+const LSS_CHANGES_SLOT_ = "03";
+const LSS_CHANGES_SINCE_ = LSS_PREFIX_ + "CHANGES_SINCE";
+const LSS_CHANGES_MAX_DAYS_ = 7;
+
+function lssChangesSection_(now, prune) {
+  const props = PropertiesService.getScriptProperties();
+  if (String(props.getProperty(LSS_PREFIX_ + "CHANGES_ENABLED") || "") === "false") return "";
+  try {
+    if (prune) try { llPrune_(now); } catch (err) { console.warn("lehrlinge log prune failed: " + (err && err.message)); }
+    const floor = new Date(now.getTime() - LSS_CHANGES_MAX_DAYS_ * 24 * 3600 * 1000);
+    const stored = new Date(props.getProperty(LSS_CHANGES_SINCE_) || "");
+    const since = isNaN(stored) || stored < floor
+      ? (isNaN(stored) ? new Date(now.getTime() - 24 * 3600 * 1000) : floor)
+      : stored;
+    return llSummarySection_(since, now);
+  } catch (err) {
+    console.warn("lehrlinge changes section failed: " + (err && err.message));
+    return ""; // der Fahrtenplan geht trotzdem raus
   }
 }
 

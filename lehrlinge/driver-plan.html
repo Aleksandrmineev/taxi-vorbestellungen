@@ -7,7 +7,7 @@
     <title>Fahrtenplan · Lehrlinge</title>
     <link rel="icon" href="./assets/favicon/favicon.ico" sizes="any" />
     <link rel="stylesheet" href="./assets/css/theme.css" />
-    <link rel="stylesheet" href="./driver-plan.css" />
+    <link rel="stylesheet" href="./driver-plan.css?v=20260923-1" />
     <link rel="stylesheet" href="../assets/css/app-shell.css?v=20260912-2" />
   </head>
   <body>
@@ -21,6 +21,7 @@
         <a class="app-header__logo" href="../" aria-label="Zur zentralen Startseite"><img src="../main/assets/img/logo1.png" alt="MurtalTaxi" /></a>
         <span class="app-header__title app-header__title--always">Fahrtenplan</span>
         <span class="app-header__spacer"></span>
+        <button id="openLog" class="app-header__edit app-header__log" type="button" aria-label="Änderungsprotokoll" title="Änderungsprotokoll"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3 2M3.5 12a8.5 8.5 0 1 0 2.5-6M3 4v4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
         <button id="editPlan" class="app-header__edit" type="button" aria-label="Plan ändern" title="Plan ändern"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16.8-.7 3.9 3.9-.7L18.8 8.4l-3.2-3.2L4 16.8Zm12.7-10.7 1.2-1.2a1.7 1.7 0 0 1 2.4 2.4l-1.2 1.2-2.4-2.4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
       </header>
 
@@ -59,7 +60,26 @@
         <button id="openStudentPlan" class="primary" type="button">Fahrten öffnen</button>
       </div>
     </div>
-    <script src="./driver-data.js?v=20260921-1"></script>
-    <script src="./driver-plan.js?v=20260921-1"></script>
+    <div id="logDialog" class="picker log-dialog" hidden>
+      <div class="picker-card log-card" role="dialog" aria-modal="true" aria-labelledby="logTitle">
+        <button id="closeLog" class="picker-close" type="button" aria-label="Schließen">×</button>
+        <h2 id="logTitle">Änderungen</h2>
+        <p>Fahrtenplan-Änderungen der letzten zwei Monate · neueste zuerst</p>
+        <div id="logAccounts" class="log-accounts" hidden></div>
+        <div class="log-filters">
+          <div class="log-chips" role="group" aria-label="Absender">
+            <button type="button" class="log-chip is-active" data-channel="all">Alle</button>
+            <button type="button" class="log-chip" data-channel="lehrlinge">Lehrlinge</button>
+            <button type="button" class="log-chip" data-channel="driver">Fahrer</button>
+            <button type="button" class="log-chip" data-channel="admin">Büro</button>
+          </div>
+          <label class="log-student">Lehrling<select id="logStudent"><option value="">Alle Lehrlinge</option></select></label>
+        </div>
+        <div id="logStatus" class="status" role="status" aria-live="polite"></div>
+        <div id="logList" class="log-list"></div>
+      </div>
+    </div>
+    <script src="./driver-data.js?v=20260923-1"></script>
+    <script src="./driver-plan.js?v=20260923-1"></script>
   </body>
 </html>

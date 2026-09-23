@@ -257,6 +257,11 @@
     else setTimeout(run, 300);
   }
 
+  // Änderungsprotokoll: nur über Vercel (liest das Sheet über GAS), kein Cache.
+  function loadPlanLog(studentId) {
+    return vercelRequest("plan-log", { query: studentId ? { studentId } : {} });
+  }
+
   function formatSyncedAt(timestamp) {
     return new Date(timestamp).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
   }
@@ -269,6 +274,7 @@
     loadSchedule,
     loadStudentPlan,
     savePlan,
+    loadPlanLog,
     studentPlanKey,
     writeCache,
     prefetch,

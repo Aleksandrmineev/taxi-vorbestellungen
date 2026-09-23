@@ -162,6 +162,11 @@ function doGet(e) {
       return json({ ok: true, ...getLehrlingeStudentPlan_(session, e.parameter.from, e.parameter.to) });
     }
 
+    if (fn === "student_plan_log") {
+      const session = requireLehrlingStudentToken_(e.parameter.studentToken || "");
+      return json({ ok: true, entries: llReadLog_({ audience: "student", studentId: session.studentId }) });
+    }
+
     if (fn === "student_logout") {
       return json(logoutLehrling_(e.parameter.studentToken || ""));
     }
@@ -295,6 +300,21 @@ function doPost(e) {
 
     if (action === "driver_whoami") {
       return json({ ok: true, driver: driverWhoAmI_(body) });
+    }
+
+    // Änderungsprotokoll (Aufruf nur von Vercel mit SYNC_SECRET). Fahrer: alles; gemeinsames Konto: nur ein Lehrling, ohne Taxinummern.
+    if (action === "lehrlinge_log") {
+      const driver = requireTrustedDriver_(body);
+      const shared = driver.id === "shared";
+      const result = { ok: true, entries: llReadLog_({ audience: shared ? "student" : "driver", studentId: body.studentId }) };
+      if (!shared && llAccountsAllowed_(driver)) result.accounts = llAccountStatus_();
+      return json(result);
+    }
+
+    // Kontostatus aller Lehrlinge, nur mit SYNC_SECRET (Server/Wartung).
+    if (action === "lehrlinge_accounts") {
+      llRequireServerKey_(body);
+      return json({ ok: true, accounts: llAccountStatus_() });
     }
 
     if (action === "student_plan_save") {

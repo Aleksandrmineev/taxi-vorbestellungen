@@ -388,6 +388,19 @@ function saveLehrlingePlan_(body) {
   const now = new Date();
   const newRows = [];
   let saved = 0;
+  // Für das Änderungsprotokoll: effektiver Status vor dem Speichern (wie getLehrlingePlan_/Fahrtenplan:
+  // Zeile vorhanden -> override sonst baseline; keine Zeile -> "both", an Ferientagen "none").
+  const existingHolidays = new Set();
+  existingRows.forEach((row, index) => {
+    if (String(row[6] || "").trim() === "holiday") existingHolidays.add(lehrlingePlanDate_(existingDisplay[index]?.[0] || row[0]));
+  });
+  const statusOf = (row) => {
+    const morning = String(row[4] === "" || row[4] == null ? row[2] : row[4]) === "1";
+    const evening = String(row[5] === "" || row[5] == null ? row[3] : row[5]) === "1";
+    return morning && evening ? "both" : morning ? "out" : evening ? "back" : "none";
+  };
+  const changes = [];
+  const statusInCall = {}; // derselbe Schlüssel mehrfach in einem Aufruf
   rows.forEach((item) => {
     const date = String(item.date || "").trim();
     const studentId = String(item.student_id || "").trim();
@@ -403,6 +416,9 @@ function saveLehrlingePlan_(body) {
       : item.note === undefined
         ? String(existing?.[6] || "")
         : String(item.note || "").trim();
+    const previousStatus = statusInCall[key] || (existing ? statusOf(existing) : existingHolidays.has(date) ? "none" : "both");
+    statusInCall[key] = status;
+    if (previousStatus !== status) changes.push({ date: date, student_id: studentId, from: previousStatus, to: status });
     const values = [[date, studentId, existing?.[2] ?? morning, existing?.[3] ?? evening, morning, evening, note, String(body.updatedBy || "admin"), now]];
     if (existingIndex == null) {
       newRows.push(values[0]);
@@ -435,6 +451,7 @@ function saveLehrlingePlan_(body) {
   });
   flushBlock();
   if (newRows.length) sh.getRange(sh.getLastRow() + 1, 1, newRows.length, LEHRLINGE_PLAN_HEADERS.length).setValues(newRows);
+  if (changes.length && typeof llRecordPlanChanges_ === "function") llRecordPlanChanges_(changes, body.updatedBy || "admin", now);
   return { ok: true, saved: saved };
 }
 
@@ -614,6 +631,7 @@ function loginLehrling_(studentId, pin) {
     LEHRLINGE_REMEMBER_TOKEN_PREFIX + student.id,
     JSON.stringify({ hash: sha256Hex_(token), expiresAt: Date.now() + LEHRLINGE_REMEMBER_TOKEN_TTL_SEC * 1000 })
   );
+  if (typeof llRecordLogin_ === "function") llRecordLogin_(student.id);
   return { token: token, expiresInSec: LEHRLINGE_REMEMBER_TOKEN_TTL_SEC, studentId: student.id };
 }
 
