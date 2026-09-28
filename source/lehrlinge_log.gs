@@ -256,6 +256,6 @@ function llRequireServerKey_(body) {
  */
 function llAccountsAllowed_(driver) {
   const list = String(PropertiesService.getScriptProperties().getProperty("LEHRLINGE_LOG_ACCOUNTS_TAXIS") || "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
-  return Boolean(driver && list.indexOf(String(driver.taxiNumber || "").trim()) >= 0);
+    .split(",").map((s) => normalizeTaxiNumber_(s)).filter(Boolean);
+  return Boolean(driver && list.indexOf(normalizeTaxiNumber_(driver.taxiNumber)) >= 0);
 }

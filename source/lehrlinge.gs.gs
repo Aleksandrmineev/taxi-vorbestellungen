@@ -5,6 +5,21 @@ const DRIVER_REMEMBER_TOKEN_TTL_SEC = 365 * 24 * 60 * 60;
 const DRIVER_PIN_RESET_PREFIX = "driver_pin_reset:";
 const DRIVER_PIN_RESET_TTL_SEC = 10 * 60;
 
+// Google Sheets macht aus "03" beim Schreiben die Zahl 3 — Taxinummern daher immer als
+// mindestens zweistelligen Text vergleichen ("3" und "03" sind dieselbe Nummer).
+function normalizeTaxiNumber_(value) {
+  const text = String(value == null ? "" : value).trim();
+  return /^\d$/.test(text) ? "0" + text : text;
+}
+
+// Spalte taxi_number als Text formatieren, damit führende Nullen erhalten bleiben.
+function keepTaxiNumberAsText_(sh) {
+  if (!sh || sh.getLastColumn() < 1) return;
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map((v) => String(v || "").trim().toLowerCase());
+  const index = headers.indexOf("taxi_number");
+  if (index >= 0) sh.getRange(1, index + 1, sh.getMaxRows(), 1).setNumberFormat("@");
+}
+
 function normalizeDriverPhone_(value) {
   const raw = normalizePhone_(value);
   const digits = raw.replace(/\D/g, "");
@@ -712,7 +727,7 @@ function normalizeDrivers_(list) {
     id: String(item?.id || "").trim(),
     name: String(item?.name || "").trim(),
     surname: String(item?.surname || "").trim(),
-    taxi_number: String(item?.taxi_number || "").trim(),
+    taxi_number: normalizeTaxiNumber_(item?.taxi_number),
     pin: String(item?.pin || "").replace(/\D/g, "").slice(0, 4),
     active: String(item?.active || "") === "1" ? "1" : "0",
   }));
@@ -738,7 +753,7 @@ function readDriversSheet_(sh) {
       id: String(row[idIndex] || "").trim(),
       name: String(row[nameIndex] || ""),
       surname: surnameIndex >= 0 ? String(row[surnameIndex] || "") : "",
-      taxi_number: taxiIndex >= 0 ? String(row[taxiIndex] || "").trim() : "",
+      taxi_number: taxiIndex >= 0 ? normalizeTaxiNumber_(row[taxiIndex]) : "",
       active: String(row[activeIndex] || "") === "1" ? "1" : "0",
     }));
 }
@@ -761,10 +776,10 @@ function getDriverAuthRecord_(taxiNumber) {
   const nameIndex = indexOf("name", 1);
   const surnameIndex = headers.indexOf("surname");
   const activeIndex = indexOf("active", 2);
-  const wanted = String(taxiNumber || "").trim();
+  const wanted = normalizeTaxiNumber_(taxiNumber);
   for (let i = 1; i < values.length; i += 1) {
     const row = values[i];
-    if (String(row[taxiIndex] || "").trim() !== wanted) continue;
+    if (normalizeTaxiNumber_(row[taxiIndex]) !== wanted) continue;
     return {
       id: String(row[idIndex] || "").trim(),
       name: String(row[nameIndex] || "").trim(),
@@ -830,7 +845,7 @@ function resetDriverPin_(taxiNumber, phone, code, pin) {
   const headers = values[0].map((value) => String(value || "").trim().toLowerCase());
   const taxiIndex = headers.indexOf("taxi_number");
   const pinIndex = headers.indexOf("pin_hash");
-  const rowIndex = values.slice(1).findIndex((row) => String(row[taxiIndex] || "").trim() === taxi);
+  const rowIndex = values.slice(1).findIndex((row) => normalizeTaxiNumber_(row[taxiIndex]) === normalizeTaxiNumber_(taxi));
   if (rowIndex < 0 || pinIndex < 0) throw new Error("driver_not_found");
   sh.getRange(rowIndex + 2, pinIndex + 1).setValue(sha256Hex_(normalizedPin));
   props.deleteProperty(key);
@@ -888,7 +903,7 @@ function getDriverAuthRecordById_(driverId) {
     id: wanted,
     name: String(row[nameIndex] || "").trim(),
     surname: surnameIndex >= 0 ? String(row[surnameIndex] || "").trim() : "",
-    taxiNumber: taxiIndex >= 0 ? String(row[taxiIndex] || "").trim() : "",
+    taxiNumber: taxiIndex >= 0 ? normalizeTaxiNumber_(row[taxiIndex]) : "",
     active: String(row[activeIndex] || "") === "1" ? "1" : "0",
   };
 }
@@ -927,7 +942,7 @@ function registerDriver_(taxiNumber, name, surname, pin, phone) {
   const activeIndex = indexOf("active", 3);
   for (let i = 1; i < values.length; i += 1) {
     const row = values[i];
-    if (String(row[taxiIndex] || "").trim() !== taxi) continue;
+    if (normalizeTaxiNumber_(row[taxiIndex]) !== taxi) continue;
     if (String(row[activeIndex] || "") !== "1") throw new Error("driver_inactive");
     if (String(row[pinIndex] || "").trim()) throw new Error("driver_already_registered");
     sh.getRange(i + 1, nameIndex + 1).setValue(firstName);
@@ -962,6 +977,7 @@ function registerDriver_(taxiNumber, name, surname, pin, phone) {
       }
     });
   }
+  keepTaxiNumberAsText_(sh);
   // Re-read the header order after adding missing columns.
   const finalHeaders = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
   const finalRow = finalHeaders.map((header) => {
@@ -1045,6 +1061,7 @@ function saveDriversSheet_(ss, drivers) {
 
   sh.clearContents();
   sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+  keepTaxiNumberAsText_(sh);
   if (rows.length) sh.getRange(2, 1, rows.length, headers.length).setValues(rows);
 }
 
