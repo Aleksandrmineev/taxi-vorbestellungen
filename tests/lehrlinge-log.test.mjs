@@ -218,3 +218,27 @@ test("03:00 Fahrtenplan message gets the changes since the last sent one; weeken
   f.ctx.processLehrlingeShuttleSummary();
   assert.doesNotMatch(f.waCalls[3][1], /Änderungen/);
 });
+
+test("Admin: Ferien entfernen löscht die Markierung von allen Zeilen des Tages", () => {
+  const f = fixture();
+  f.save("admin", [
+    { date: "2026-10-26", student_id: "anna", status: "none" },
+    { date: "2026-10-26", student_id: "ben", status: "none" },
+  ], ["2026-10-26"]);
+  assert.deepEqual([...f.ctx.getLehrlingePlan_("2026-10-01", "2026-10-31").holidays], ["2026-10-26"]);
+  f.ctx.saveLehrlingePlan_({
+    rows: JSON.stringify([{ date: "2026-10-26", student_id: "anna", status: "both" }]),
+    holidays: "[]", holidaysRemoved: JSON.stringify(["2026-10-26"]), updatedBy: "admin",
+  });
+  const plan = f.ctx.getLehrlingePlan_("2026-10-01", "2026-10-31");
+  assert.deepEqual([...plan.holidays], []);
+  assert.equal(plan.items.find((i) => i.student_id === "anna").status, "both");
+  assert.equal(plan.items.find((i) => i.student_id === "ben").status, "none"); // Status bleibt, nur die Ferien-Markierung geht
+});
+
+test("Fahrer-Speichern ohne holidaysRemoved lässt bestehende Ferien unangetastet", () => {
+  const f = fixture();
+  f.save("admin", [{ date: "2026-10-26", student_id: "anna", status: "none" }], ["2026-10-26"]);
+  f.save("driver:12", [{ date: "2026-10-26", student_id: "ben", status: "out" }], ["2026-10-26"]);
+  assert.deepEqual([...f.ctx.getLehrlingePlan_("2026-10-01", "2026-10-31").holidays], ["2026-10-26"]);
+});

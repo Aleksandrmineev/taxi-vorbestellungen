@@ -1,4 +1,18 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const SCHEDULE_AUTOSAVE_MS = 1200;
+
+  function currentSchoolWeek() {
+    const monday = new Date();
+    monday.setHours(12, 0, 0, 0);
+    const day = monday.getDay();
+    monday.setDate(monday.getDate() + (day === 0 ? 1 : day === 6 ? 2 : 1 - day));
+    const friday = new Date(monday);
+    friday.setDate(monday.getDate() + 4);
+    const key = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    return { from: key(monday), to: key(friday) };
+  }
+  const initialWeek = currentSchoolWeek();
+
   const state = {
     activeTab: "points",
     routeFilter: "1",
@@ -14,8 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
       matrix: { ids: [], rows: [] },
     },
     schedule: {
-      from: "2026-09-14",
-      to: "2026-09-18",
+      from: initialWeek.from,
+      to: initialWeek.to,
       route: "all",
       student: "all",
       holidays: new Set(),
@@ -757,6 +771,7 @@ document.addEventListener("DOMContentLoaded", () => {
       state.schedule.originalValues = { ...state.schedule.values };
       state.schedule.originalHolidays = Array.from(state.schedule.holidays).sort();
       state.schedule.dirty = false;
+      state.schedule.live = true;
       return true;
     } catch (error) {
       console.warn("Live Fahrtenplan unavailable; using local fixture", error);
@@ -780,6 +795,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function scheduleStatus(studentId, date) {
     const key = `${studentId}|${date}`;
     if (state.schedule.values[key]) return state.schedule.values[key];
+    // Live-Plan: ohne Zeile gilt wie auf dem Server „both“, an Ferientagen „none“.
+    if (state.schedule.live) return state.schedule.holidays.has(date) ? "none" : "both";
     const baseline = scheduleBaseline.get(date);
     return baseline ? (baseline.has(studentId) ? "both" : "none") : "both";
   }
@@ -799,6 +816,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderSchedule() {
+    // Neu zeichnen (z. B. nach dem Autosave) soll die Tabelle nicht an den Anfang springen lassen.
+    const oldWrap = dom.panels.schedule.querySelector(".schedule-table-wrap");
+    const scroll = oldWrap ? [oldWrap.scrollLeft, oldWrap.scrollTop] : null;
     const dates = scheduleDates();
     const values = state.schedule.values;
     const visibleStudents = demoStudents.filter((student) =>
@@ -881,14 +901,25 @@ document.addEventListener("DOMContentLoaded", () => {
       </article>
     `;
 
+    const newWrap = dom.panels.schedule.querySelector(".schedule-table-wrap");
+    if (scroll && newWrap) [newWrap.scrollLeft, newWrap.scrollTop] = scroll;
+
     dom.panels.schedule.querySelector("#schedulePrintBtn")?.addEventListener("click", () => window.print());
     dom.panels.schedule.querySelector("#scheduleFrom").addEventListener("change", async (event) => {
+      if (!(await settleScheduleBeforeReload())) {
+        event.target.value = state.schedule.from;
+        return;
+      }
       state.schedule.from = event.target.value;
       renderSchedule();
       await loadLiveSchedule();
       renderSchedule();
     });
     dom.panels.schedule.querySelector("#scheduleTo").addEventListener("change", async (event) => {
+      if (!(await settleScheduleBeforeReload())) {
+        event.target.value = state.schedule.to;
+        return;
+      }
       state.schedule.to = event.target.value;
       renderSchedule();
       await loadLiveSchedule();
@@ -916,19 +947,15 @@ document.addEventListener("DOMContentLoaded", () => {
             visibleStudents.forEach((student) => { values[`${student.id}|${date}`] = action; });
           }
         });
-        state.schedule.dirty = true;
-        setDirty(true, false);
-        renderSchedule();
+        markScheduleChanged();
       });
     });
     dom.panels.schedule.querySelectorAll("[data-student][data-date]").forEach((button) => {
       button.addEventListener("click", () => {
         const key = `${button.dataset.student}|${button.dataset.date}`;
         const order = ["both", "out", "back", "none"];
-        values[key] = order[(order.indexOf(values[key] || "both") + 1) % order.length];
-        state.schedule.dirty = true;
-        setDirty(true, false);
-        renderSchedule();
+        values[key] = order[(order.indexOf(scheduleStatus(button.dataset.student, button.dataset.date)) + 1) % order.length];
+        markScheduleChanged();
       });
     });
   }
@@ -963,6 +990,103 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Fahrtenplan speichert automatisch (kurz nach der letzten Änderung), der Knopf bleibt als Sofort-Speichern.
+  let scheduleSaveTimer = null;
+  let scheduleSaveRun = null;
+
+  function pendingScheduleChanges() {
+    const { values, originalValues, holidays: holidaySet, originalHolidays } = state.schedule;
+    const holidays = Array.from(holidaySet).sort();
+    const holidaysAdded = holidays.filter((date) => !originalHolidays.includes(date));
+    const holidaysRemoved = originalHolidays.filter((date) => !holidaySet.has(date));
+    const changed = new Map();
+    Object.entries(values).forEach(([key, status]) => {
+      if (originalValues[key] !== status) changed.set(key, status);
+    });
+    // Ferien hängen im Sheet an den Zeilen des Tages: bei geänderten Ferientagen alle Lehrlinge mitschicken.
+    [...holidaysAdded, ...holidaysRemoved].forEach((date) => {
+      demoStudents.forEach((student) => {
+        const key = `${student.id}|${date}`;
+        if (!changed.has(key)) changed.set(key, scheduleStatus(student.id, date));
+      });
+    });
+    const rows = Array.from(changed, ([key, status]) => {
+      const separator = key.indexOf("|");
+      return { student_id: key.slice(0, separator), date: key.slice(separator + 1), status };
+    });
+    return { rows, holidays, holidaysRemoved, empty: !rows.length && !holidaysAdded.length && !holidaysRemoved.length };
+  }
+
+  function flushScheduleSave() {
+    clearTimeout(scheduleSaveTimer);
+    if (scheduleSaveRun) return scheduleSaveRun;
+    scheduleSaveRun = (async () => {
+      try {
+        // Während einer laufenden Anfrage neu hinzugekommene Änderungen gleich hinterher speichern.
+        for (let round = 0; round < 5; round += 1) {
+          const pending = pendingScheduleChanges();
+          if (pending.empty) break;
+          await window.saveLehrlingePlan(pending);
+          pending.rows.forEach((row) => {
+            const key = `${row.student_id}|${row.date}`;
+            state.schedule.originalValues[key] = row.status;
+            if (!state.schedule.values[key]) state.schedule.values[key] = row.status;
+          });
+          state.schedule.originalHolidays = pending.holidays;
+        }
+        state.schedule.dirty = !pendingScheduleChanges().empty;
+      } finally {
+        scheduleSaveRun = null;
+      }
+    })();
+    return scheduleSaveRun;
+  }
+
+  function markScheduleChanged() {
+    state.schedule.dirty = true;
+    setDirty(true, false);
+    renderSchedule();
+    clearTimeout(scheduleSaveTimer);
+    scheduleSaveTimer = setTimeout(autoSaveSchedule, SCHEDULE_AUTOSAVE_MS);
+  }
+
+  async function autoSaveSchedule() {
+    if (state.saving) {
+      // Gerade läuft „Alles speichern“ — danach erneut versuchen.
+      clearTimeout(scheduleSaveTimer);
+      scheduleSaveTimer = setTimeout(autoSaveSchedule, SCHEDULE_AUTOSAVE_MS);
+      return true;
+    }
+    state.saving = true;
+    renderStatus("Speichere Fahrtenplan…");
+    try {
+      await flushScheduleSave();
+      state.dirty = state.dataDirty || state.schedule.dirty;
+      renderStatus("Fahrtenplan gespeichert");
+      return true;
+    } catch (err) {
+      console.error("schedule autosave failed", err);
+      if (isAuthError(err)) {
+        window.logoutAdmin();
+        setAuthenticated(false);
+        setAuthStatus("Sitzung abgelaufen. Bitte erneut einloggen.");
+      }
+      renderStatus(`Fahrtenplan nicht gespeichert: ${err?.message || err}`);
+      showSaveToast("Fahrtenplan: Speichern fehlgeschlagen", "error", 5000);
+      return false;
+    } finally {
+      state.saving = false;
+      renderStatus();
+    }
+  }
+
+  // Vor dem Laden eines anderen Zeitraums: offene Änderungen speichern, sonst gingen sie verloren.
+  async function settleScheduleBeforeReload() {
+    if (!state.schedule.dirty) return true;
+    if (await autoSaveSchedule()) return true;
+    return window.confirm("Fahrtenplan konnte nicht gespeichert werden. Änderungen verwerfen?");
+  }
+
   async function save() {
     state.saving = true;
     showSaveToast("Speichere Änderungen…", "saving");
@@ -972,24 +1096,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (state.dataDirty) {
         await window.saveAdminData(state.data, Array.from(state.dataSections));
       }
-      if (state.schedule.dirty && typeof window.saveLehrlingePlan === "function") {
-        const rows = Object.entries(state.schedule.values)
-          .filter(([key, status]) => state.schedule.originalValues[key] !== status)
-          .map(([key, status]) => {
-          const separator = key.indexOf("|");
-          return { student_id: key.slice(0, separator), date: key.slice(separator + 1), status };
-          });
-        const holidays = Array.from(state.schedule.holidays).sort();
-        const holidaysChanged = JSON.stringify(holidays) !== JSON.stringify(state.schedule.originalHolidays);
-        if (rows.length || holidaysChanged) {
-          await window.saveLehrlingePlan({ rows, holidays });
-          rows.forEach((row) => {
-            state.schedule.originalValues[`${row.student_id}|${row.date}`] = row.status;
-          });
-          state.schedule.originalHolidays = holidays;
-        }
-        state.schedule.dirty = false;
-      }
+      await flushScheduleSave();
       state.data.points.forEach((point) => { point.lehrling_pin = ""; });
       state.dataDirty = false;
       state.dataSections.clear();
@@ -1081,6 +1188,10 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     const password = dom.passwordInput.value;
     handleLogin(password);
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden" && state.schedule.dirty) autoSaveSchedule();
   });
 
   window.addEventListener("beforeunload", (e) => {

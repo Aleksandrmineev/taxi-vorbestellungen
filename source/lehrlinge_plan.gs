@@ -373,6 +373,8 @@ function saveLehrlingePlan_(body) {
   const parsed = JSON.parse(String(body.rows || "[]"));
   const rows = Array.isArray(parsed) ? parsed : [];
   const holidays = new Set(JSON.parse(String(body.holidays || "[]")) || []);
+  // Nur Admin: Tage, an denen die Ferien entfernt wurden — die Markierung verschwindet dort von allen Zeilen.
+  const holidaysRemoved = new Set((JSON.parse(String(body.holidaysRemoved || "[]")) || []).filter((date) => !holidays.has(date)));
   const sh = ensureLehrlingeSheet_(SpreadsheetApp.getActive(), LEHRLINGE_PLAN_SHEET, LEHRLINGE_PLAN_HEADERS);
   const existingRows = sh.getLastRow() >= 2
     ? sh.getRange(2, 1, sh.getLastRow() - 1, LEHRLINGE_PLAN_HEADERS.length).getValues()
@@ -411,11 +413,8 @@ function saveLehrlingePlan_(body) {
     const key = date + "|" + studentId;
     const existingIndex = rowByKey[key];
     const existing = existingIndex == null ? null : existingRows[existingIndex];
-    const note = holidays.has(date)
-      ? "holiday"
-      : item.note === undefined
-        ? String(existing?.[6] || "")
-        : String(item.note || "").trim();
+    const keptNote = item.note === undefined ? String(existing?.[6] || "") : String(item.note || "").trim();
+    const note = holidays.has(date) ? "holiday" : holidaysRemoved.has(date) && keptNote === "holiday" ? "" : keptNote;
     const previousStatus = statusInCall[key] || (existing ? statusOf(existing) : existingHolidays.has(date) ? "none" : "both");
     statusInCall[key] = status;
     if (previousStatus !== status) changes.push({ date: date, student_id: studentId, from: previousStatus, to: status });
@@ -431,6 +430,14 @@ function saveLehrlingePlan_(body) {
     const key = String(item.date || "").trim() + "|" + String(item.student_id || "").trim();
     if (rowByKey[key] != null && rowByKey[key] < existingRows.length && !changedIndexes.includes(rowByKey[key])) changedIndexes.push(rowByKey[key]);
   });
+  if (holidaysRemoved.size) {
+    existingRows.forEach((row, index) => {
+      if (String(row[6] || "").trim() !== "holiday") return;
+      if (!holidaysRemoved.has(lehrlingePlanDate_(existingDisplay[index]?.[0] || row[0]))) return;
+      row[6] = "";
+      if (!changedIndexes.includes(index)) changedIndexes.push(index);
+    });
+  }
   changedIndexes.sort((a, b) => a - b);
   let blockStart = null;
   let previous = null;

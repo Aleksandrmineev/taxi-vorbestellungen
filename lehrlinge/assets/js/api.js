@@ -504,6 +504,7 @@ async function saveLehrlingePlan(payload) {
       adminToken: getAdminToken(),
       rows: JSON.stringify(payload?.rows || []),
       holidays: JSON.stringify(payload?.holidays || []),
+      holidaysRemoved: JSON.stringify(payload?.holidaysRemoved || []),
     },
     { retries: 0, timeoutMs: 25000 }
   );
