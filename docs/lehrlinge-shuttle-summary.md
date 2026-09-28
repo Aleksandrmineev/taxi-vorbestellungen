@@ -1,11 +1,12 @@
-# Zellstoff Pöls Shuttle: Fahrtenplan per WhatsApp (03:00 / 12:00)
+# Zellstoff Pöls Shuttle: Fahrtenplan per WhatsApp (20:00 / 11:00)
 
-Sendet um **03:00** (Hinfahrt) und **12:00** (Rückfahrt), Europe/Vienna, die zu diesem Zeitpunkt endgültige
+Sendet um **20:00** (Hinfahrt des nächsten Tages) und **11:00** (Rückfahrt heute), Europe/Vienna, die zu diesem Zeitpunkt endgültige
 Liste des Lehrlinge-Fahrtenplans an die WhatsApp-Gruppe **Pöls Lehrlinge-wer fährt?**
 (`436506367662-1552028657@g.us`, dieselbe Gruppe wie die Lehrlinge-Berichtserinnerungen; bis 23.09.2026:
 Zellstoff Pöls Shuttle `436506367662-1535622857@g.us`). Diese Uhrzeiten sind genau die Änderungsfristen im Portal
-(Hinfahrt bis 03:00, Rückfahrt bis 12:00 — `lehrlingeCutoffOpen_` in `lehrlinge_plan.gs`), die Liste kann sich
-danach also nicht mehr ändern.
+(Hinfahrt bis 20:00 am Vortag, Rückfahrt bis 11:00 — `lehrlingeCutoffOpen_` in `lehrlinge_plan.gs`), die Liste kann sich
+danach also nicht mehr ändern. Bis 28.09.2026 galten 03:00 / 12:00 am Fahrtag. Freitag 20:00 (Samstag) und
+Samstag 20:00 (Sonntag) gehen leer aus; die Montagsliste kommt Sonntag um 20:00.
 
 ## Format
 
@@ -30,10 +31,10 @@ Gerda G
 Keine Absagen-Zeile (seit 23.09.2026) — nur wer fährt. Eine Route ohne Fahrten wird nicht mit ausgegeben
 (z. B. Route 2 fährt an diesem Tag nicht); fährt an dem Tag niemand, wird nichts gesendet.
 
-## Änderungen im Anhang (nur 03:00)
+## Änderungen im Anhang (20:00 und 11:00)
 
-An die 03:00-Nachricht wird „Änderungen seit …“ aus dem Änderungsprotokoll angehängt (seit der letzten
-gesendeten 03:00-Nachricht, Wochenende sammelt sich bis Montag). Details: `docs/lehrlinge-log.md`.
+An jede Nachricht (20:00 und 11:00) wird „Änderungen seit …“ aus dem Änderungsprotokoll angehängt (seit der
+letzten gesendeten Nachricht, Wochenende sammelt sich bis Sonntagabend; ohne neue Änderungen kein Block). Details: `docs/lehrlinge-log.md`.
 Abschalten: `LSS_CHANGES_ENABLED = false`.
 
 ## An schulfreien Tagen (Wochenende, Ferien, Feiertag)
@@ -53,7 +54,7 @@ das Fenster trotzdem als geprüft markiert (kein Wiederholungsversuch).
 
 1. `clasp push` + neue Deploy-Version (neu: `source/lehrlinge_shuttle_summary.gs`). Ohne weitere Schritte ändert
    sich nichts — die Nachricht ist aus.
-2. **Testen, ohne die Gruppe zu benachrichtigen:** `sendLehrlingeShuttleSummaryTestNow()` (oder mit `"03"`/`"12"`
+2. **Testen, ohne die Gruppe zu benachrichtigen:** `sendLehrlingeShuttleSummaryTestNow()` (oder mit `"20"`/`"11"`
    als Argument für das jeweils andere Fenster) — schickt `[TEST] …` nur an die persönliche Nummer
    (+43 681 81289405), auch wenn gerade nichts geplant ist (zeigt dann „Keine Fahrten geplant.").
    `previewLehrlingeShuttleSummary(slot)` zeigt Text/Anzahl nur im Journal, ohne zu senden.

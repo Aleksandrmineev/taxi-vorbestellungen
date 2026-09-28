@@ -54,10 +54,10 @@ const route = (num, direction, points, cancellations = []) => ({
   count: points.reduce((n, p) => n + p.students.length, 0),
 });
 
-test("lssDirectionForSlot_: 03 -> morning (Hinfahrt), 12 -> evening (Rückfahrt)", () => {
+test("lssDirectionForSlot_: 20 -> morning (Hinfahrt), 11 -> evening (Rückfahrt)", () => {
   const { ctx } = fixture();
-  assert.equal(ctx.lssDirectionForSlot_("03"), "morning");
-  assert.equal(ctx.lssDirectionForSlot_("12"), "evening");
+  assert.equal(ctx.lssDirectionForSlot_("20"), "morning");
+  assert.equal(ctx.lssDirectionForSlot_("11"), "evening");
 });
 
 test("lssSummaryText_: header, per-route blocks in order, no addresses — just names, one per line, in stop order", () => {
@@ -97,8 +97,8 @@ test("lssSummaryText_: no Absagen line; a route/day with only cancellations is n
   assert.equal(ctx.lssSummaryText_({ days: [day("2026-09-22", [route("1", "morning", [])])] }, "morning", "22.09."), null);
 });
 
-test("processLehrlingeShuttleSummary: sends only at 03 and 12, once per slot per day, disabled by default", () => {
-  const f = fixture("2026-09-22T01:00:00Z"); // 03:00 Vienna
+test("processLehrlingeShuttleSummary: sends only at 20 (Hinfahrt morgen) and 11 (Rückfahrt heute), once per slot per day, disabled by default", () => {
+  const f = fixture("2026-09-21T18:00:00Z"); // Mo 20:00 Vienna -> Hinfahrt Di 22.09.
   f.setSchedule((from, to, r, direction) => ({ days: [day(from, [route("1", direction, [point("X", [student("a", "A")])])])] }));
   f.ctx.processLehrlingeShuttleSummary();
   assert.equal(f.waCalls.length, 0); // ENABLED not set
@@ -107,42 +107,46 @@ test("processLehrlingeShuttleSummary: sends only at 03 and 12, once per slot per
   f.ctx.processLehrlingeShuttleSummary();
   assert.equal(f.waCalls.length, 1);
   assert.equal(f.waCalls[0][0], "436506367662-1552028657@g.us");
-  assert.match(f.waCalls[0][1], /Hinfahrt/);
+  assert.match(f.waCalls[0][1], /Hinfahrt 22\.09\./);
   f.ctx.processLehrlingeShuttleSummary(); // same slot again
   assert.equal(f.waCalls.length, 1);
 
-  f.setNow("2026-09-22T02:00:00Z"); // still 04:00 Vienna, not a trigger hour
+  f.setNow("2026-09-21T19:00:00Z"); // 21:00 Vienna, not a trigger hour
   f.ctx.processLehrlingeShuttleSummary();
   assert.equal(f.waCalls.length, 1);
 
-  f.setNow("2026-09-22T10:00:00Z"); // 12:00 Vienna
+  f.setNow("2026-09-22T09:00:00Z"); // Di 11:00 Vienna
   f.ctx.processLehrlingeShuttleSummary();
   assert.equal(f.waCalls.length, 2);
-  assert.match(f.waCalls[1][1], /Rückfahrt/);
+  assert.match(f.waCalls[1][1], /Rückfahrt 22\.09\./);
+
+  f.setNow("2026-09-22T01:00:00Z"); // 03:00 Vienna: alter Termin, nichts mehr
+  f.ctx.processLehrlingeShuttleSummary();
+  assert.equal(f.waCalls.length, 2);
 });
 
 test("empty schedule (weekend/holiday): no message sent, marked as checked so it is not retried", () => {
-  const f = fixture("2026-09-22T01:00:00Z");
+  const f = fixture("2026-09-21T18:00:00Z");
   f.props.set("LSS_ENABLED", "true");
   f.setSchedule(() => ({ days: [] }));
   f.ctx.processLehrlingeShuttleSummary();
   assert.equal(f.waCalls.length, 0);
-  assert.match(f.props.get("LSS_LAST_03"), /skipped_empty/);
+  assert.match(f.props.get("LSS_LAST_20"), /skipped_empty/);
   f.ctx.processLehrlingeShuttleSummary(); // does not retry within the same slot
   assert.equal(f.waCalls.length, 0);
 });
 
 test("WhatsApp failure is recorded and does not crash", () => {
-  const f = fixture("2026-09-22T01:00:00Z");
+  const f = fixture("2026-09-21T18:00:00Z");
   f.props.set("LSS_ENABLED", "true");
   f.setSchedule(() => ({ days: [day("2026-09-22", [route("1", "morning", [point("X", [student("a", "A")])])])] }));
   f.fail();
   assert.doesNotThrow(() => f.ctx.processLehrlingeShuttleSummary());
-  assert.match(f.props.get("LSS_LAST_03"), /failed_or_unknown/);
+  assert.match(f.props.get("LSS_LAST_20"), /failed_or_unknown/);
 });
 
 test("LSS_WHATSAPP_GROUP_JID overrides the default group", () => {
-  const f = fixture("2026-09-22T01:00:00Z");
+  const f = fixture("2026-09-21T18:00:00Z");
   f.props.set("LSS_ENABLED", "true");
   f.props.set("LSS_WHATSAPP_GROUP_JID", "other-group@g.us");
   f.setSchedule(() => ({ days: [day("2026-09-22", [route("1", "morning", [point("X", [student("a", "A")])])])] }));
@@ -162,17 +166,18 @@ test("setupLehrlingeShuttleSummary installs a single trigger and enables the fla
 });
 
 test("preview: read-only, correct slot inferred from the current time, no message sent", () => {
-  const f = fixture("2026-09-22T01:00:00Z"); // 03:00 Vienna
+  const f = fixture("2026-09-21T18:00:00Z"); // Mo 20:00 Vienna -> Hinfahrt Di 22.09.
   f.setSchedule((from, to, r, direction) => ({ days: [day(from, [route("1", direction, [point("X", [student("a", "A")])])])] }));
   const result = f.ctx.previewLehrlingeShuttleSummary();
-  assert.equal(result.slot, "03");
+  assert.equal(result.slot, "20");
+  assert.equal(result.date, "2026-09-22");
   assert.equal(result.direction, "morning");
   assert.equal(result.willSend, true);
   assert.equal(f.waCalls.length, 0);
 });
 
 test("manual test-now: [TEST]-prefixed, personal number only, shows a placeholder when nothing is scheduled", () => {
-  const f = fixture("2026-09-22T01:00:00Z");
+  const f = fixture("2026-09-21T18:00:00Z");
   f.setSchedule(() => ({ days: [] }));
   f.ctx.sendLehrlingeShuttleSummaryTestNow();
   assert.equal(f.waCalls.length, 1);
@@ -181,6 +186,6 @@ test("manual test-now: [TEST]-prefixed, personal number only, shows a placeholde
 
   f.waCalls.length = 0;
   f.setSchedule((from, to, r, direction) => ({ days: [day(from, [route("1", direction, [point("X", [student("a", "A")])])])] }));
-  f.ctx.sendLehrlingeShuttleSummaryTestNow("12");
+  f.ctx.sendLehrlingeShuttleSummaryTestNow("11");
   assert.match(f.waCalls[0][1], /^\[TEST\] TaxiApp: Fahrtenplan Zellstoff Pöls — Rückfahrt/);
 });

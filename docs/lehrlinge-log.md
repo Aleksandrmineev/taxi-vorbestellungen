@@ -30,8 +30,8 @@ Status vor einer Änderung wird wie im Fahrtenplan berechnet: keine Zeile = `bot
 - **Student-Portal** (eigenes Repo `student-portal/`): Block „Änderungen“ unter „Route & Hinweise“ — nur der
   eigene Plan, ohne Taxinummern (nur „Fahrer“/„Büro“). Eigenes Konto: GAS `fn=student_plan_log`;
   gemeinsames Konto: `plan-log?studentId=` (GAS erzwingt die Einschränkung selbst).
-- **WhatsApp**: an die 03:00-Nachricht (Fahrtenplan Hinfahrt, Gruppe „Pöls Lehrlinge-wer fährt?“) wird
-  „Änderungen seit …“ angehängt — alles seit der letzten gesendeten 03:00-Nachricht (max. 7 Tage), netto je
+- **WhatsApp**: an jede Fahrtenplan-Nachricht (20:00 Hinfahrt morgen, 11:00 Rückfahrt, Gruppe „Pöls Lehrlinge-wer fährt?“) wird
+  „Änderungen seit …“ angehängt — alles seit der letzten gesendeten Nachricht (max. 7 Tage), netto je
   Lehrling und Tag, gleiche Änderung von Fahrer/Büro für ≥ 4 Lehrlinge als eine Sammelzeile, max. 25 Zeilen.
   Keine Änderungen → kein Abschnitt. Abschalten: Script Property `LSS_CHANGES_ENABLED = false`.
 - **Editor**: `previewLehrlingeLog()` schreibt Kontostatus + letzte 30 Einträge ins Journal.
@@ -47,7 +47,7 @@ Status vor einer Änderung wird wie im Fahrtenplan berechnet: keine Zeile = `bot
 
 ## Aufbewahrung
 
-Vormonat + laufender Monat. Ältere Zeilen löscht der 03:00-Lauf (`llPrune_`), praktisch einmal im Monat.
+Vormonat + laufender Monat. Ältere Zeilen löscht der 20:00-Lauf (`llPrune_`), praktisch einmal im Monat.
 
 ## Rollback
 

@@ -181,40 +181,47 @@ test("prune keeps previous and current month", () => {
   assert.equal(f.sheets._LehrlingeLog.rows.length, 2);
 });
 
-test("03:00 Fahrtenplan message gets the changes since the last sent one; weekend changes wait for Monday", () => {
-  const f = fixture("2026-09-18T01:00:00Z"); // Fri 03:00
+test("every Fahrtenplan message (20:00 and 11:00) gets the changes since the last sent one; weekend changes wait for Sunday evening", () => {
+  const f = fixture("2026-09-17T18:00:00Z"); // Thu 20:00 -> Hinfahrt Fri 18.09.
   f.props.set("LSS_ENABLED", "true");
   f.setSchedule((from, to, r, direction) => (from === "2026-09-19" || from === "2026-09-20") ? { days: [] }
     : { days: [{ date: from, routes: [{ route: "1", direction, count: 1, points: [{ students: [{ id: "a", name: "A" }] }] }] }] });
-  f.ctx.processLehrlingeShuttleSummary(); // Fri 03:00: nothing changed yet
+  f.ctx.processLehrlingeShuttleSummary(); // Thu 20:00: nothing changed yet
+  assert.match(f.waCalls[0][1], /Hinfahrt 18\.09\./);
   assert.doesNotMatch(f.waCalls[0][1], /Änderungen/);
   f.waCalls.length = 0;
   f.setNow("2026-09-18T06:00:00Z"); // Fri 08:00
   f.save("anna", [{ date: "2026-09-21", student_id: "anna", status: "out" }]);
 
-  f.setNow("2026-09-19T01:00:00Z"); // Sat 03:00: no rides -> nothing sent
+  f.setNow("2026-09-18T18:00:00Z"); // Fri 20:00 -> Sat: no rides -> nothing sent
   f.ctx.processLehrlingeShuttleSummary();
   assert.equal(f.waCalls.length, 0);
   f.setNow("2026-09-19T10:00:00Z");
   f.save("portal:lehrlinge", [{ date: "2026-09-22", student_id: "ben", status: "none" }]);
+  f.setNow("2026-09-19T18:00:00Z"); // Sat 20:00 -> Sun: nothing sent
+  f.ctx.processLehrlingeShuttleSummary();
+  assert.equal(f.waCalls.length, 0);
 
-  f.setNow("2026-09-21T01:00:00Z"); // Mon 03:00
+  f.setNow("2026-09-20T18:00:00Z"); // Sun 20:00 -> Hinfahrt Mon 21.09.
   f.ctx.processLehrlingeShuttleSummary();
   assert.equal(f.waCalls.length, 1);
   assert.match(f.waCalls[0][1], /^TaxiApp: Fahrtenplan Zellstoff Pöls — Hinfahrt 21\.09\./);
-  assert.match(f.waCalls[0][1], /\n\nÄnderungen seit 18\.09\. 03:00:\nAnna Muster: 21\.09\. Rückfahrt ✗\nBen B: 22\.09\. keine Fahrt$/);
+  assert.match(f.waCalls[0][1], /\n\nÄnderungen seit 17\.09\. 20:00:\nAnna Muster: 21\.09\. Rückfahrt ✗\nBen B: 22\.09\. keine Fahrt$/);
 
-  f.setNow("2026-09-21T10:00:00Z"); // Mon 12:00: Rückfahrt, no changes section
+  f.setNow("2026-09-21T06:00:00Z"); // Mon 08:00
+  f.save("cara", [{ date: "2026-09-23", student_id: "cara", status: "back" }]);
+  f.setNow("2026-09-21T09:00:00Z"); // Mon 11:00: Rückfahrt, with the changes since Sunday 20:00
   f.ctx.processLehrlingeShuttleSummary();
-  assert.doesNotMatch(f.waCalls[1][1], /Änderungen/);
+  assert.match(f.waCalls[1][1], /^TaxiApp: Fahrtenplan Zellstoff Pöls — Rückfahrt 21\.09\./);
+  assert.match(f.waCalls[1][1], /\n\nÄnderungen seit 20\.09\. 20:00:\nCara C: 23\.09\. Hinfahrt ✗$/);
 
-  f.setNow("2026-09-22T01:00:00Z"); // Tue 03:00: nothing new since Monday 03:00
+  f.setNow("2026-09-21T18:00:00Z"); // Mon 20:00: nothing new since Monday 11:00
   f.ctx.processLehrlingeShuttleSummary();
   assert.doesNotMatch(f.waCalls[2][1], /Änderungen/);
 
   f.props.set("LSS_CHANGES_ENABLED", "false");
   f.save("anna", [{ date: "2026-09-24", student_id: "anna", status: "none" }]);
-  f.setNow("2026-09-23T01:00:00Z");
+  f.setNow("2026-09-22T18:00:00Z");
   f.ctx.processLehrlingeShuttleSummary();
   assert.doesNotMatch(f.waCalls[3][1], /Änderungen/);
 });

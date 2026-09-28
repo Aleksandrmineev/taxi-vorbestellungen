@@ -87,5 +87,5 @@ Fensterposition/-größe und `screencapture -R x,y,w,h` (Region), nie ohne Regio
 
 - `order-notifications.md` — WhatsApp statt SMS für Bestell-Erinnerungen + Schicht-Übersicht 06:00/18:00
 - `orders-redis.md` — Redis-Fastpath für Bestellungen (Rollout/Rollback, Sicherheitsprinzipien)
-- `lehrlinge-shuttle-summary.md` — Fahrtenplan-Zusammenfassung per WhatsApp 03:00/12:00
-- `lehrlinge-log.md` — Änderungsprotokoll Fahrtenplan + Kontostatus der Lehrlinge (Popup, Portal, 03:00-WhatsApp)
+- `lehrlinge-shuttle-summary.md` — Fahrtenplan-Zusammenfassung per WhatsApp 20:00 (Hinfahrt morgen) / 11:00 (Rückfahrt)
+- `lehrlinge-log.md` — Änderungsprotokoll Fahrtenplan + Kontostatus der Lehrlinge (Popup, Portal, WhatsApp 20:00/11:00)

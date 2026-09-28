@@ -1,8 +1,8 @@
 /**
- * Zellstoff Pöls Shuttle: Fahrtenplan per WhatsApp um 03:00 und 12:00.
+ * Zellstoff Pöls Shuttle: Fahrtenplan per WhatsApp um 20:00 und 11:00.
  * Genau die Zeitpunkte, an denen Änderungen im Lehrlinge-Fahrtenplan schließen
- * (Hinfahrt bis 03:00, Rückfahrt bis 12:00 — siehe lehrlingeCutoffOpen_ in lehrlinge_plan.gs):
- * die Liste ist zu diesem Zeitpunkt endgültig. 03:00 → Hinfahrt heute, 12:00 → Rückfahrt heute.
+ * (Hinfahrt bis 20:00 am Vortag, Rückfahrt bis 11:00 — siehe lehrlingeCutoffOpen_ in lehrlinge_plan.gs):
+ * die Liste ist zu diesem Zeitpunkt endgültig. 20:00 → Hinfahrt morgen, 11:00 → Rückfahrt heute.
  * Route für Route, in Fahrtreihenfolge, mit den Namen je Haltepunkt (wie auf der Fahrtenplan-Seite).
  *
  * Ausgeschaltet, bis setupLehrlingeShuttleSummary() ausgeführt wurde (Script Property LSS_ENABLED).
@@ -23,8 +23,25 @@ function lssToday_(now) {
   return Utilities.formatDate(now, LSS_ZONE_, "yyyy-MM-dd");
 }
 
+const LSS_MORNING_SLOT_ = "20"; // Hinfahrt des nächsten Tages (Frist: 20:00 am Vortag)
+const LSS_EVENING_SLOT_ = "11"; // Rückfahrt heute (Frist: 11:00)
+
 function lssDirectionForSlot_(slot) {
-  return slot === "12" ? "evening" : "morning";
+  return slot === LSS_EVENING_SLOT_ ? "evening" : "morning";
+}
+
+// Fahrtag, um den es in einem Slot geht: 20:00 → morgen, 11:00 → heute.
+function lssTripDate_(now, slot) {
+  const today = lssToday_(now);
+  if (slot !== LSS_MORNING_SLOT_) return today;
+  const next = new Date(today + "T12:00:00Z");
+  next.setUTCDate(next.getUTCDate() + 1);
+  return next.toISOString().slice(0, 10);
+}
+
+function lssDefaultSlot_(now) {
+  const hour = Number(Utilities.formatDate(now, LSS_ZONE_, "H"));
+  return hour < 11 ? LSS_EVENING_SLOT_ : LSS_MORNING_SLOT_; // die nächste bzw. gerade gesendete Liste
 }
 
 // Baut die WhatsApp-Nachricht aus dem Ergebnis von getLehrlingeDriverSchedule_(today, today, "all", direction).
@@ -59,13 +76,13 @@ function lssSummaryText_(scheduleResult, direction, dateLabel) {
 /** Nur Vorschau: baut den Text und schreibt ihn ins Journal, sendet nichts. */
 function previewLehrlingeShuttleSummary(slot) {
   const now = new Date();
-  const useSlot = slot || (Number(Utilities.formatDate(now, LSS_ZONE_, "H")) < 8 ? "03" : "12");
+  const useSlot = slot || lssDefaultSlot_(now);
   const direction = lssDirectionForSlot_(useSlot);
-  const today = lssToday_(now);
-  const schedule = getLehrlingeDriverSchedule_(today, today, "all", direction);
-  const text = lssSummaryText_(schedule, direction, today.slice(8) + "." + today.slice(5, 7) + ".");
-  const changes = useSlot === LSS_CHANGES_SLOT_ ? lssChangesSection_(now) : "";
-  const result = { slot: useSlot, direction: direction, date: today, willSend: text !== null, target: lssTarget_(false), text: text && changes ? text + "\n\n" + changes : text };
+  const tripDate = lssTripDate_(now, useSlot);
+  const schedule = getLehrlingeDriverSchedule_(tripDate, tripDate, "all", direction);
+  const text = lssSummaryText_(schedule, direction, tripDate.slice(8) + "." + tripDate.slice(5, 7) + ".");
+  const changes = lssChangesSection_(now);
+  const result = { slot: useSlot, direction: direction, date: tripDate, willSend: text !== null, target: lssTarget_(false), text: text && changes ? text + "\n\n" + changes : text };
   console.log(JSON.stringify(result));
   return result;
 }
@@ -75,32 +92,32 @@ function processLehrlingeShuttleSummary() {
   if (String(props.getProperty(LSS_PREFIX_ + "ENABLED") || "") !== "true") return;
   const now = new Date();
   const hour = Utilities.formatDate(now, LSS_ZONE_, "HH");
-  if (hour !== "03" && hour !== "12") return;
+  if (hour !== LSS_MORNING_SLOT_ && hour !== LSS_EVENING_SLOT_) return;
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) return;
   try {
     if (String(props.getProperty(LSS_PREFIX_ + "ENABLED") || "") !== "true") return;
-    const today = lssToday_(now);
+    const tripDate = lssTripDate_(now, hour);
     const key = LSS_PREFIX_ + "LAST_" + hour;
-    const token = today + ":" + hour;
+    const token = tripDate + ":" + hour;
     const previous = JSON.parse(props.getProperty(key) || "{}");
     if (previous.token === token) return; // für diesen Termin schon gesendet (oder bewusst leer)
     const direction = lssDirectionForSlot_(hour);
-    const schedule = getLehrlingeDriverSchedule_(today, today, "all", direction);
-    const text = lssSummaryText_(schedule, direction, today.slice(8) + "." + today.slice(5, 7) + ".");
+    const schedule = getLehrlingeDriverSchedule_(tripDate, tripDate, "all", direction);
+    const text = lssSummaryText_(schedule, direction, tripDate.slice(8) + "." + tripDate.slice(5, 7) + ".");
     if (text === null) {
       // Schulfreier Tag (Wochenende/Ferien/Feiertag): keine Nachricht, aber als geprüft markieren.
       props.setProperty(key, JSON.stringify({ token: token, status: "skipped_empty" }));
       return;
     }
     const target = lssTarget_(false);
-    const changes = hour === LSS_CHANGES_SLOT_ ? lssChangesSection_(now, true) : "";
+    const changes = lssChangesSection_(now, hour === LSS_MORNING_SLOT_);
     props.setProperty(key, JSON.stringify({ token: token, status: "attempting" }));
     try {
       sendWhatsAppMessage_(target, changes ? text + "\n\n" + changes : text);
       props.setProperty(key, JSON.stringify({ token: token, status: "sent" }));
       // Erst nach dem Senden weiterschieben: Wochenende/Ferien (keine Nachricht) sammeln sich bis zur nächsten.
-      if (hour === LSS_CHANGES_SLOT_) props.setProperty(LSS_CHANGES_SINCE_, now.toISOString());
+      props.setProperty(LSS_CHANGES_SINCE_, now.toISOString());
     } catch (err) {
       props.setProperty(key, JSON.stringify({ token: token, status: "failed_or_unknown" }));
       safeNotificationLog_("lehrlinge_shuttle_error", { message: redactLogText_(err && err.message, 180) });
@@ -111,11 +128,10 @@ function processLehrlingeShuttleSummary() {
 }
 
 /**
- * Änderungen am Fahrtenplan (Protokoll, lehrlinge_log.gs) hängen einmal täglich an der 03:00-Nachricht:
- * alles seit der letzten gesendeten 03:00-Nachricht (höchstens LSS_CHANGES_MAX_DAYS_ zurück).
- * Abschalten: Script Property LSS_CHANGES_ENABLED = false. Nebenbei: Protokoll auf Vormonat + laufenden Monat kürzen.
+ * Änderungen am Fahrtenplan (Protokoll, lehrlinge_log.gs) hängen an jeder Nachricht (20:00 und 11:00):
+ * alles seit der letzten gesendeten Nachricht (höchstens LSS_CHANGES_MAX_DAYS_ zurück).
+ * Abschalten: Script Property LSS_CHANGES_ENABLED = false. Nebenbei (20:00): Protokoll auf Vormonat + laufenden Monat kürzen.
  */
-const LSS_CHANGES_SLOT_ = "03";
 const LSS_CHANGES_SINCE_ = LSS_PREFIX_ + "CHANGES_SINCE";
 const LSS_CHANGES_MAX_DAYS_ = 7;
 
@@ -140,7 +156,7 @@ function setupLehrlingeShuttleSummary() {
   disableLehrlingeShuttleSummary();
   ScriptApp.newTrigger("processLehrlingeShuttleSummary").timeBased().everyMinutes(5).create();
   PropertiesService.getScriptProperties().setProperty(LSS_PREFIX_ + "ENABLED", "true");
-  console.log("Lehrlinge shuttle summary enabled (03:00 & 12:00, Europe/Vienna).");
+  console.log("Lehrlinge shuttle summary enabled (20:00 Hinfahrt morgen & 11:00 Rückfahrt, Europe/Vienna).");
 }
 
 function disableLehrlingeShuttleSummary() {
@@ -153,11 +169,11 @@ function disableLehrlingeShuttleSummary() {
 /** Manueller Test jederzeit: sendet die aktuelle Liste (auch „keine Fahrten“) nur an die persönliche Testnummer. */
 function sendLehrlingeShuttleSummaryTestNow(slot) {
   const now = new Date();
-  const useSlot = slot || (Number(Utilities.formatDate(now, LSS_ZONE_, "H")) < 8 ? "03" : "12");
+  const useSlot = slot || lssDefaultSlot_(now);
   const direction = lssDirectionForSlot_(useSlot);
-  const today = lssToday_(now);
-  const schedule = getLehrlingeDriverSchedule_(today, today, "all", direction);
-  const dateLabel = today.slice(8) + "." + today.slice(5, 7) + ".";
+  const tripDate = lssTripDate_(now, useSlot);
+  const schedule = getLehrlingeDriverSchedule_(tripDate, tripDate, "all", direction);
+  const dateLabel = tripDate.slice(8) + "." + tripDate.slice(5, 7) + ".";
   const text = lssSummaryText_(schedule, direction, dateLabel) || ("TaxiApp: Fahrtenplan Zellstoff Pöls — " + (direction === "evening" ? "Rückfahrt" : "Hinfahrt") + " " + dateLabel + "\n\nKeine Fahrten geplant.");
   sendWhatsAppMessage_(LR_WHATSAPP_TEST_TARGET_, "[TEST] " + text);
   console.log("Sent shuttle summary test to the personal number:\n" + text);

@@ -814,15 +814,26 @@ function findLehrlingStudentRow_(sh, studentId) {
   return 0;
 }
 
+// Änderungsfristen für Lehrlinge (Europe/Vienna): Hinfahrt bis 20:00 am Vortag, Rückfahrt bis 11:00 am selben Tag.
+// Gleiche Regeln: api/_lib/lehrlinge-cutoff.js (Vercel) und directionOpen in student-portal/app.js.
+const LEHRLINGE_MORNING_CUTOFF_HOUR = 20; // am Vortag
+const LEHRLINGE_EVENING_CUTOFF_HOUR = 11; // am Fahrtag
+
 function lehrlingeCutoffOpen_(dateValue, direction, now) {
   const date = String(dateValue || "").trim();
   const current = now || new Date();
   const today = Utilities.formatDate(current, "Europe/Vienna", "yyyy-MM-dd");
-  if (date > today) return true;
-  if (date < today) return false;
+  let deadlineDay = date;
+  if (direction === "morning" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const previous = new Date(date + "T12:00:00Z");
+    previous.setUTCDate(previous.getUTCDate() - 1);
+    deadlineDay = previous.toISOString().slice(0, 10);
+  }
+  if (deadlineDay > today) return true;
+  if (deadlineDay < today) return false;
 
   const hour = Number(Utilities.formatDate(current, "Europe/Vienna", "H"));
-  return direction === "morning" ? hour < 3 : hour < 12;
+  return hour < (direction === "morning" ? LEHRLINGE_MORNING_CUTOFF_HOUR : LEHRLINGE_EVENING_CUTOFF_HOUR);
 }
 
 function assertLehrlingeCutoffOpen_(dateValue, direction) {

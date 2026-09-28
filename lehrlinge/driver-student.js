@@ -50,8 +50,8 @@ function cutoffOpen(date, direction) {
 function friendlyError(error) {
   const message = String(error?.message || error || "Unbekannter Fehler");
   if (message.includes("driver_auth_required")) return "Die Fahreranmeldung ist abgelaufen. Bitte auf der zentralen Startseite erneut anmelden.";
-  if (message.includes("morning_cutoff_passed")) return "Die Hinfahrt kann nicht mehr geändert werden (Frist: 03:00).";
-  if (message.includes("evening_cutoff_passed")) return "Die Rückfahrt kann nicht mehr geändert werden (Frist: 12:00).";
+  if (message.includes("morning_cutoff_passed")) return "Die Hinfahrt kann nicht mehr geändert werden (Frist: 20:00 am Vortag).";
+  if (message.includes("evening_cutoff_passed")) return "Die Rückfahrt kann nicht mehr geändert werden (Frist: 11:00).";
   return message;
 }
 
