@@ -733,15 +733,23 @@ function saveLehrlingeStudentPlan_(session, body) {
   const current = sortedDates.length ? getLehrlingePlan_(sortedDates[0], sortedDates[sortedDates.length - 1]) : { items: [], holidays: [] };
   const currentByDate = {};
   current.items.filter((item) => item.student_id === student.id).forEach((item) => { currentByDate[item.date] = item.status; });
+  const holidaySet = new Set(current.holidays);
+  const flag = (value) => value === true || value === "1";
   const planRows = [];
   rows.forEach((item) => {
     const date = String(item.date || "").trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("invalid_date");
-    const out = item.out === true || item.out === "1";
-    const back = item.back === true || item.back === "1";
-    const currentStatus = currentByDate[date] || "none";
+    // Ohne Zeile im Sheet gilt wie im Fahrtenplan: „both“, an Ferientagen „none“.
+    const currentStatus = currentByDate[date] || (holidaySet.has(date) ? "none" : "both");
     const currentOut = currentStatus === "both" || currentStatus === "out";
     const currentBack = currentStatus === "both" || currentStatus === "back";
+    let out = flag(item.out);
+    let back = flag(item.back);
+    // Portal schickt den Stand beim Laden mit (baseOut/baseBack): nur die Richtung übernehmen, die der Lehrling
+    // selbst umgeschaltet hat — eine zwischenzeitliche Änderung von Fahrer/Büro bleibt so erhalten.
+    if (item.baseOut !== undefined && out === flag(item.baseOut)) out = currentOut;
+    if (item.baseBack !== undefined && back === flag(item.baseBack)) back = currentBack;
+    if (out === currentOut && back === currentBack) return; // nichts geändert: nicht schreiben, keine Frist prüfen
     if (out !== currentOut) assertLehrlingeCutoffOpen_(date, "morning");
     if (back !== currentBack) assertLehrlingeCutoffOpen_(date, "evening");
     planRows.push({ date: date, student_id: student.id, status: out && back ? "both" : out ? "out" : back ? "back" : "none" });

@@ -249,3 +249,26 @@ test("Fahrer-Speichern ohne holidaysRemoved lässt bestehende Ferien unangetaste
   f.save("driver:12", [{ date: "2026-10-26", student_id: "ben", status: "out" }], ["2026-10-26"]);
   assert.deepEqual([...f.ctx.getLehrlingePlan_("2026-10-01", "2026-10-31").holidays], ["2026-10-26"]);
 });
+
+test("own account: unchanged days without a sheet row are not treated as changes (no false cutoff error)", () => {
+  const f = fixture("2026-09-28T19:00:00Z"); // Mon 21:00 Vienna: Tue Hinfahrt already closed
+  const saveOwn = (rows) => f.ctx.saveLehrlingeStudentPlan_({ studentId: "anna" }, { rows: JSON.stringify(rows) });
+  const result = saveOwn([
+    { date: "2026-09-29", out: true, back: true, baseOut: true, baseBack: true },
+    { date: "2026-09-30", out: false, back: true, baseOut: true, baseBack: true },
+  ]);
+  assert.equal(result.saved, 1);
+  assert.throws(() => saveOwn([{ date: "2026-09-29", out: false, back: true, baseOut: true, baseBack: true }]), /morning_cutoff_passed/);
+});
+
+test("own account: only the direction the student toggled is applied; a driver's change in between survives", () => {
+  const f = fixture("2026-09-28T10:00:00Z"); // Mon 12:00
+  // Student loaded Thu = both. Meanwhile the driver sets Thu to "out" (no Rückfahrt).
+  f.save("driver:12", [{ date: "2026-10-01", student_id: "anna", status: "out" }]);
+  // Student (stale screen) switches off the Hinfahrt on Thu and leaves Fri untouched.
+  f.ctx.saveLehrlingeStudentPlan_({ studentId: "anna" }, { rows: JSON.stringify([
+    { date: "2026-10-01", out: false, back: true, baseOut: true, baseBack: true },
+  ]) });
+  const items = f.ctx.getLehrlingePlan_("2026-10-01", "2026-10-02").items;
+  assert.deepEqual([...items].map((i) => i.date + "=" + i.status), ["2026-10-01=none"]); // Hin off (student) + Rück off (driver)
+});
