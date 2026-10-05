@@ -99,11 +99,6 @@
   border-radius: 12px;
 } /* белое поле для распознавания */
 /* Hinweis unter dem QR: wo man in der Bank-App scannt */
-.qr-banks {
-  margin-top: 10px;
-  font-size: 14px;
-  line-height: 1.4;
-}
 .qr-banks__title {
   margin: 0 0 4px;
   font-weight: 600;
@@ -692,11 +687,6 @@ body {
   .qrbox .qrcanvas img {
     width: min(210px, 58vw);
   }
-  .qr-banks {
-    margin-top: 4px;
-    font-size: 12.5px;
-    line-height: 1.3;
-  }
   .qr-banks__title {
     margin-bottom: 2px;
   }
@@ -727,4 +717,39 @@ body {
   width: 18px;
   height: 18px;
   fill: currentColor;
+}
+
+/* Link zur Scan-Anleitung unter dem QR */
+.scan-help {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.scan-help svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: var(--accent);
+}
+#scanDialog .qr-banks__title {
+  margin: 4px 0 8px;
+  text-align: left;
+  font-weight: 600;
+}
+#scanDialog .qr-banks__list {
+  display: grid;
+  gap: 8px;
+  font-size: 16px;
+  line-height: 1.4;
 }

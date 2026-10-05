@@ -336,6 +336,13 @@ function loggedInDriverNo() {
       el.textContent = shown[el.dataset.field] ?? "";
     });
   }
+  // Anleitung-Popup: wo man in der Bank-App scannt
+  const scanDialog = document.getElementById("scanDialog");
+  document.getElementById("scanHelpBtn")?.addEventListener("click", () => scanDialog?.showModal());
+  scanDialog?.addEventListener("click", (e) => {
+    if (e.target === scanDialog || e.target.closest("[data-close]")) scanDialog.close();
+  });
+
   if (ibanBtn && bankDialog) {
     ibanBtn.addEventListener("click", () => {
       fillBankDialog();

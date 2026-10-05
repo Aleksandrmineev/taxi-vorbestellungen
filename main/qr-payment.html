@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="assets/css/adaptive.css" />
 
     <!-- Стили этой страницы -->
-    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-4" />
+    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-5" />
   </head>
   <body>
     <!-- Header -->
@@ -130,14 +130,11 @@
           <div class="qrbox">
             <div id="qr" class="qrcanvas" aria-label="SEPA QR Code"></div>
           </div>
-          <!-- Für Kund:innen: wo die Scan-Funktion in der eigenen Bank-App steckt -->
-          <div class="qr-banks">
-            <p class="qr-banks__title">Mit der Bank-App scannen – nicht mit der Kamera:</p>
-            <ul class="qr-banks__list">
-              <li><strong>George</strong>: Neue Überweisung → Scan und Pay → QR-Code scannen</li>
-              <li><strong>Andere Banken</strong>: Neue Überweisung → QR-Code scannen</li>
-            </ul>
-          </div>
+          <!-- Für Kund:innen: wo die Scan-Funktion in der Bank-App steckt (Popup, spart Höhe) -->
+          <button id="scanHelpBtn" class="scan-help" type="button" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg>
+            Anleitung: QR-Code in der Bank-App scannen
+          </button>
           <!-- IBAN groß und ohne Beiwerk: für Bank-Apps, die nur IBAN per Kamera lesen -->
           <button id="ibanBtn" class="iban-btn" type="button" aria-haspopup="dialog">
             <span class="iban-btn__label">IBAN</span>
@@ -163,6 +160,19 @@
           Noch keine Daten.
         </div>
       </details>
+      <dialog id="scanDialog" class="bank-dialog" aria-labelledby="scanDialogTitle">
+        <div class="bank-dialog__panel">
+          <div class="bank-dialog__head">
+            <strong id="scanDialogTitle">So bezahlen Sie per QR-Code</strong>
+            <button type="button" class="bank-dialog__close" data-close aria-label="Schließen">×</button>
+          </div>
+          <p class="qr-banks__title">Mit der Bank-App scannen – nicht mit der Kamera:</p>
+          <ul class="qr-banks__list">
+            <li><strong>George</strong>: Neue Überweisung → Scan und Pay → QR-Code scannen</li>
+            <li><strong>Andere Banken</strong>: Neue Überweisung → QR-Code scannen</li>
+          </ul>
+        </div>
+      </dialog>
       <dialog id="bankDialog" class="bank-dialog" aria-labelledby="bankDialogTitle">
         <div class="bank-dialog__panel">
           <div class="bank-dialog__head">
@@ -263,7 +273,7 @@
 
     <!-- JS этой страницы -->
     <script defer src="assets/js/qr.js?v=20261005-1"></script>
-    <script defer src="assets/js/main.js?v=20261005-2"></script>
+    <script defer src="assets/js/main.js?v=20261005-3"></script>
 
     <!-- Глобальные скрипты темы -->
     <script type="module" defer src="assets/js/theme.js"></script>
