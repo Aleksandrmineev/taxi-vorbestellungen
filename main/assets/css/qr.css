@@ -98,6 +98,29 @@
   padding: 10px;
   border-radius: 12px;
 } /* белое поле для распознавания */
+/* Hinweis unter dem QR: wo man in der Bank-App scannt */
+.qr-banks {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.qr-banks__title {
+  margin: 0 0 4px;
+  font-weight: 600;
+  text-align: center;
+}
+.qr-banks__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+}
+.qr-banks__list li {
+  padding: 2px 0;
+}
+.qr-banks__list strong {
+  color: var(--text);
+}
 .qrmeta {
   text-align: center;
   color: var(--muted);

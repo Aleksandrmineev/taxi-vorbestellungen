@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="assets/css/adaptive.css" />
 
     <!-- Стили этой страницы -->
-    <link rel="stylesheet" href="assets/css/qr.css" />
+    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-1" />
   </head>
   <body>
     <!-- Header -->
@@ -170,6 +170,16 @@
         <div class="right">
           <div class="qrbox">
             <div id="qr" class="qrcanvas" aria-label="SEPA QR Code"></div>
+          </div>
+          <!-- Für Kund:innen: wo die Scan-Funktion in der eigenen Bank-App steckt -->
+          <div class="qr-banks">
+            <p class="qr-banks__title">Mit der Bank-App scannen – nicht mit der Kamera:</p>
+            <ul class="qr-banks__list">
+              <li><strong>George</strong> (Sparkasse/Erste): Neue Zahlung → Scan-Symbol</li>
+              <li><strong>Mein ELBA</strong> (Raiffeisen): Überweisung → Scan-Symbol</li>
+              <li><strong>Bank Austria</strong>: Überweisung → QR-/Kamera-Symbol</li>
+              <li><strong>Andere Bank</strong>: Neue Überweisung → QR-/Kamera-Symbol</li>
+            </ul>
           </div>
           <div class="qrmeta">
             IBAN:
