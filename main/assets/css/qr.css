@@ -635,7 +635,7 @@ body {
     padding: 10px 16px 16px;
   }
   .pay h1 {
-    font-size: 22px;
+    font-size: clamp(16px, 4.9vw, 22px); /* „QR-Code mit der Bank-App scannen“ in einer Zeile */
   }
   .card.grid2 {
     padding: 12px;
