@@ -735,14 +735,47 @@ body {
   align-content: start;
 }
 
-#scanDialog .qr-banks__title {
-  margin: 4px 0 8px;
-  text-align: left;
-  font-weight: 600;
+/* Anleitung-Popup */
+.help-dialog {
+  max-height: calc(100dvh - 32px);
 }
-#scanDialog .qr-banks__list {
+.help-dialog .bank-dialog__panel {
+  max-height: calc(100dvh - 34px);
+  overflow-y: auto;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.help-steps {
+  margin: 4px 0 12px;
+  padding-left: 22px;
   display: grid;
   gap: 8px;
-  font-size: 16px;
-  line-height: 1.4;
+}
+.help-steps .qr-banks__list {
+  margin-top: 6px;
+  display: grid;
+  gap: 6px;
+  font-size: 15px;
+}
+.help-more {
+  border-top: 1px solid var(--ring);
+  padding: 10px 0 2px;
+}
+.help-more > summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+.help-more p,
+.help-more ol {
+  margin: 8px 0;
+  font-size: 15px;
+  color: var(--muted);
+}
+.help-more ol {
+  padding-left: 22px;
+  display: grid;
+  gap: 4px;
+}
+.help-more strong {
+  color: var(--text);
 }

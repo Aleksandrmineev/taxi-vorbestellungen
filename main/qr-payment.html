@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="assets/css/adaptive.css" />
 
     <!-- Стили этой страницы -->
-    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-7" />
+    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-8" />
   </head>
   <body>
     <!-- Header -->
@@ -158,17 +158,61 @@
           Noch keine Daten.
         </div>
       </details>
-      <dialog id="scanDialog" class="bank-dialog" aria-labelledby="scanDialogTitle">
+      <!-- Anleitung (Kund:innen kurz oben, Details aufklappbar) – ersetzt die frühere Seite anleitung-qr.html -->
+      <dialog id="scanDialog" class="bank-dialog help-dialog" aria-labelledby="scanDialogTitle">
         <div class="bank-dialog__panel">
           <div class="bank-dialog__head">
             <strong id="scanDialogTitle">So bezahlen Sie per QR-Code</strong>
             <button type="button" class="bank-dialog__close" data-close aria-label="Schließen">×</button>
           </div>
-          <p class="qr-banks__title">Mit der Bank-App scannen – nicht mit der Kamera:</p>
-          <ul class="qr-banks__list">
-            <li><strong>George</strong>: Neue Überweisung → Scan und Pay → QR-Code scannen</li>
-            <li><strong>Andere Banken</strong>: Neue Überweisung → QR-Code scannen</li>
-          </ul>
+          <ol class="help-steps">
+            <li>Die <strong>Bank-App</strong> öffnen – nicht die Kamera.</li>
+            <li>
+              QR-Code scannen:
+              <ul class="qr-banks__list">
+                <li><strong>George</strong>: Neue Überweisung → Scan und Pay → QR-Code scannen</li>
+                <li><strong>Andere Banken</strong>: Neue Überweisung → QR-Code scannen</li>
+              </ul>
+            </li>
+            <li>Betrag prüfen und die Überweisung bestätigen.</li>
+          </ol>
+
+          <details class="help-more">
+            <summary>Kein QR-Scanner in der Bank-App?</summary>
+            <p>
+              Viele Bank-Apps können die <strong>IBAN</strong> abfotografieren:
+              einfach die große IBAN unter dem QR-Code scannen.
+            </p>
+            <p>
+              Oder auf die IBAN tippen – dort stehen Empfänger, IBAN, BIC,
+              Betrag und Verwendungszweck groß und zum Kopieren.
+            </p>
+          </details>
+
+          <details class="help-more">
+            <summary>Für Fahrer</summary>
+            <ol>
+              <li>
+                <strong>Betrag</strong> vom Taxameter eingeben. <strong>Gesamt</strong>
+                wird vorgeschlagen: +5&nbsp;%, auf ganze Euro aufgerundet.
+              </li>
+              <li>
+                Gibt die/der Kund:in mehr, <strong>Gesamt</strong> ändern – das
+                Trinkgeld wird automatisch berechnet.
+              </li>
+              <li>Handy zeigen, die/der Kund:in scannt und überweist.</li>
+              <li>Überweisungsbestätigung am Display zeigen lassen.</li>
+              <li>
+                <strong>Zahlung bestätigen</strong> tippen – die Zahlung wird
+                gespeichert und steht unter <em>Letzte Zahlungen</em>.
+              </li>
+            </ol>
+            <p>
+              Die Fahrer-Nr. kommt aus deinem Login. Ohne Anmeldung erscheint ein
+              Feld zum Eintippen. Der Verwendungszweck
+              „Taxi Murtal – Fahrer&nbsp;NN“ wird automatisch ausgefüllt.
+            </p>
+          </details>
         </div>
       </dialog>
       <dialog id="bankDialog" class="bank-dialog" aria-labelledby="bankDialogTitle">

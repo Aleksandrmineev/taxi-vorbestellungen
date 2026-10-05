@@ -1,4 +1,4 @@
-const CACHE = "mt-main-v25";
+const CACHE = "mt-main-v26";
 
 const ASSETS = [
   // Страницы
@@ -6,7 +6,6 @@ const ASSETS = [
   "/main/index.html",
   "/main/hilfe.html",
   "/main/qr-payment.html",
-  "/main/anleitung-qr.html",
 
   // CSS
   "/main/assets/css/theme.css",
