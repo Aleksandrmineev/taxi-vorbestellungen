@@ -34,11 +34,11 @@
     <!-- Глобальные стили проекта -->
     <link rel="stylesheet" href="assets/css/theme.css" />
     <link rel="stylesheet" href="assets/css/global.css" />
-    <link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/main.css?v=20261005-1" />
     <link rel="stylesheet" href="assets/css/adaptive.css" />
 
     <!-- Стили этой страницы -->
-    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-2" />
+    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-3" />
   </head>
   <body>
     <!-- Header -->
@@ -134,7 +134,7 @@
           <div class="qr-banks">
             <p class="qr-banks__title">Mit der Bank-App scannen – nicht mit der Kamera:</p>
             <ul class="qr-banks__list">
-              <li><strong>George</strong> (Sparkasse/Erste): Neue Überweisung → Scan und Pay → QR-Code scannen</li>
+              <li><strong>George</strong>: Neue Überweisung → Scan und Pay → QR-Code scannen</li>
               <li><strong>Andere Banken</strong>: Neue Überweisung → QR-Code scannen</li>
             </ul>
           </div>
@@ -157,12 +157,12 @@
 
         <!-- <div class="row report-line"></div> -->
       </section>
-      <section class="card qr-recent">
-        <h2 class="qr-recent__title">Letzte Zahlungen</h2>
+      <details class="card qr-recent" id="qrRecentBox">
+        <summary class="qr-recent__title">Letzte Zahlungen</summary>
         <div id="qrRecent" class="qr-recent__body small muted">
           Noch keine Daten.
         </div>
-      </section>
+      </details>
       <dialog id="bankDialog" class="bank-dialog" aria-labelledby="bankDialogTitle">
         <div class="bank-dialog__panel">
           <div class="bank-dialog__head">
@@ -263,7 +263,7 @@
 
     <!-- JS этой страницы -->
     <script defer src="assets/js/qr.js?v=20261005-1"></script>
-    <script defer src="assets/js/main.js?v=20261005-1"></script>
+    <script defer src="assets/js/main.js?v=20261005-2"></script>
 
     <!-- Глобальные скрипты темы -->
     <script type="module" defer src="assets/js/theme.js"></script>

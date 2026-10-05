@@ -54,6 +54,7 @@ function loggedInDriverNo() {
   const bankDialog = document.getElementById("bankDialog");
   const qrBox = document.getElementById("qr");
   const elRecent = document.getElementById("qrRecent");
+  const recentBox = document.getElementById("qrRecentBox"); // Akkordeon: lädt erst beim Aufklappen
 
   // Защита: если это не страница QR-Zahlung → выходим, чтобы не падать
   if (
@@ -152,6 +153,7 @@ function loggedInDriverNo() {
   // --- 5. Загрузка последних платежей ---
   async function fetchQrRecent(limit = 5) {
     if (!elRecent || !GS_ENDPOINT) return;
+    if (recentBox && !recentBox.open) return;
 
     elRecent.innerHTML =
       '<div class="qr-recent__loading">Daten werden geladen …</div>';
@@ -226,6 +228,10 @@ function loggedInDriverNo() {
 
     elRecent.innerHTML = rows.join("");
   }
+
+  recentBox?.addEventListener("toggle", () => {
+    if (recentBox.open) fetchQrRecent(5);
+  });
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {

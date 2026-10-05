@@ -614,3 +614,105 @@ body {
 .pay-line #driverNo {
   text-align: center;
 }
+
+/* „Letzte Zahlungen“ als Akkordeon */
+.qr-recent > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.qr-recent > summary::-webkit-details-marker {
+  display: none;
+}
+.qr-recent > summary::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+.qr-recent[open] > summary::after {
+  transform: rotate(-135deg);
+}
+
+/* Handy: alles Wichtige auf einen Bildschirm */
+@media (max-width: 600px) {
+  .header {
+    padding-block: 8px;
+  }
+  .pay {
+    gap: 10px;
+    padding: 10px 16px 16px;
+  }
+  .pay h1 {
+    font-size: 22px;
+  }
+  .card.grid2 {
+    padding: 12px;
+    gap: 10px;
+  }
+  .pay-line .input {
+    height: 46px;
+  }
+  .pay-line label {
+    font-size: 13px;
+  }
+  .pay-line {
+    margin-bottom: 4px;
+  }
+  .sep {
+    display: none;
+  }
+  .tip-info {
+    margin: 0;
+    font-size: 14px;
+  }
+  .qrbox {
+    padding: 6px;
+    border: 0;
+    background: none;
+  }
+  /* das QR-Bild hat schon einen weißen Rand (Ruhezone) eingebaut */
+  .qrbox .qrcanvas {
+    padding: 0;
+  }
+  .qrbox .qrcanvas img {
+    width: min(210px, 58vw);
+  }
+  .qr-banks {
+    margin-top: 4px;
+    font-size: 12.5px;
+    line-height: 1.3;
+  }
+  .qr-banks__title {
+    margin-bottom: 2px;
+  }
+  .iban-btn {
+    margin-top: 8px;
+    padding: 8px 10px;
+    gap: 2px;
+  }
+  .iban-btn__label,
+  .iban-btn__more {
+    font-size: 11.5px;
+  }
+  .confirm-wrap {
+    margin-top: 8px;
+  }
+  .confirm-wrap .wa-btn {
+    margin-bottom: 0;
+  }
+  .qr-recent {
+    padding: 12px 14px;
+  }
+  .qr-recent > summary {
+    font-size: 16px;
+  }
+}

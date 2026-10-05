@@ -1,10 +1,10 @@
 * {
   box-sizing: border-box;
 }
-html,
-body {
+html {
   height: 100%;
 }
+/* body nur mindestens bildschirmhoch: mit fester Höhe quetscht das Grid bei langen Seiten den Header */
 html {
   font-family: var(--font);
 }
