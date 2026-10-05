@@ -719,29 +719,15 @@ body {
   fill: currentColor;
 }
 
-/* Link zur Scan-Anleitung unter dem QR */
-.scan-help {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  margin-top: 6px;
-  padding: 6px;
+/* Footer: nur der Anleitung-Button (öffnet das Popup) */
+button.footer__link {
   border: 0;
   background: none;
-  color: var(--muted);
+  color: inherit;
   font: inherit;
-  font-size: 14px;
-  text-decoration: underline;
   cursor: pointer;
 }
-.scan-help svg {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  fill: var(--accent);
-}
+
 #scanDialog .qr-banks__title {
   margin: 4px 0 8px;
   text-align: left;
@@ -752,4 +738,9 @@ body {
   gap: 8px;
   font-size: 16px;
   line-height: 1.4;
+}
+.footer__dev > button.footer__link {
+  flex: 0 0 auto;
+  width: auto;
+  padding-inline: 16px;
 }

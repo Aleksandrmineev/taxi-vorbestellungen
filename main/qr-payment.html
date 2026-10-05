@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="assets/css/adaptive.css" />
 
     <!-- Стили этой страницы -->
-    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-5" />
+    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-6" />
   </head>
   <body>
     <!-- Header -->
@@ -130,11 +130,6 @@
           <div class="qrbox">
             <div id="qr" class="qrcanvas" aria-label="SEPA QR Code"></div>
           </div>
-          <!-- Für Kund:innen: wo die Scan-Funktion in der Bank-App steckt (Popup, spart Höhe) -->
-          <button id="scanHelpBtn" class="scan-help" type="button" aria-haspopup="dialog">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg>
-            Anleitung: QR-Code in der Bank-App scannen
-          </button>
           <!-- IBAN groß und ohne Beiwerk: für Bank-Apps, die nur IBAN per Kamera lesen -->
           <button id="ibanBtn" class="iban-btn" type="button" aria-haspopup="dialog">
             <span class="iban-btn__label">IBAN</span>
@@ -208,32 +203,12 @@
     <!-- Footer -->
     <footer>
       <div class="footer__dev">
-        <a
-          href="https://t.me/aamineev"
-          target="_blank"
-          rel="noopener"
-          aria-label="Schreiben in Telegram @aamineev"
-          class="footer__link"
-        >
-          <svg
-            class="tg-icon"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              d="M9.7 14.7l-.3 4.6c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.7.4 1.2.2 1.4-.6l2.6-12.2c.2-.9-.3-1.3-1-1.1L4 10.3c-.8.2-.8.7-.1.9l4.3 1.3 10-6.3c.5-.3.9-.1.5.2l-9 8.3z"
-              fill="currentColor"
-            />
-          </svg>
-          Entwicklung
-        </a>
-
-        <a
-          href="anleitung-qr.html"
+        <!-- Anleitung für Kund:innen: wo man in der Bank-App scannt (Popup) -->
+        <button
+          id="scanHelpBtn"
+          type="button"
           class="footer__link footer__help"
-          aria-label="Öffnen der Hilfeseite"
+          aria-haspopup="dialog"
         >
           <svg
             class="help-icon"
@@ -247,22 +222,7 @@
               fill="currentColor"
             />
           </svg>
-          Hilfe
-        </a>
-
-        <button
-          id="theme-toggle-footer"
-          class="footer__theme theme-toggle"
-          aria-label="Thema umschalten"
-        >
-          <span class="theme-toggle-shell" aria-hidden="true">
-            <svg
-              id="theme-icon-footer"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-            ></svg>
-          </span>
+          So bezahlen
         </button>
       </div>
     </footer>
