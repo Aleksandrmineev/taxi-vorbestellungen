@@ -29,9 +29,10 @@ export function initTodoList({ fillForm }) {
     const items = (res.items || []).filter((it) => it.status !== "done" && it.status !== "cancelled").sort((a, b) => new Date(a.start_iso) - new Date(b.start_iso));
     // Eine wiederkehrende Serie wird als eine Zeile dargestellt. So bleibt
     // sie sichtbar und zeigt immer den nächsten noch offenen Termin.
+    // „Mehrere Tage“ (Serie ohne rrule) bleibt Tag für Tag sichtbar — sonst sähe es nach nur einem Auftrag aus.
     const grouped = new Map();
     items.forEach((it) => {
-      const key = it.series_id ? `series:${it.series_id}` : `order:${it.order_id || it.id}`;
+      const key = it.series_id && it.rrule ? `series:${it.series_id}` : `order:${it.order_id || it.id}`;
       if (!grouped.has(key)) grouped.set(key, []);
       grouped.get(key).push(it);
     });
