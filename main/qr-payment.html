@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="assets/css/adaptive.css" />
 
     <!-- Стили этой страницы -->
-    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-9" />
+    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-10" />
   </head>
   <body>
     <!-- Header -->
@@ -158,36 +158,51 @@
           Noch keine Daten.
         </div>
       </details>
-      <!-- Anleitung (Kund:innen kurz oben, Details aufklappbar) – ersetzt die frühere Seite anleitung-qr.html -->
-      <dialog id="scanDialog" class="bank-dialog help-dialog" aria-labelledby="scanDialogTitle">
+      <!-- Ein Popup für alles: kurze Anleitung (Beispiel George), Überweisungsdaten zum Kopieren, Fahrer-Hinweise.
+           Öffnet über „?“ im Header und über die IBAN. -->
+      <dialog id="bankDialog" class="bank-dialog help-dialog" aria-labelledby="bankDialogTitle">
         <div class="bank-dialog__panel">
           <div class="bank-dialog__head">
-            <strong id="scanDialogTitle">So bezahlen Sie per QR-Code</strong>
+            <strong id="bankDialogTitle">So bezahlen Sie</strong>
             <button type="button" class="bank-dialog__close" data-close aria-label="Schließen">×</button>
           </div>
           <ol class="help-steps">
             <li>Die <strong>Bank-App</strong> öffnen – nicht die Kamera.</li>
             <li>
-              QR-Code scannen:
-              <ul class="qr-banks__list">
-                <li><strong>George</strong>: Neue Überweisung → Scan und Pay → QR-Code scannen</li>
-                <li><strong>Andere Banken</strong>: Neue Überweisung → QR-Code scannen</li>
-              </ul>
+              QR-Code scannen, z.&nbsp;B. in <strong>George</strong>:
+              Neue Überweisung → Scan und Pay → QR-Code scannen.
+              In anderen Bank-Apps ähnlich.
             </li>
             <li>Betrag prüfen und die Überweisung bestätigen.</li>
           </ol>
 
-          <details class="help-more">
-            <summary>Kein QR-Scanner in der Bank-App?</summary>
-            <p>
-              Viele Bank-Apps können die <strong>IBAN</strong> abfotografieren:
-              einfach die große IBAN unter dem QR-Code scannen.
-            </p>
-            <p>
-              Oder auf die IBAN tippen – dort stehen Empfänger, IBAN, BIC,
-              Betrag und Verwendungszweck groß und zum Kopieren.
-            </p>
-          </details>
+          <p class="bank-hint" id="bankDataStart">
+            <strong>Kein QR-Scanner?</strong> Neue Überweisung öffnen und die
+            Daten unten mit <span class="bank-hint__icon" aria-hidden="true">⧉</span>
+            kopieren und einfügen.
+          </p>
+          <dl class="bank-data">
+            <div class="bank-data__row">
+              <dt>Empfänger</dt>
+              <dd><span data-field="name">Michael Kleißner</span><button type="button" class="bank-copy" data-copy="name" aria-label="Kopieren" title="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 00-2 2v12h2V3h12V1zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11v14z"/></svg></button></dd>
+            </div>
+            <div class="bank-data__row bank-data__row--iban">
+              <dt>IBAN <button type="button" class="bank-copy" data-copy="iban" aria-label="Kopieren" title="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 00-2 2v12h2V3h12V1zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11v14z"/></svg></button></dt>
+              <dd><span data-field="iban" class="bank-data__iban">AT93 2081 5000 4319 2756</span></dd>
+            </div>
+            <div class="bank-data__row">
+              <dt>BIC</dt>
+              <dd><span data-field="bic">STSPAT2GXXX</span><button type="button" class="bank-copy" data-copy="bic" aria-label="Kopieren" title="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 00-2 2v12h2V3h12V1zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11v14z"/></svg></button></dd>
+            </div>
+            <div class="bank-data__row">
+              <dt>Betrag</dt>
+              <dd><span data-field="amount">€ 0,00</span><button type="button" class="bank-copy" data-copy="amount" aria-label="Kopieren" title="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 00-2 2v12h2V3h12V1zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11v14z"/></svg></button></dd>
+            </div>
+            <div class="bank-data__row">
+              <dt>Verwendungszweck</dt>
+              <dd><span data-field="vz">Taxi Murtal – Fahrer 00</span><button type="button" class="bank-copy" data-copy="vz" aria-label="Kopieren" title="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 00-2 2v12h2V3h12V1zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11v14z"/></svg></button></dd>
+            </div>
+          </dl>
 
           <details class="help-more">
             <summary>Für Fahrer</summary>
@@ -215,42 +230,6 @@
           </details>
         </div>
       </dialog>
-      <dialog id="bankDialog" class="bank-dialog" aria-labelledby="bankDialogTitle">
-        <div class="bank-dialog__panel">
-          <div class="bank-dialog__head">
-            <strong id="bankDialogTitle">Überweisungsdaten</strong>
-            <button type="button" class="bank-dialog__close" data-close aria-label="Schließen">×</button>
-          </div>
-          <!-- Ein Beispiel statt aller Banken: so findet man die manuelle Überweisung -->
-          <p class="bank-hint">
-            <strong>Beispiel George:</strong> Neue Überweisung öffnen und die Daten
-            unten mit <span class="bank-hint__icon" aria-label="Kopieren">⧉</span>
-            kopieren und einfügen. In anderen Bank-Apps ähnlich.
-          </p>
-          <dl class="bank-data">
-            <div class="bank-data__row">
-              <dt>Empfänger</dt>
-              <dd><span data-field="name">Michael Kleißner</span><button type="button" class="bank-copy" data-copy="name" aria-label="Kopieren" title="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 00-2 2v12h2V3h12V1zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11v14z"/></svg></button></dd>
-            </div>
-            <div class="bank-data__row bank-data__row--iban">
-              <dt>IBAN <button type="button" class="bank-copy" data-copy="iban" aria-label="Kopieren" title="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 00-2 2v12h2V3h12V1zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11v14z"/></svg></button></dt>
-              <dd><span data-field="iban" class="bank-data__iban">AT93 2081 5000 4319 2756</span></dd>
-            </div>
-            <div class="bank-data__row">
-              <dt>BIC</dt>
-              <dd><span data-field="bic">STSPAT2GXXX</span><button type="button" class="bank-copy" data-copy="bic" aria-label="Kopieren" title="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 00-2 2v12h2V3h12V1zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11v14z"/></svg></button></dd>
-            </div>
-            <div class="bank-data__row">
-              <dt>Betrag</dt>
-              <dd><span data-field="amount">€ 0,00</span><button type="button" class="bank-copy" data-copy="amount" aria-label="Kopieren" title="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 00-2 2v12h2V3h12V1zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11v14z"/></svg></button></dd>
-            </div>
-            <div class="bank-data__row">
-              <dt>Verwendungszweck</dt>
-              <dd><span data-field="vz">Taxi Murtal – Fahrer 00</span><button type="button" class="bank-copy" data-copy="vz" aria-label="Kopieren" title="Kopieren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 00-2 2v12h2V3h12V1zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11v14z"/></svg></button></dd>
-            </div>
-          </dl>
-        </div>
-      </dialog>
     </main>
 
     <!-- QR lib (локально) -->
@@ -259,7 +238,7 @@
 
     <!-- JS этой страницы -->
     <script defer src="assets/js/qr.js?v=20261005-1"></script>
-    <script defer src="assets/js/main.js?v=20261005-3"></script>
+    <script defer src="assets/js/main.js?v=20261005-4"></script>
 
     <!-- Глобальные скрипты темы -->
     <script type="module" defer src="assets/js/theme.js"></script>

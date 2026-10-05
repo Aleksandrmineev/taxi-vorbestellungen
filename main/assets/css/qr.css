@@ -98,24 +98,6 @@
   padding: 10px;
   border-radius: 12px;
 } /* белое поле для распознавания */
-/* Hinweis unter dem QR: wo man in der Bank-App scannt */
-.qr-banks__title {
-  margin: 0 0 4px;
-  font-weight: 600;
-  text-align: center;
-}
-.qr-banks__list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--muted);
-}
-.qr-banks__list li {
-  padding: 2px 0;
-}
-.qr-banks__list strong {
-  color: var(--text);
-}
 .qrmeta {
   text-align: center;
   color: var(--muted);
@@ -687,9 +669,6 @@ body {
   .qrbox .qrcanvas img {
     width: min(210px, 58vw);
   }
-  .qr-banks__title {
-    margin-bottom: 2px;
-  }
   .iban-btn {
     margin-top: 8px;
     padding: 8px 10px;
@@ -740,6 +719,7 @@ body {
   max-height: calc(100dvh - 32px);
 }
 .help-dialog .bank-dialog__panel {
+  position: relative; /* Bezug für offsetTop beim Springen zu den Daten */
   max-height: calc(100dvh - 34px);
   overflow-y: auto;
   font-size: 16px;
@@ -750,12 +730,6 @@ body {
   padding-left: 22px;
   display: grid;
   gap: 8px;
-}
-.help-steps .qr-banks__list {
-  margin-top: 6px;
-  display: grid;
-  gap: 6px;
-  font-size: 15px;
 }
 .help-more {
   border-top: 1px solid var(--ring);

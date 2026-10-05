@@ -336,18 +336,17 @@ function loggedInDriverNo() {
       el.textContent = shown[el.dataset.field] ?? "";
     });
   }
-  // Anleitung-Popup: wo man in der Bank-App scannt
-  const scanDialog = document.getElementById("scanDialog");
-  document.getElementById("scanHelpBtn")?.addEventListener("click", () => scanDialog?.showModal());
-  scanDialog?.addEventListener("click", (e) => {
-    if (e.target === scanDialog || e.target.closest("[data-close]")) scanDialog.close();
-  });
-
   if (ibanBtn && bankDialog) {
-    ibanBtn.addEventListener("click", () => {
+    // „?“ im Header: Popup von oben (Anleitung); IBAN: gleich zu den Überweisungsdaten
+    const openBankDialog = (toData) => {
       fillBankDialog();
       bankDialog.showModal();
-    });
+      const panel = bankDialog.querySelector(".bank-dialog__panel");
+      const start = document.getElementById("bankDataStart");
+      if (panel) panel.scrollTop = toData && start ? start.offsetTop - 12 : 0;
+    };
+    ibanBtn.addEventListener("click", () => openBankDialog(true));
+    document.getElementById("scanHelpBtn")?.addEventListener("click", () => openBankDialog(false));
     bankDialog.addEventListener("click", async (e) => {
       if (e.target === bankDialog || e.target.closest("[data-close]")) {
         bankDialog.close();
