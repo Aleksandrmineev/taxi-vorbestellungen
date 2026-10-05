@@ -719,13 +719,20 @@ body {
   fill: currentColor;
 }
 
-/* Footer: nur der Anleitung-Button (öffnet das Popup) */
-button.footer__link {
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
+/* Header rechts: Anleitung statt Anruf */
+.help-pill {
+  border: 1px solid var(--header-border);
   cursor: pointer;
+  font: inherit;
+}
+.help-pill svg {
+  width: 24px;
+  height: 24px;
+  fill: var(--accent);
+}
+/* ohne Footer füllt main die Resthöhe: Blöcke oben halten statt verteilen */
+.pay {
+  align-content: start;
 }
 
 #scanDialog .qr-banks__title {
@@ -738,9 +745,4 @@ button.footer__link {
   gap: 8px;
   font-size: 16px;
   line-height: 1.4;
-}
-.footer__dev > button.footer__link {
-  flex: 0 0 auto;
-  width: auto;
-  padding-inline: 16px;
 }

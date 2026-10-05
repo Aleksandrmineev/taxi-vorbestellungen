@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="assets/css/adaptive.css" />
 
     <!-- Стили этой страницы -->
-    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-6" />
+    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-7" />
   </head>
   <body>
     <!-- Header -->
@@ -55,18 +55,21 @@
 
       <div class="spacer"></div>
 
-      <a
-        class="pill"
-        href="tel:+436601018101"
-        aria-label="Jetzt anrufen: +43 660 1018101"
+      <!-- Anleitung für Kund:innen: wo man in der Bank-App scannt (Popup) -->
+      <button
+        id="scanHelpBtn"
+        type="button"
+        class="pill help-pill"
+        aria-haspopup="dialog"
+        aria-label="So bezahlen – Anleitung"
+        title="So bezahlen"
       >
-        <svg viewBox="0 0 24 24" role="img">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
           <path
-            d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.56.57 1 1 0 011 1v3.61a1 1 0 01-1 1A17.02 17.02 0 013 5a1 1 0 011-1h3.61a1 1 0 011 1c0 1.22.2 2.41.57 3.56a1 1 0 01-.24 1.01l-2.32 2.22z"
+            d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm.25 17a1.25 1.25 0 1 1 1.25-1.25A1.25 1.25 0 0 1 12.25 19ZM13.5 13a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75v-.5a2.5 2.5 0 0 1 2.5-2.5 1.5 1.5 0 1 0-1.5-1.5.75.75 0 0 1-1.5 0 3 3 0 1 1 3.75 2.9Z"
           />
         </svg>
-        <strong>+43&nbsp;660&nbsp;1018101</strong>
-      </a>
+      </button>
 
     </header>
 
@@ -199,33 +202,6 @@
         </div>
       </dialog>
     </main>
-
-    <!-- Footer -->
-    <footer>
-      <div class="footer__dev">
-        <!-- Anleitung für Kund:innen: wo man in der Bank-App scannt (Popup) -->
-        <button
-          id="scanHelpBtn"
-          type="button"
-          class="footer__link footer__help"
-          aria-haspopup="dialog"
-        >
-          <svg
-            class="help-icon"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm.25 17a1.25 1.25 0 1 1 1.25-1.25A1.25 1.25 0 0 1 12.25 19ZM13.5 13a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75v-.5a2.5 2.5 0 0 1 2.5-2.5 1.5 1.5 0 1 0-1.5-1.5.75.75 0 0 1-1.5 0 3 3 0 1 1 3.75 2.9Z"
-              fill="currentColor"
-            />
-          </svg>
-          So bezahlen
-        </button>
-      </div>
-    </footer>
 
     <!-- QR lib (локально) -->
     <script src="assets/js/vendor/qrcode.min.js"></script>
