@@ -548,13 +548,19 @@ body {
   overflow-wrap: anywhere;
 }
 .bank-data__iban {
-  font-size: clamp(14px, 6.2cqi, 30px);
+  font-size: clamp(14px, 6.4cqi, 30px);
   white-space: nowrap;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+.bank-data__row--iban dt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
 .bank-data__row--iban dd {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   container-type: inline-size;
   padding: 10px 12px;
   border-radius: 12px;
@@ -563,7 +569,11 @@ body {
 }
 .bank-copy {
   flex: none;
-  padding: 6px 10px;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
   border: 1px solid var(--ring);
   border-radius: 999px;
   background: var(--button-bg, transparent);
@@ -571,11 +581,7 @@ body {
   font-size: 13px;
   cursor: pointer;
 }
-.bank-data__row--iban .bank-copy {
-  background: #fff;
-  color: #111;
-  border-color: #ccc;
-}
+
 
 #confirmPay svg {
   fill: currentColor;
@@ -715,4 +721,10 @@ body {
   .qr-recent > summary {
     font-size: 16px;
   }
+}
+
+.bank-copy svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
 }
