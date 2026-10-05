@@ -796,3 +796,26 @@ body {
   color: var(--muted);
   text-align: center;
 }
+
+/* Hover: global.css färbt jeden <button> beim Hover grau – hier eigene Farben behalten (Kontrast) */
+/* dunkle Schrift auf Gold: in hell und dunkel gut lesbar (weiß auf Gold war zu schwach) */
+#confirmPay:enabled {
+  color: #1d1505;
+}
+#confirmPay:hover:enabled {
+  background: var(--gold-grad);
+  color: #1d1505;
+  filter: brightness(1.05);
+}
+#confirmPay:disabled:hover {
+  background: transparent;
+  transform: none;
+}
+.iban-btn:hover {
+  background: var(--qrcanvas-bg);
+  color: #111;
+  border-color: var(--accent);
+}
+.help-pill:hover {
+  background: var(--card);
+}
