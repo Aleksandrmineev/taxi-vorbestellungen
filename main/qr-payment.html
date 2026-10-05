@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="assets/css/adaptive.css" />
 
     <!-- Стили этой страницы -->
-    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-11" />
+    <link rel="stylesheet" href="assets/css/qr.css?v=20261006-1" />
   </head>
   <body>
     <!-- Header -->
@@ -141,12 +141,16 @@
           </button>
 
           <div class="confirm-wrap">
-            <button id="confirmPay" class="wa-btn" type="button" disabled>
+            <button id="confirmPay" class="wa-btn" type="button" data-state="empty" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" />
               </svg>
-              Zahlung bestätigen
+              <span id="confirmLabel">Zuerst Betrag eingeben</span>
             </button>
+            <!-- Text und Aussehen der Taste zeigen den nächsten Schritt (data-state, gesetzt in main.js) -->
+            <p id="confirmHint" class="confirm-hint" hidden>
+              Erst tippen, wenn der Kunde die Überweisung bestätigt hat.
+            </p>
           </div>
         </div>
 
@@ -238,7 +242,7 @@
 
     <!-- JS этой страницы -->
     <script defer src="assets/js/qr.js?v=20261005-1"></script>
-    <script defer src="assets/js/main.js?v=20261005-4"></script>
+    <script defer src="assets/js/main.js?v=20261006-1"></script>
 
     <!-- Глобальные скрипты темы -->
     <script type="module" defer src="assets/js/theme.js"></script>

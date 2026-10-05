@@ -770,3 +770,29 @@ body {
 .bank-hint__icon {
   color: var(--text);
 }
+
+/* Bestätigen-Taste: Zustände statt nur „grau“ */
+#confirmPay:disabled {
+  opacity: 1;
+  box-shadow: none;
+  background: transparent;
+  border: 2px dashed color-mix(in srgb, var(--accent) 70%, transparent);
+  color: var(--accent);
+  cursor: default;
+}
+#confirmPay[data-state="saving"] {
+  border-style: solid;
+}
+#confirmPay[data-state="saved"] {
+  border: 2px solid #2e9e5b;
+  color: #2e9e5b;
+}
+#confirmPay[data-state="saved"] svg {
+  display: none;
+}
+.confirm-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}

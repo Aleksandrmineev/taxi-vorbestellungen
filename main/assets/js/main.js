@@ -245,6 +245,23 @@ function loggedInDriverNo() {
 
   // --- 6. Пересчёт ---
 
+  // Bestätigen-Taste zeigt den nächsten Schritt statt nur grau zu sein
+  const CONFIRM_LABELS = {
+    driver: "Zuerst Fahrer-Nr. eingeben",
+    empty: "Zuerst Betrag eingeben",
+    ready: "Zahlung bestätigen",
+    saving: "Wird gespeichert …",
+    saved: "Gespeichert ✓",
+  };
+  const elConfirmLabel = document.getElementById("confirmLabel");
+  const elConfirmHint = document.getElementById("confirmHint");
+  function setConfirmState(state) {
+    confirmBtn.dataset.state = state;
+    confirmBtn.disabled = state !== "ready";
+    if (elConfirmLabel) elConfirmLabel.textContent = CONFIRM_LABELS[state];
+    if (elConfirmHint) elConfirmHint.hidden = state !== "ready";
+  }
+
   function recalc() {
     const { fare, total, tip, tooLow } = amounts();
 
@@ -258,7 +275,16 @@ function loggedInDriverNo() {
 
     // nach dem Bestätigen gesperrt, bis sich der Betrag ändert (kein doppelter Eintrag)
     const key = `${elDriver.value}|${total}`;
-    confirmBtn.disabled = saving || key === savedKey || !(total > 0 && /^\d{1,2}$/.test(elDriver.value.trim()));
+    const state = saving
+      ? "saving"
+      : key === savedKey
+      ? "saved"
+      : !/^\d{1,2}$/.test(elDriver.value.trim())
+      ? "driver"
+      : !(total > 0)
+      ? "empty"
+      : "ready";
+    setConfirmState(state);
     if (bankDialog?.open) fillBankDialog();
   }
 
