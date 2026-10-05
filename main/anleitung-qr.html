@@ -157,7 +157,7 @@
         </a>
         <p class="lead">
           Anleitung zur <strong>QR-Zahlung</strong> in TaxiApp: Eingaben,
-          Übergabe an Kund:innen, Bestätigung und Bericht.
+          Übergabe an Kund:innen und Bestätigung.
         </p>
       </div>
 
@@ -173,108 +173,35 @@
         </div>
         <ol class="steps">
           <li>
-            <strong>Fahrer-Nr.</strong> ist in der Regel bereits gespeichert (2
-            Ziffern). Bei Bedarf ändern.
+            <strong>Fahrer-Nr.</strong> kommt automatisch aus deinem Login.
+            Nur ohne Anmeldung (Gast) erscheint das Feld zum Eintippen.
           </li>
           <li>
             <strong>Betrag (Taxameter)</strong> eingeben.
-            <span class="note"
-              >Feld fokussiert sich automatisch; Eingabe mit Komma oder Punkt
-              möglich.</span
-            >
+            <strong>Gesamt</strong> wird sofort vorgeschlagen: +5&nbsp;%, auf
+            ganze Euro aufgerundet.
           </li>
           <li>
-            <strong>Trinkgeld</strong> optional ergänzen (Schnellbuttons
-            <span class="kbd">+2</span>, <span class="kbd">+5</span>,
-            <span class="kbd">+10%</span> …).<br />Gesamtbetrag wird sofort
-            berechnet.
+            Will die/der Kund:in mehr geben, einfach <strong>Gesamt</strong>
+            ändern – das Trinkgeld wird automatisch berechnet.
           </li>
           <li>
-            Der <strong>SEPA/EPC-QR-Code</strong> wird
-            <em>automatisch</em> aktualisiert. Du kannst dein Handy der/dem
-            Kund:in geben – sie/er scannt den Code im Bank-App, gibt ggf. den
-            Betrag ein und bestätigt die Überweisung.
+            Der <strong>QR-Code</strong> wird automatisch aktualisiert. Die/der
+            Kund:in scannt ihn in der <em>Bank-App</em> (nicht mit der Kamera).
+            Liest die Bank-App nur IBAN, die große <strong>IBAN</strong> unter
+            dem QR scannen; Tipp darauf zeigt alle Überweisungsdaten groß zum
+            Kopieren.
           </li>
           <li>
-            Bitte die/den Kund:in um
-            <strong>kurze Bestätigung am Display</strong>
-            (Überweisungsbestätigung zeigen).
-          </li>
-          <li>
-            Tippe anschließend auf <strong>Bestätigung an WhatsApp</strong> – es
-            öffnet sich Chat an die Dispo/Leitung mit fertigem Text. Senden
-            tippen.
-            <span class="badge badge--info"
-              >Ab jetzt zählt die Zahlung in den Bericht.</span
-            >
+            Nach der Überweisung auf <strong>Zahlung bestätigen</strong> tippen.
+            Die Zahlung wird gespeichert und erscheint unter
+            <em>Letzte Zahlungen</em>.
           </li>
         </ol>
         <div class="callout note">
           Hinweis: Der Verwendungszweck im QR enthält
-          <em>„Taxi Murtal – Fahrer&nbsp;NN“</em> und erscheint in vielen
-          Bank-Apps automatisch.
+          <em>„Taxi Murtal – Fahrer&nbsp;NN“</em> und wird automatisch ausgefüllt.
         </div>
-      </section>
-
-      <!-- Bericht & Logik -->
-      <section class="hilfe__section">
-        <div class="headline">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 3h18v2H3V3zm0 6h18v2H3V9zm0 6h12v2H3v-2z" />
-          </svg>
-          <h2>Bericht (24&nbsp;h) & Kopieren</h2>
-        </div>
-        <ul class="checklist">
-          <li>
-            <strong>Bericht (24&nbsp;h)</strong> summiert alle QR-Bestätigungen
-            der letzten 24 Stunden (nicht Kalendertag!). Es werden
-            <em>Taxameter</em>, <em>Trinkgeld</em> und <em>Gesamt</em> getrennt
-            ausgewiesen.
-          </li>
-          <li>
-            Die Summierung passiert <strong>nur</strong> für Zahlungen, bei
-            denen du auf <em>Bestätigung an WhatsApp</em> getippt hast. Erst
-            dann wird ein Eintrag im lokalen Journal erstellt.
-          </li>
-          <li>
-            Beim Klick auf <strong>Bericht (24&nbsp;h)</strong> wird die fertige
-            Zusammenfassung <strong>in die Zwischenablage kopiert</strong> – du
-            kannst sie direkt in einen Chat, eine Notiz oder in einen
-            Tagesbericht <em>einfügen</em>.
-          </li>
-          <li>
-            Das lokale <strong>Zahlungsjournal</strong> wird
-            <strong>automatisch nach 24&nbsp;Stunden</strong> bereinigt
-            (Datenschutz & Performance).
-          </li>
-        </ul>
-      </section>
-
-      <!-- Tipps -->
-      <section class="hilfe__section">
-        <div class="headline">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
-            />
-          </svg>
-          <h2>Tipps für den Einsatz</h2>
-        </div>
-        <ul class="checklist">
-          <li>
-            Wenn Kund:innen <em>kein</em> Bank-App haben, kannst du die
-            <strong>Zusammenfassung kopieren</strong> und als Nachweis intern
-            verschicken.
-          </li>
-          <li>
-            Auf Wunsch kann die Leitung die Nummer für WhatsApp-Zielkontakt
-            ändern (wird lokal gespeichert).
-          </li>
-          <li>
-            Bei sehr schmalen Displays kann die Seite die Eingaben in zwei
-            Zeilen umbrechen – QR bleibt immer gut scannbar.
-          </li>
-        </ul>
       </section>
 
       <div class="backline">

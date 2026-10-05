@@ -18,12 +18,27 @@ async function sendToSheet(entry) {
     params.set("method", entry.method || "QR");
     params.set("iban", entry.iban || "");
 
-    await fetch(GS_ENDPOINT, {
+    const res = await fetch(GS_ENDPOINT, {
       method: "POST",
       body: params, // БЕЗ headers → simple request, без CORS preflight
     });
+    const data = await res.json().catch(() => null);
+    return Boolean(res.ok && data && data.ok);
   } catch (err) {
     console.error("QR payment → Sheet error", err);
+    return false;
+  }
+}
+
+// Taxi-Nr. des angemeldeten Fahrers (Login auf der Startseite), sonst "".
+function loggedInDriverNo() {
+  try {
+    const session = JSON.parse(localStorage.getItem("mt:driver-session") || "null");
+    if (!session?.token || !(Number(session.expiresAt) > Date.now())) return "";
+    const digits = String(session.driver?.taxiNumber || "").replace(/\D/g, "").slice(-2);
+    return digits ? digits.padStart(2, "0") : "";
+  } catch (_) {
+    return "";
   }
 }
 
@@ -32,13 +47,11 @@ async function sendToSheet(entry) {
   // --- 1. DOM-элементы ---
   const elDriver = document.getElementById("driverNo");
   const elFare = document.getElementById("fare");
-  const elTip = document.getElementById("tip");
-  const elTotal = document.getElementById("totalEuro");
-  const elVZ = document.getElementById("vzPreview");
-  const tipBtns = document.querySelectorAll(".tipbtn");
-  const sendWA = document.getElementById("sendWA");
-  const copyBtn = document.getElementById("copySummary");
-  const tipClear = document.getElementById("tipClear");
+  const elPay = document.getElementById("payTotal"); // Gesamtbetrag inkl. Trinkgeld
+  const elTipInfo = document.getElementById("tipInfo");
+  const confirmBtn = document.getElementById("confirmPay");
+  const ibanBtn = document.getElementById("ibanBtn");
+  const bankDialog = document.getElementById("bankDialog");
   const qrBox = document.getElementById("qr");
   const elRecent = document.getElementById("qrRecent");
 
@@ -46,12 +59,10 @@ async function sendToSheet(entry) {
   if (
     !elDriver ||
     !elFare ||
-    !elTip ||
-    !elTotal ||
-    !elVZ ||
+    !elPay ||
+    !elTipInfo ||
     !qrBox ||
-    !sendWA ||
-    !copyBtn
+    !confirmBtn
   ) {
     console.warn(
       "[QR] main.js: необходимые элементы не найдены — инициализация QR-Zahlung пропущена."
@@ -60,19 +71,18 @@ async function sendToSheet(entry) {
   }
 
   // --- 2. Константы и LocalStorage ---
-  const DEFAULT_WA = "436506367662"; // +43 650 6367662 без плюса
-
   const LS = {
     driver: "taxapp.driverNo",
-    waBoss: "taxapp.whatsAppBoss",
   };
 
-  if (!localStorage.getItem(LS.waBoss)) {
-    localStorage.setItem(LS.waBoss, DEFAULT_WA);
+  // Angemeldet: Fahrer-Nr. kommt aus dem Login, das Feld entfällt. Sonst (Gast) wie bisher eintippen.
+  const sessionDriver = loggedInDriverNo();
+  if (sessionDriver) {
+    elDriver.value = sessionDriver;
+    document.getElementById("driverField")?.setAttribute("hidden", "");
+  } else {
+    elDriver.value = localStorage.getItem(LS.driver) || "";
   }
-
-  // Восстановление номера водителя
-  elDriver.value = localStorage.getItem(LS.driver) || "";
 
   // --- 3. Helpers: parse/format/round ---
   const nfEUR = new Intl.NumberFormat("de-AT", {
@@ -90,14 +100,20 @@ async function sendToSheet(entry) {
   const toMoney = (n) => nfEUR.format(n);
   const two = (n) => Math.round(n * 100) / 100;
 
-  // tip → строка в input с запятой
-  const tipToInput = (tip) => String(two(tip)).replace(".", ",");
+  // Betrag → Eingabefeld mit Komma
+  const toInput = (n) => String(two(n)).replace(".", ",");
 
-  // === авто-режим чаевых (+5% → итог вверх до целого) ===
-  let autoTip = true; // пока пользователь не вмешался, считаем автоматически
-  function computeDefault5UpTip(fare) {
-    const targetTotal = Math.ceil(fare * 1.05); // +5%, затем итог до целого €
-    return two(Math.max(0, targetTotal - fare));
+  let saving = false; // Bestätigung läuft
+  let savedKey = ""; // zuletzt bestätigte Fahrer|Summe
+  // Jede Betrag-Eingabe setzt Gesamt neu: +5 %, auf ganze € aufgerundet. Danach darf der Fahrer Gesamt ändern.
+  const defaultTotal = (fare) => (fare > 0 ? Math.ceil(fare * 1.05) : 0);
+
+  // Zahlbetrag = Gesamt, aber nie unter dem Taxameter-Betrag; Trinkgeld = Differenz.
+  function amounts() {
+    const fare = two(toNumber(elFare.value));
+    const entered = two(toNumber(elPay.value));
+    const total = Math.max(fare, entered);
+    return { fare, total, tip: two(total - fare), tooLow: entered < fare };
   }
 
   // --- 4. UX фокус/выделение сумм ---
@@ -115,7 +131,7 @@ async function sendToSheet(entry) {
 
   elDriver.addEventListener("focus", selectAll);
   elFare.addEventListener("focus", selectAll);
-  elTip.addEventListener("focus", selectAll);
+  elPay.addEventListener("focus", selectAll);
 
   // На мобильных устройствах повторный focus внутри пользовательского
   // касания помогает открыть клавиатуру, если autofocus только поставил курсор.
@@ -128,8 +144,8 @@ async function sendToSheet(entry) {
   elFare.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      elTip.focus();
-      elTip.select?.();
+      elPay.focus();
+      elPay.select?.();
     }
   });
 
@@ -221,92 +237,24 @@ async function sendToSheet(entry) {
     fetchQrRecent(5);
   });
 
-  // --- 6. VZ-превью + пересчёт ---
-  function updateVzPreview(driverNo) {
-    elVZ.textContent = `Taxi Murtal – Fahrer ${driverNo || "00"}`;
-  }
+  // --- 6. Пересчёт ---
 
   function recalc() {
-    const fare = toNumber(elFare.value);
-    const tip = toNumber(elTip.value);
-    const total = two(fare + tip);
+    const { fare, total, tip, tooLow } = amounts();
 
-    elTotal.textContent = toMoney(total);
-    updateVzPreview(elDriver.value);
+    elTipInfo.textContent = tooLow
+      ? `Gesamt ist kleiner als der Betrag – es gilt ${toMoney(fare)}`
+      : `davon Trinkgeld: ${toMoney(tip)}`;
+    elTipInfo.classList.toggle("is-warn", tooLow);
 
     const epc = QrPay.buildEpcString(total, elDriver.value);
     QrPay.renderQR(qrBox, epc);
 
-    sendWA.disabled = !(total > 0 && /^\d{1,2}$/.test(elDriver.value.trim()));
+    // nach dem Bestätigen gesperrt, bis sich der Betrag ändert (kein doppelter Eintrag)
+    const key = `${elDriver.value}|${total}`;
+    confirmBtn.disabled = saving || key === savedKey || !(total > 0 && /^\d{1,2}$/.test(elDriver.value.trim()));
+    if (bankDialog?.open) fillBankDialog();
   }
-
-  // --- 7. Логика tip-buttons ---
-  function computeTipByKind(kind) {
-    const fare = toNumber(elFare.value);
-
-    const m = /^(\+)?(\d{1,2})%(?:up)?$/.exec(
-      String(kind).toLowerCase().replace(/\s+/g, "")
-    );
-    if (m) {
-      const p = Number(m[2]) / 100;
-      const targetTotal = Math.ceil(fare * (1 + p));
-      return two(Math.max(0, targetTotal - fare));
-    }
-
-    switch (kind) {
-      case "0":
-        return 0;
-      case "round1": {
-        const targetTotal = Math.ceil(fare);
-        return two(Math.max(0, targetTotal - fare));
-      }
-      case "round1+1": {
-        const targetTotal = Math.ceil(fare) + 1;
-        return two(Math.max(0, targetTotal - fare));
-      }
-      case "round5": {
-        const targetTotal = Math.ceil(fare / 5) * 5;
-        return two(Math.max(0, targetTotal - fare));
-      }
-      case "10%up": {
-        const targetTotal = Math.ceil(fare * 1.1);
-        return two(Math.max(0, targetTotal - fare));
-      }
-      case "15%up": {
-        const targetTotal = Math.ceil(fare * 1.15);
-        return two(Math.max(0, targetTotal - fare));
-      }
-      default:
-        if (/^\d+(\.\d+)?$/.test(kind)) return two(parseFloat(kind));
-        return toNumber(elTip.value) || 0;
-    }
-  }
-
-  tipBtns.forEach((btn) => {
-    if (btn === tipClear) return;
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      autoTip = false;
-      const kind = getTipKindFromBtn(e.currentTarget);
-      const tip = computeTipByKind(kind);
-      elTip.value = tipToInput(tip);
-      recalc();
-    });
-  });
-
-  tipClear?.addEventListener(
-    "click",
-    () => {
-      autoTip = false;
-      elTip.value = "0";
-      recalc();
-    },
-    { passive: true }
-  );
-
-  elTip.addEventListener("input", () => {
-    autoTip = false;
-  });
 
   // --- 8. Сохранение номера водителя ---
   elDriver.addEventListener("input", () => {
@@ -317,17 +265,16 @@ async function sendToSheet(entry) {
   });
 
   // --- 9. Пересчёт при изменении сумм ---
+  // neue Eingabe = neue Fahrt: Bestätigen wieder erlauben, auch bei gleichem Betrag
+  [elFare, elPay].forEach((el) => el.addEventListener("input", () => { savedKey = ""; }));
+
   ["input", "change"].forEach((evt) => {
     elFare.addEventListener(evt, () => {
-      const fare = toNumber(elFare.value);
-      if (autoTip) {
-        const tip = computeDefault5UpTip(fare);
-        elTip.value = tipToInput(tip);
-      }
+      elPay.value = toInput(defaultTotal(toNumber(elFare.value)));
       recalc();
     });
 
-    elTip.addEventListener(evt, recalc);
+    elPay.addEventListener(evt, recalc);
   });
 
   // --- 10. Мини-тост ---
@@ -341,99 +288,77 @@ async function sendToSheet(entry) {
     setTimeout(() => toast.classList.remove("show"), 2000);
   }
 
-  // --- 11. Копирование сводки ---
-  copyBtn.addEventListener("click", async () => {
-    const fare = toNumber(elFare.value);
-    const tip = toNumber(elTip.value);
-    const total = two(fare + tip);
+  // --- 12. Zahlung bestätigen: nur in die Tabelle, Anzeige unter „Letzte Zahlungen“ ---
+  confirmBtn.addEventListener("click", async () => {
+    const { fare, total, tip } = amounts();
+    const key = `${elDriver.value}|${total}`;
 
-    const now = new Date();
-    const date = now.toLocaleDateString("de-AT");
-    const time = now.toLocaleTimeString("de-AT", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    const txt = [
-      "MurtalTaxi – QR-Zahlung",
-      `Fahrer: ${elDriver.value || "00"}`,
-      `Datum/Zeit: ${date} ${time}`,
-      `Betrag (Taxameter): ${toMoney(fare)}`,
-      `Trinkgeld: ${toMoney(tip)}`,
-      `Gesamt: ${toMoney(total)}`,
-      `Methode: QR (SEPA)`,
-    ].join("\n");
-
-    try {
-      await navigator.clipboard.writeText(txt);
-      showToast("Zusammenfassung kopiert");
-    } catch {
-      showToast("Kopieren fehlgeschlagen");
-    }
-  });
-
-  // --- 12. Отправка в WhatsApp + запись в таблицу ---
-  const getBossWa = () => localStorage.getItem(LS.waBoss) || DEFAULT_WA;
-
-  sendWA.addEventListener("click", async () => {
-    const fare = toNumber(elFare.value);
-    const tip = toNumber(elTip.value);
-    const total = two(fare + tip);
-
-    const now = new Date();
-    const date = now.toLocaleDateString("de-AT");
-    const time = now.toLocaleTimeString("de-AT", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    const msg = [
-      "MurtalTaxi – QR-Zahlung",
-      `Fahrer: ${elDriver.value || "00"}`,
-      `Datum/Zeit: ${date} ${time}`,
-      `Betrag (Taxameter): ${toMoney(fare)}`,
-      `Trinkgeld: ${toMoney(tip)}`,
-      `Gesamt: ${toMoney(total)}`,
-      `Methode: QR (SEPA)`,
-    ].join("\n");
-
-    const url = `https://wa.me/${getBossWa()}?text=${encodeURIComponent(msg)}`;
-    window.open(url, "_blank", "noopener");
-
-    const entry = {
+    saving = true;
+    recalc();
+    const ok = await sendToSheet({
       ts: new Date().toISOString(),
       driver: elDriver.value || "00",
-      fare: two(fare),
-      tip: two(tip),
-      total: two(total),
+      fare,
+      tip,
+      total,
       method: "QR",
-      iban: "AT932081500043192756",
-    };
-
-    await sendToSheet(entry);
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    fetchQrRecent(10);
+      iban: QrPay.RECEIVER.iban,
+    });
+    saving = false;
+    if (ok) savedKey = key;
+    recalc();
+    showToast(ok ? `Zahlung ${toMoney(total)} gespeichert` : "Speichern fehlgeschlagen – bitte nochmal");
+    if (ok) fetchQrRecent(10);
   });
+
+  // --- 12b. IBAN-Popup mit allen Überweisungsdaten ---
+  const ibanGrouped = (iban) => iban.replace(/(.{4})/g, "$1 ").trim();
+  function bankValues() {
+    const { total } = amounts();
+    return {
+      name: QrPay.RECEIVER.name,
+      iban: QrPay.RECEIVER.iban,
+      bic: QrPay.RECEIVER.bic,
+      amount: total.toFixed(2).replace(".", ","),
+      vz: `Taxi Murtal - Fahrer ${elDriver.value || "00"}`,
+    };
+  }
+  function fillBankDialog() {
+    const v = bankValues();
+    const shown = { ...v, iban: ibanGrouped(v.iban), amount: `€ ${v.amount}` };
+    bankDialog.querySelectorAll("[data-field]").forEach((el) => {
+      el.textContent = shown[el.dataset.field] ?? "";
+    });
+  }
+  if (ibanBtn && bankDialog) {
+    ibanBtn.addEventListener("click", () => {
+      fillBankDialog();
+      bankDialog.showModal();
+    });
+    bankDialog.addEventListener("click", async (e) => {
+      if (e.target === bankDialog || e.target.closest("[data-close]")) {
+        bankDialog.close();
+        return;
+      }
+      const btn = e.target.closest("[data-copy]");
+      if (!btn) return;
+      try {
+        await navigator.clipboard.writeText(bankValues()[btn.dataset.copy] || "");
+        showToast("Kopiert");
+      } catch {
+        showToast("Kopieren fehlgeschlagen");
+      }
+    });
+  }
 
   // --- 13. Стартовое состояние ---
   if (!elDriver.value) elDriver.value = "00";
   elFare.value = elFare.value || "0,00";
 
-  autoTip = true;
-  {
-    const fare0 = toNumber(elFare.value);
-    elTip.value = tipToInput(computeDefault5UpTip(fare0));
-  }
+  elPay.value = toInput(defaultTotal(toNumber(elFare.value)));
 
   recalc();
   window.addEventListener("load", recalc);
   fetchQrRecent(5);
 })();
 
-// ===== Вспомогательная функция для tip-buttons (глобальная) =====
-function getTipKindFromBtn(el) {
-  return (el.dataset.tip || el.textContent || "")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "");
-}

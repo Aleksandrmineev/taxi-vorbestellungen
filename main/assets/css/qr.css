@@ -58,7 +58,7 @@
 
 /* сумма и чаевые — ещё крупнее */
 #fare,
-#tip {
+#payTotal {
   font-size: var(--fs-input-lg);
   font-weight: 600;
 }
@@ -289,7 +289,7 @@
 
 /* сами инпуты по ширине под 3+2 знака (e.g. 999,99) */
 #fare,
-#tip {
+#payTotal {
   width: 11ch; /* ~11 символов с учетом запятой и пробела */
   max-width: 11ch;
   text-align: right; /* деньги удобнее читать справа */
@@ -298,7 +298,7 @@
 /* на очень узких экранах немного компактнее */
 @media (max-width: 420px) {
   #fare,
-  #tip {
+  #payTotal {
     width: 10ch;
     max-width: 10ch;
   }
@@ -341,7 +341,7 @@
 #fare {
   width: 11ch;
 }
-#tip {
+#payTotal {
   width: 8ch;
 }
 
@@ -353,7 +353,7 @@
   #fare {
     width: 10ch;
   }
-  #tip {
+  #payTotal {
     width: 7ch;
   }
 }
@@ -379,7 +379,7 @@ body {
 #fare {
   width: clamp(9ch, 32vw, 11ch);
 }
-#tip {
+#payTotal {
   width: clamp(7ch, 26vw, 8ch);
 }
 
@@ -402,7 +402,7 @@ body {
   }
   #driverNo,
   #fare,
-  #tip {
+  #payTotal {
     width: 100%;
     max-width: 100%;
     text-align: right;
@@ -455,4 +455,162 @@ body {
   .sep {
     margin: 10px 0;
   }
+}
+
+/* Angemeldet: Fahrer-Nr. kommt aus dem Login */
+.field[hidden] {
+  display: none;
+}
+
+/* IBAN groß und frei stehend: lesbar für Bank-Apps mit IBAN-Scanner */
+.iban-btn {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 14px 12px;
+  border: 1px solid var(--ring);
+  border-radius: 16px;
+  background: var(--qrcanvas-bg);
+  color: #111;
+  cursor: pointer;
+  font: inherit;
+  container-type: inline-size;
+}
+.iban-btn__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #555;
+}
+.iban-btn__value {
+  /* 24 Zeichen passen immer in eine Zeile, egal wie schmal das Handy ist */
+  font-size: clamp(14px, 6.2cqi, 30px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.iban-btn__more {
+  font-size: 13px;
+  color: #555;
+  text-decoration: underline;
+}
+
+/* Popup mit allen Überweisungsdaten */
+.bank-dialog {
+  width: min(560px, calc(100vw - 24px));
+  padding: 0;
+  border: 1px solid var(--ring);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--text);
+}
+.bank-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+.bank-dialog__panel {
+  padding: 16px;
+}
+.bank-dialog__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+.bank-dialog__close {
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+.bank-data {
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.bank-data__row dt {
+  font-size: 13px;
+  color: var(--muted);
+}
+.bank-data__row dd {
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.bank-data__iban {
+  font-size: clamp(14px, 6.2cqi, 30px);
+  white-space: nowrap;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bank-data__row--iban dd {
+  flex-wrap: wrap;
+  container-type: inline-size;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--qrcanvas-bg);
+  color: #111;
+}
+.bank-copy {
+  flex: none;
+  padding: 6px 10px;
+  border: 1px solid var(--ring);
+  border-radius: 999px;
+  background: var(--button-bg, transparent);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+.bank-data__row--iban .bank-copy {
+  background: #fff;
+  color: #111;
+  border-color: #ccc;
+}
+
+#confirmPay svg {
+  fill: currentColor;
+}
+
+/* Unter den Beträgen: berechnetes Trinkgeld */
+.tip-info {
+  margin: 4px 0 0;
+  font-size: 15px;
+  color: var(--muted);
+}
+.tip-info.is-warn {
+  font-size: 15px;
+  color: #c0392b;
+}
+
+/* Felder-Zeile als Grid: Betrag und Gesamt gleich breit, Fahrer-Nr. (nur Gast) schmal */
+.pay-line {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.pay-line:has(#driverField:not([hidden])) {
+  grid-template-columns: minmax(0, 0.55fr) repeat(2, minmax(0, 1fr));
+}
+.pay-line .field {
+  min-width: 0;
+  margin-bottom: 0;
+}
+.pay-line #driverNo,
+.pay-line #fare,
+.pay-line #payTotal {
+  width: 100%;
+  max-width: 100%;
+}
+.pay-line #driverNo {
+  text-align: center;
 }

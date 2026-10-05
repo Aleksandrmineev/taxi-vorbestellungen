@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="assets/css/adaptive.css" />
 
     <!-- Стили этой страницы -->
-    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-1" />
+    <link rel="stylesheet" href="assets/css/qr.css?v=20261005-2" />
   </head>
   <body>
     <!-- Header -->
@@ -85,15 +85,11 @@
       </div>
 
       <h1>QR-Zahlung</h1>
-      <p class="lead">
-        SEPA/EPC-QR wird automatisch erzeugt. Felder sind minimal: Fahrer-Nr.,
-        Betrag, Trinkgeld.
-      </p>
 
       <section class="card grid2">
         <div class="left">
           <div class="row pay-line">
-            <div class="field">
+            <div class="field" id="driverField">
               <label for="driverNo">Fahrer-Nr.</label>
               <input
                 id="driverNo"
@@ -115,56 +111,19 @@
             </div>
 
             <div class="field">
-              <label for="tip">Trinkgeld €</label>
+              <label for="payTotal">Gesamt €</label>
               <input
-                id="tip"
+                id="payTotal"
                 class="input"
                 inputmode="decimal"
-                placeholder="0"
+                placeholder="0,00"
               />
             </div>
           </div>
 
-          <div class="tip-buttons">
-            <button type="button" class="tipbtn" data-tip="0">+0</button>
-            <button type="button" class="tipbtn" data-tip="round1">
-              auf €
-            </button>
-            <button type="button" class="tipbtn" data-tip="round1+1">
-              auf € + 1
-            </button>
-            <button type="button" class="tipbtn" data-tip="round5">
-              auf 5 €
-            </button>
-            <button type="button" class="tipbtn" data-tip="10%up">+10 %</button>
-            <button type="button" class="tipbtn" data-tip="15%up">+15 %</button>
-          </div>
-
           <div class="sep"></div>
 
-          <div class="row">
-            <div class="total">Gesamt: <span id="totalEuro">€ 0,00</span></div>
-            <div class="muted small">
-              Verwendungszweck:
-              <span id="vzPreview">Taxi Murtal – Fahrer 00</span>
-            </div>
-          </div>
-
-          <div class="actions">
-            <button
-              id="copySummary"
-              class="copybtn"
-              type="button"
-              title="Zusammenfassung kopieren"
-            >
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M16 1H4a2 2 0 00-2 2v12h2V3h12V1zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11v14z"
-                />
-              </svg>
-              Zusammenfassung
-            </button>
-          </div>
+          <p id="tipInfo" class="tip-info">davon Trinkgeld: € 0,00</p>
         </div>
 
         <div class="right">
@@ -179,24 +138,20 @@
               <li><strong>Andere Banken</strong>: Neue Überweisung → QR-Code scannen</li>
             </ul>
           </div>
-          <div class="qrmeta">
-            IBAN:
-            <strong>AT93 2081 5000 4319 2756</strong> · BIC:
-            <strong>STSPAT2GXXX</strong><br />
-            Empfänger: <strong>Michael&nbsp;Kleißner</strong>
-          </div>
+          <!-- IBAN groß und ohne Beiwerk: für Bank-Apps, die nur IBAN per Kamera lesen -->
+          <button id="ibanBtn" class="iban-btn" type="button" aria-haspopup="dialog">
+            <span class="iban-btn__label">IBAN</span>
+            <span class="iban-btn__value">AT93 2081 5000 4319 2756</span>
+            <span class="iban-btn__more">Alle Überweisungsdaten anzeigen</span>
+          </button>
 
           <div class="confirm-wrap">
-            <button id="sendWA" class="wa-btn" type="button" disabled>
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M20.52 3.48A11.86 11.86 0 0012 .5 11.5 11.5 0 00.5 12.08c0 2 .53 3.91 1.53 5.6L.5 23.5l6-1.49A11.45 11.45 0 0012.05 23 11.5 11.5 0 0023.5 11.99a11.86 11.86 0 00-2.98-8.51zM12 21a9.36 9.36 0 01-4.77-1.29l-.34-.2-3.55.88.95-3.45-.22-.35A9.37 9.37 0 1121.37 12 9.37 9.37 0 0112 21zm5.32-6.84c-.29-.14-1.7-.84-1.96-.93-.26-.1-.45-.14-.64.14-.19.28-.74.93-.9 1.12-.17.19-.33.21-.62.07-.29-.14-1.23-.45-2.34-1.44-.86-.77-1.44-1.72-1.61-2-.17-.28-.02-.43.13-.57.13-.12.29-.33.43-.5.14-.17.19-.29.29-.48.1-.19.05-.36-.02-.5-.07-.14-.64-1.54-.88-2.1-.23-.55-.47-.48-.64-.49h-.55c-.19 0-.5.07-.76.36-.26.28-1 1-1 2.43s1.03 2.82 1.17 3.01c.14.19 2.03 3.11 4.92 4.36.69.3 1.23.48 1.65.62.69.22 1.32.19 1.81.12.55-.08 1.7-.7 1.94-1.38.24-.67.24-1.24.17-1.38-.07-.14-.26-.22-.55-.36z"
-                />
+            <button id="confirmPay" class="wa-btn" type="button" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" />
               </svg>
-              Bestätigung
+              Zahlung bestätigen
             </button>
-
-            <div class="small muted">An: +43 650 6367662</div>
           </div>
         </div>
 
@@ -208,6 +163,36 @@
           Noch keine Daten.
         </div>
       </section>
+      <dialog id="bankDialog" class="bank-dialog" aria-labelledby="bankDialogTitle">
+        <div class="bank-dialog__panel">
+          <div class="bank-dialog__head">
+            <strong id="bankDialogTitle">Überweisungsdaten</strong>
+            <button type="button" class="bank-dialog__close" data-close aria-label="Schließen">×</button>
+          </div>
+          <dl class="bank-data">
+            <div class="bank-data__row">
+              <dt>Empfänger</dt>
+              <dd><span data-field="name">Michael Kleißner</span><button type="button" class="bank-copy" data-copy="name">Kopieren</button></dd>
+            </div>
+            <div class="bank-data__row bank-data__row--iban">
+              <dt>IBAN</dt>
+              <dd><span data-field="iban" class="bank-data__iban">AT93 2081 5000 4319 2756</span><button type="button" class="bank-copy" data-copy="iban">Kopieren</button></dd>
+            </div>
+            <div class="bank-data__row">
+              <dt>BIC</dt>
+              <dd><span data-field="bic">STSPAT2GXXX</span><button type="button" class="bank-copy" data-copy="bic">Kopieren</button></dd>
+            </div>
+            <div class="bank-data__row">
+              <dt>Betrag</dt>
+              <dd><span data-field="amount">€ 0,00</span><button type="button" class="bank-copy" data-copy="amount">Kopieren</button></dd>
+            </div>
+            <div class="bank-data__row">
+              <dt>Verwendungszweck</dt>
+              <dd><span data-field="vz">Taxi Murtal – Fahrer 00</span><button type="button" class="bank-copy" data-copy="vz">Kopieren</button></dd>
+            </div>
+          </dl>
+        </div>
+      </dialog>
     </main>
 
     <!-- Footer -->
@@ -277,8 +262,8 @@
     <script src="assets/js/vendor/qrcode_UTF8.min.js"></script>
 
     <!-- JS этой страницы -->
-    <script defer src="assets/js/qr.js" ?v="5"></script>
-    <script defer src="assets/js/main.js?v=6"></script>
+    <script defer src="assets/js/qr.js?v=20261005-1"></script>
+    <script defer src="assets/js/main.js?v=20261005-1"></script>
 
     <!-- Глобальные скрипты темы -->
     <script type="module" defer src="assets/js/theme.js"></script>
