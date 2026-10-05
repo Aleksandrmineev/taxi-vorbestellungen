@@ -779,3 +779,20 @@ body {
 .help-more strong {
   color: var(--text);
 }
+
+/* Kurzer Hinweis im Daten-Popup */
+.bank-hint {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface-2, rgba(0, 0, 0, 0.04));
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.bank-hint strong {
+  color: var(--text);
+}
+.bank-hint__icon {
+  color: var(--text);
+}
