@@ -178,6 +178,33 @@
             </p>
           </div>
         </a>
+        <!-- Aufträge (WhatsApp-Gruppe, läuft auf dem VPS; Weiterleitung über /api/auftraege) -->
+        <a class="tile" href="/api/auftraege" id="ordersTile" data-driver-required>
+          <span class="tile__icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="5" y="3.5" width="14" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+              <path d="M9 3.5h6v2.2a.8.8 0 0 1-.8.8H9.8a.8.8 0 0 1-.8-.8z" fill="currentColor" opacity=".25" stroke="currentColor" stroke-width="1.4" />
+              <path d="m8.5 11 1.4 1.4 2.6-2.6M8.5 16l1.4 1.4 2.6-2.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M14 11.3h2M14 16.3h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+          </span>
+
+          <div>
+            <div class="tile__title">Aufträge</div>
+            <p class="tile__desc">Aufträge aus der Gruppe, Schicht und Fahrten.</p>
+          </div>
+        </a>
+        <script>
+          // Das Theme der App an die Auftragsseite weitergeben (andere Domain, eigener Speicher).
+          (function () {
+            var tile = document.getElementById("ordersTile");
+            if (!tile) return;
+            tile.addEventListener("click", function () {
+              var t = document.documentElement.getAttribute("data-theme");
+              tile.href = "/api/auftraege" + (t === "light" || t === "dark" ? "?theme=" + t : "");
+            });
+          })();
+        </script>
         <!-- SchulTransport -->
         <a class="tile" href="../lehrlinge/index.html" data-driver-required>
           <span class="tile__icon" aria-hidden="true">
