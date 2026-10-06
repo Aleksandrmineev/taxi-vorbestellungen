@@ -178,33 +178,6 @@
             </p>
           </div>
         </a>
-        <!-- Aufträge (WhatsApp-Gruppe, läuft auf dem VPS; Weiterleitung über /api/auftraege) -->
-        <a class="tile" href="/api/auftraege" id="ordersTile" data-driver-required>
-          <span class="tile__icon" aria-hidden="true">
-            <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="5" y="3.5" width="14" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6" />
-              <path d="M9 3.5h6v2.2a.8.8 0 0 1-.8.8H9.8a.8.8 0 0 1-.8-.8z" fill="currentColor" opacity=".25" stroke="currentColor" stroke-width="1.4" />
-              <path d="m8.5 11 1.4 1.4 2.6-2.6M8.5 16l1.4 1.4 2.6-2.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-              <path d="M14 11.3h2M14 16.3h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-            </svg>
-          </span>
-
-          <div>
-            <div class="tile__title">Aufträge</div>
-            <p class="tile__desc">Aufträge aus der Gruppe, Schicht und Fahrten.</p>
-          </div>
-        </a>
-        <script>
-          // Das Theme der App an die Auftragsseite weitergeben (andere Domain, eigener Speicher).
-          (function () {
-            var tile = document.getElementById("ordersTile");
-            if (!tile) return;
-            tile.addEventListener("click", function () {
-              var t = document.documentElement.getAttribute("data-theme");
-              tile.href = "/api/auftraege" + (t === "light" || t === "dark" ? "?theme=" + t : "");
-            });
-          })();
-        </script>
         <!-- SchulTransport -->
         <a class="tile" href="../lehrlinge/index.html" data-driver-required>
           <span class="tile__icon" aria-hidden="true">
@@ -247,26 +220,33 @@
             <p class="tile__desc">Aufträge verwalten &amp; Status sehen.</p>
           </div>
         </a>
-        <!-- MiniCRM -->
-        <a class="tile" href="../minicrm/index.html">
+        <!-- Aufträge (WhatsApp-Gruppe, läuft auf dem VPS; Weiterleitung über /api/auftraege) -->
+        <a class="tile" href="/api/auftraege" id="ordersTile" data-driver-required>
           <span class="tile__icon" aria-hidden="true">
             <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true">
-              <!-- sheet duotone -->
-              <path d="M6 3.5h7.8L18.5 8v9.5A3 3 0 0 1 15.5 20.5H8A3 3 0 0 1 5 17.5V6.5A3 3 0 0 1 8 3.5z" fill="currentColor" opacity=".12" />
-              <path d="M6 3.5h7.8L18.5 8v9.5A3 3 0 0 1 15.5 20.5H8A3 3 0 0 1 5 17.5V6.5A3 3 0 0 1 8 3.5z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" />
-              <path d="M13.8 3.5V8H18.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" />
-              <circle cx="11" cy="12" r="3.25" fill="none" stroke="currentColor" stroke-width="1.75" />
-              <line x1="13.3" y1="14.3" x2="16.2" y2="17.2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+              <rect x="5" y="3.5" width="14" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+              <path d="M9 3.5h6v2.2a.8.8 0 0 1-.8.8H9.8a.8.8 0 0 1-.8-.8z" fill="currentColor" opacity=".25" stroke="currentColor" stroke-width="1.4" />
+              <path d="m8.5 11 1.4 1.4 2.6-2.6M8.5 16l1.4 1.4 2.6-2.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M14 11.3h2M14 16.3h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
             </svg>
           </span>
 
           <div>
-            <div class="tile__title">Telefonnummernsuche</div>
-            <p class="tile__desc">
-              Bestellungen &amp; Kontakte suchen.
-            </p>
+            <div class="tile__title">Aufträge</div>
+            <p class="tile__desc">Aufträge aus der Gruppe, Schicht und Fahrten.</p>
           </div>
         </a>
+        <script>
+          // Das Theme der App an die Auftragsseite weitergeben (andere Domain, eigener Speicher).
+          (function () {
+            var tile = document.getElementById("ordersTile");
+            if (!tile) return;
+            tile.addEventListener("click", function () {
+              var t = document.documentElement.getAttribute("data-theme");
+              tile.href = "/api/auftraege" + (t === "light" || t === "dark" ? "?theme=" + t : "");
+            });
+          })();
+        </script>
         <!-- Schichtabrechnung -->
         <a class="tile" href="../abrechnung/index.html" data-driver-required>
           <span class="tile__icon" aria-hidden="true">
