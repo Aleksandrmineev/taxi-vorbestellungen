@@ -1,9 +1,10 @@
-// api/auftraege.js — Vercel serverless function
+// api/_lib/auftraege.js — keine eigene Function (Hobby-Plan: höchstens 12), sondern von
+// api/orders.js aufgerufen; /api/auftraege wird per vercel.json dorthin umgeschrieben.
 // Kachel „Aufträge“ auf der Startseite → Auftragsseite auf dem VPS (mineev-bot /orders).
 // Die Adresse steht nur in der Vercel-Umgebungsvariable ORDERS_PAGE_URL, nicht im (öffentlichen) Repo.
 // Das gewählte Theme der App wird als ?theme=light|dark mitgegeben.
 
-export default function handler(req, res) {
+export function openOrdersPage(req, res) {
   const target = process.env.ORDERS_PAGE_URL || "";
   if (!/^https:\/\/[^\s"'<>]+$/.test(target)) {
     res.setHeader("Content-Type", "text/plain; charset=utf-8");

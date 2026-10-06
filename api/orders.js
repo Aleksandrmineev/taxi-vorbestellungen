@@ -3,6 +3,7 @@
 //   op=list    GET   ?date=&includeAll=1            wie GAS ordersbydate
 //   op=todos   GET   ?hours=                        wie GAS todos
 //   op=create|update|status  POST                   Redis zuerst, Tabelle im Hintergrund
+//   op=auftraege GET  (/api/auftraege)              Weiterleitung zur Auftragsseite auf dem VPS
 // Lesen nur mit ORDERS_REDIS=on, Schreiben zusätzlich mit ORDERS_REDIS_WRITES=on (Vercel-Umgebung);
 // sonst 503 und der Client nutzt GAS.
 import crypto from "node:crypto";
@@ -13,6 +14,7 @@ import {
 } from "./_lib/orders-store.js";
 import { flushOrdersOutbox } from "./_lib/orders-outbox.js";
 import { background } from "./_lib/background.js";
+import { openOrdersPage } from "./_lib/auftraege.js";
 
 export const config = { maxDuration: 30, api: { bodyParser: { sizeLimit: "4mb" } } };
 
@@ -195,6 +197,8 @@ export async function dispatch(req, res, extra = {}) {
 }
 
 export default async function handler(req, res) {
+  // /api/auftraege (Kachel „Aufträge“) → Weiterleitung zur Auftragsseite auf dem VPS
+  if (req.query?.op === "auftraege") return openOrdersPage(req, res);
   if (cors(req, res)) return;
   return dispatch(req, res);
 }

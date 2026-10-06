@@ -3,6 +3,10 @@
     {
       "source": "/",
       "destination": "/main/index.html"
+    },
+    {
+      "source": "/api/auftraege",
+      "destination": "/api/orders?op=auftraege"
     }
   ],
   "headers": [
