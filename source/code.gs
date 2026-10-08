@@ -411,6 +411,11 @@ function doPost(e) {
       return json({ ok: true, profile: profile });
     }
 
+    if (action === "shift_report_delete") {
+      const profile = deleteOwnShiftReport_(body.driverNumber, body.reportId);
+      return json({ ok: true, profile: profile });
+    }
+
     if (action === "shift_admin_report_save") {
       requireShiftAdminToken_(body.adminToken);
       const report = Object.assign({}, body.report || {}, { id: body.reportId });
@@ -1549,6 +1554,28 @@ function deleteShiftReport_(reportId) {
     if (!row) throw new Error("report_not_found");
     sheets.reports.deleteRow(row);
   } finally { lock.releaseLock(); }
+}
+
+// Fahrer ohne Admin-Login: nur eigener Bericht, nur kurz nach dem Senden (versehentlich doppelt
+// gesendete Berichte). Ältere Berichte löscht weiterhin nur der Admin.
+const SHIFT_SELF_DELETE_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+function deleteOwnShiftReport_(driverNumber, reportId) {
+  const driver = String(driverNumber || "").trim();
+  if (!driver || !reportId) throw new Error("driver_and_report_required");
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheets = ensureShiftSheets_();
+    const row = findShiftReportRow_(sheets.reports, reportId);
+    if (!row) throw new Error("report_not_found");
+    const report = shiftReportFromRow_(sheets.reports.getRange(row, 1, 1, 17).getValues()[0]);
+    if (report.driverNumber.trim() !== driver) throw new Error("report_not_found");
+    const savedAt = new Date(report.savedAt).getTime();
+    if (!isFinite(savedAt) || Date.now() - savedAt > SHIFT_SELF_DELETE_WINDOW_MS) throw new Error("delete_window_expired");
+    sheets.reports.deleteRow(row);
+  } finally { lock.releaseLock(); }
+  return getShiftProfile_(driver);
 }
 
 function clearShiftReports_(driverNumber, keepBalance) {

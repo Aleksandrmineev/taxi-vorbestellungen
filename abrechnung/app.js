@@ -39,6 +39,7 @@ async function api(path, options = {}) {
   const profileMatch = path.match(/^\/api\/profiles\/([^/]+)$/);
   const carsMatch = path.match(/^\/api\/profiles\/([^/]+)\/cars$/);
   const reportMatch = path.match(/^\/api\/admin\/reports\/([^/]+)$/);
+  const ownReportMatch = path.match(/^\/api\/profiles\/([^/]+)\/reports\/([^/]+)$/);
   const clearMatch = path.match(/^\/api\/admin\/profiles\/([^/]+)\/clear$/);
 
   if (method === "GET" && profileMatch) {
@@ -55,6 +56,8 @@ async function api(path, options = {}) {
     payload = { action: "shift_car_save", secret: API_SECRET, driverNumber: decodeURIComponent(carsMatch[1]), ...body };
   } else if (method === "POST" && path === "/api/reports") {
     payload = { action: "shift_report_save", secret: API_SECRET, ...body };
+  } else if (method === "DELETE" && ownReportMatch) {
+    payload = { action: "shift_report_delete", secret: API_SECRET, driverNumber: decodeURIComponent(ownReportMatch[1]), reportId: decodeURIComponent(ownReportMatch[2]) };
   } else if (method === "PUT" && reportMatch) {
     payload = { action: "shift_admin_report_save", secret: API_SECRET, adminToken: token, reportId: decodeURIComponent(reportMatch[1]), ...body };
   } else if (method === "DELETE" && reportMatch) {
@@ -306,6 +309,14 @@ function renderStats() {
   else $("#motivation").textContent = `${current.count} ${current.count === 1 ? "Schicht" : "Schichten"} in diesem Monat.`;
 }
 
+// Muss zu SHIFT_SELF_DELETE_WINDOW_MS in source/code.gs passen (Server prüft selbst nochmal).
+const SELF_DELETE_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+function canDeleteOwnReport(report) {
+  const savedAt = new Date(report.savedAt).getTime();
+  return Number.isFinite(savedAt) && Date.now() - savedAt <= SELF_DELETE_WINDOW_MS;
+}
+
 function renderHistory() {
   const reports = [...(activeProfile()?.reports || [])].reverse();
   let runningTotal = Number(activeProfile()?.carryoverBalance) || 0;
@@ -314,8 +325,11 @@ function renderHistory() {
     runningTotal += difference;
     const date = new Intl.DateTimeFormat("de-AT", { dateStyle: "short", timeStyle: "short" }).format(new Date(report.date));
     const cellMoney = (value) => money.format(Number(value) || 0);
+    const deleteButton = canDeleteOwnReport(report)
+      ? `<button type="button" class="row-delete" data-delete-report="${escapeHtml(report.id)}" aria-label="Bericht löschen" title="Bericht löschen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></button>`
+      : "";
     return `<tr>
-      <td>${escapeHtml(date)}</td>
+      <td><span class="date-cell">${escapeHtml(date)}${deleteButton}</span></td>
       <td>${report.shiftType === "night" ? "Nacht" : "Tag"}</td>
       <td>${escapeHtml(number.format(Number(report.hours) || 0))}</td>
       <td>${escapeHtml(report.car || "—")}</td>
@@ -410,19 +424,43 @@ function renderConfirmation(report) {
   </dl>`;
 }
 
+let savingReport = false;
+
+function setButtonBusy(button, busy, busyLabel) {
+  if (busy) {
+    button.dataset.label = button.innerHTML;
+    button.innerHTML = `<span class="button-spinner" aria-hidden="true"></span>${escapeHtml(busyLabel)}`;
+  } else if (button.dataset.label !== undefined) {
+    button.innerHTML = button.dataset.label;
+  }
+  button.disabled = busy;
+  button.classList.toggle("is-busy", busy);
+  button.setAttribute("aria-busy", String(busy));
+}
+
+function setSavingReport(busy) {
+  savingReport = busy;
+  setButtonBusy($("#confirmReportButton"), busy, "Wird gespeichert…");
+  $("#editReportButton").disabled = busy;
+  $("#closeConfirm").disabled = busy;
+}
+
 $("#confirmReportButton").addEventListener("click", async () => {
-  if (!pendingReport) return;
+  if (!pendingReport || savingReport) return;
   const report = pendingReport;
+  setSavingReport(true);
   try {
     const result = await api("/api/reports", { method: "POST", body: JSON.stringify({ report }) });
     db.profiles[currentDriver] = result.profile;
     localStorage.setItem(`taxi-recognized-${currentDriver}`, "1");
     clearDraft();
   } catch {
+    setSavingReport(false);
     $("#confirmDialog").close();
     $("#saveMessage").textContent = "Bericht konnte nicht gespeichert werden. Verbindung prüfen.";
     return;
   }
+  setSavingReport(false);
   updatePrivateVisibility();
   renderPreviousDifference();
   renderStats();
@@ -440,7 +478,11 @@ $("#confirmReportButton").addEventListener("click", async () => {
   }, 1800);
 });
 
+// Während des Speicherns darf der Dialog nicht per Esc zugehen (sonst Doppelversand möglich).
+$("#confirmDialog").addEventListener("cancel", (event) => { if (savingReport) event.preventDefault(); });
+
 function closeConfirmation() {
+  if (savingReport) return;
   pendingReport = null;
   $("#confirmDialog").close();
 }
@@ -494,6 +536,31 @@ $("#historyButton").addEventListener("click", () => {
   $("#historyDialog").showModal();
 });
 $("#closeHistory").addEventListener("click", () => $("#historyDialog").close());
+
+$("#historyBody").addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-delete-report]");
+  if (!button || button.disabled) return;
+  const report = activeProfile()?.reports?.find((item) => item.id === button.dataset.deleteReport);
+  if (!report) return;
+  const date = new Intl.DateTimeFormat("de-AT", { dateStyle: "short", timeStyle: "short" }).format(new Date(report.date));
+  if (!confirm(`Bericht vom ${date} (Nr. ${report.reportNumber || "—"}, Umsatz ${money.format(Number(report.sales) || 0)}) löschen?`)) return;
+  setButtonBusy(button, true, "");
+  try {
+    const result = await api(`/api/profiles/${encodeURIComponent(currentDriver)}/reports/${encodeURIComponent(report.id)}`, { method: "DELETE" });
+    db.profiles[currentDriver] = result.profile;
+  } catch (error) {
+    setButtonBusy(button, false);
+    alert(String(error.message).includes("delete_window_expired")
+      ? "Dieser Bericht ist älter als 24 Stunden und kann nur noch vom Büro gelöscht werden."
+      : "Bericht konnte nicht gelöscht werden. Verbindung prüfen.");
+    return;
+  }
+  renderHistory();
+  updatePrivateVisibility();
+  renderPreviousDifference();
+  renderStats();
+  $("#saveMessage").textContent = "Bericht gelöscht.";
+});
 
 $("#exportButton").addEventListener("click", () => {
   const payload = { version: 1, exportedAt: new Date().toISOString(), driverNumber: currentDriver, profile: activeProfile() };

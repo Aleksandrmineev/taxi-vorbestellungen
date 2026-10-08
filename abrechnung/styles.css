@@ -125,6 +125,15 @@ dialog p { font-size: .8rem; margin: 7px 0 13px; }
 .confirm-summary .confirm-total { background: color-mix(in oklab, var(--accent) 10%, var(--card)); }
 .confirm-actions { display: grid; grid-template-columns: .8fr 1.6fr; }
 .confirm-actions button { min-height: 44px; }
+.confirm-actions button:disabled { cursor: progress; opacity: .6; }
+.confirm-actions .primary.is-busy { opacity: 1; transform: none; display: inline-flex; align-items: center; justify-content: center; gap: 9px; }
+.button-spinner { width: 16px; height: 16px; flex: none; border: 2.5px solid rgba(22, 28, 36, .25); border-top-color: currentColor; border-radius: 50%; animation: loading-spin .8s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .button-spinner { animation-duration: 1.6s; } }
+.date-cell { display: inline-flex; align-items: center; gap: 10px; }
+.row-delete { width: 30px; height: 30px; padding: 0; justify-content: center; border: 1px solid color-mix(in oklab, var(--red) 45%, var(--line)); border-radius: 8px; background: color-mix(in oklab, var(--red) 8%, var(--card)); color: var(--red); font-size: .7rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; }
+.row-delete .button-spinner { width: 12px; height: 12px; border-width: 2px; border-color: color-mix(in oklab, var(--red) 25%, transparent); border-top-color: var(--red); }
+.row-delete:disabled { cursor: progress; }
+
 .admin-login-submit { width: 100%; }
 #adminLoginForm label { margin-top: 12px; }
 .admin-dialog { width: min(calc(100% - 20px), 900px); max-width: 900px; }
