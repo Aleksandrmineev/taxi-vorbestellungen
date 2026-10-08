@@ -71,6 +71,12 @@ async function fetchJSON(
       return data;
     } catch (err) {
       clearTimeout(timer);
+      if (err?.name === "AbortError") {
+        // Browser-Text („Fetch is aborted“ / „signal is aborted“) ist für Fahrer unverständlich
+        const e = new Error("Server antwortet nicht (Zeitüberschreitung). Bitte erneut versuchen.");
+        e.name = "AbortError";
+        err = e;
+      }
       lastErr = err;
       const status = err?.status;
       if (attempt === retries || !isRetriableError(err, status)) throw err;
@@ -225,12 +231,12 @@ async function cachedGet(
     return cached.data;
   }
 
-  // если уже летит такой же запрос — ждём его
+  // если уже летит такой же запрос — ждём его; если он упал (напр. фоновая
+  // предзагрузка с коротким таймаутом) — пробуем ещё раз со своими параметрами
   if (_inFlight.has(key)) {
     try {
       return await _inFlight.get(key);
-    } finally {
-    }
+    } catch {}
   }
 
   // новый запрос
@@ -306,6 +312,7 @@ async function loadData(route) {
   const other = r === "1" ? "2" : "1";
   cachedGet({ fn: "getData", route: other }, TTL.getData, {
     retries: 0,
+    timeoutMs: 15000,
     swr: true,
   })
     .then((otherData) => writeLsCache(lsKeyForGetData(other), otherData))
